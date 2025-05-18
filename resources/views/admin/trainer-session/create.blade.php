@@ -82,6 +82,13 @@
                             </select>
                         </div>
                     </div>
+                    <div class="col-xl-6" id="first_payment">
+                        <div class="mb-3">
+                            <label class="form-label">First Payment</label>
+                            <input type="text" name="first_payment" value="{{ old('first_payment') }}"
+                                class="form-control" placeholder="First Payment" required>
+                        </div>
+                    </div>                       
                     @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">
@@ -106,6 +113,8 @@
                                 placeholder="Enter Description">{{ old('description') }}</textarea>
                         </div>
                     </div>
+
+
                 </div>
                 <div class="d-flex justify-content-between">
                     <button type="submit" class="btn btn-primary">Save</button>
@@ -116,3 +125,35 @@
         </div>
     </div>
 </div>
+<script>
+  const input = document.getElementById('first_payment');
+
+  input.addEventListener('input', function(e) {
+    // Ambil nilai input
+    let value = e.target.value;
+
+    // Hapus semua karakter selain angka dan titik
+    // (titik ini kita anggap sebagai pemisah ribuan, bukan desimal)
+    value = value.replace(/[^0-9.]/g, '');
+
+    // Hapus titik yang bukan pemisah ribuan (misal titik ganda atau titik di akhir)
+    // Untuk memudahkan, kita hapus semua titik dulu, lalu pasang titik pemisah ribuan kembali:
+    let numbersOnly = value.replace(/\./g, '');
+
+    // Format angka dengan titik sebagai pemisah ribuan
+    // Contoh: 1234567 -> 1.234.567
+    let formatted = '';
+    let len = numbersOnly.length;
+
+    for (let i = 0; i < len; i++) {
+      // dari kanan ke kiri, tambahkan titik tiap 3 angka
+      if (i > 0 && (len - i) % 3 === 0) {
+        formatted += '.';
+      }
+      formatted += numbersOnly.charAt(i);
+    }
+
+    // Set value input ke format yang sudah diubah
+    e.target.value = formatted;
+  });
+</script>

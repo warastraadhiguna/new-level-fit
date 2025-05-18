@@ -48,6 +48,26 @@ function BirthdayDiff($bornDate)
     return $daysUntilNextBirthday->invert == 0 ? $daysUntilNextBirthday->days : -1;
 }
 
+
+function PaymentExpiredDateDiff($startDateString)
+{
+    $startDate =
+        \Carbon\Carbon::parse($startDateString)->tz('Asia/Jakarta');
+    $startDate->hour = 0;
+    $startDate->minute = 0;
+    $startDate->second = 0;
+
+    $nowDate = \Carbon\Carbon::now()->tz('Asia/Jakarta');
+    $nowDate->hour = 0;
+    $nowDate->minute = 0;
+    $nowDate->second = 0;
+
+    $dayDiff = $nowDate->diff($startDate);
+
+    return $dayDiff;
+}
+
+
 function NowDate($format = 'Y-MM-DD')
 {
     return  $nowDate = \Carbon\Carbon::now()->tz('Asia/Jakarta')->isoFormat($format);

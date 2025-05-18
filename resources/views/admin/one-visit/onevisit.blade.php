@@ -41,7 +41,8 @@
                                     <- Choose ->
                                 </option>
                                 @foreach ($memberPackage as $item)
-                                    <option value="{{ $item->id }}">{{ $item->package_name }}</option>
+                                    <option value="{{ $item->id }}">{{ $item->package_name }} || {{ formatRupiah($item->package_price) }} |
+                                        {{ formatRupiah($item->admin_price) }}</option>
                                 @endforeach
                             </select>
                             {{-- <select id="single-select2" name="member_package_id" class="form-control" required>
@@ -116,11 +117,11 @@
     </div>
 </div>
 
-<script>
+{{-- <script>
     document.getElementById('submitButton').addEventListener('click', function() {
         document.getElementById('addMemberForm').submit();
     });
-</script>
+</script> --}}
 
 <script>
     function openMembers(source) {

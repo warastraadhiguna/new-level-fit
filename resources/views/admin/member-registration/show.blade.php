@@ -390,9 +390,11 @@
 <div class="col-xl-12">
     <div class="card">
         <div class="card-body">
-            @if ($memberRegistration->status == 'Running' || $memberRegistration->member_status == 'sell')
+            {{-- nando : @if ($memberRegistration->status == 'Running' || $memberRegistration->member_status == 'sell') --}}
+            @if ($memberRegistration->status == 'Running' || $memberRegistration->days > 1 )            
                 <a href="{{ route('member-active.index') }}" class="btn btn-primary">Back</a>
-            @elseif ($memberRegistration->member_status == 'one_day_visit')
+            {{-- nando : @elseif ($memberRegistration->member_status == 'one_day_visit') --}}
+            @elseif ($memberRegistration->days == 1)            
                 <a href="{{ route('oneDayVisit') }}" class="btn btn-primary">Back</a>
             @else
                 <a href="{{ route('member-expired.index') }}" class="btn btn-primary">Back</a>

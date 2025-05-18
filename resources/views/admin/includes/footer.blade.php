@@ -381,84 +381,46 @@
 </script>
 
 <script>
-    if (window.location.pathname === '/add-data') {
-        document.addEventListener('DOMContentLoaded', function() {
-            var sellRadio = document.getElementById('sell');
-            var missedGuestRadio = document.getElementById('missed');
-
-            var elementsToShow = ['born', 'member_code', 'card_number', 'gender', 'status', 'address',
-                'description', 'formFile',
-                'output', 'nickname', 'email', 'ig', 'emergency_contact', 'ec_name', 'member_package',
-                'start_date',
-                'method_payment', 'fitness_consultant',
-            ];
-            var elementsToHide = ['born', 'member_code', 'card_number', 'gender', 'status', 'address',
-                'description', 'formFile',
-                'output', 'nickname', 'email', 'ig', 'emergency_contact', 'ec_name', 'member_package',
-                'start_date',
-                'method_payment', 'fitness_consultant',
-            ];
-
-            function toggleElements(elements, displayStyle) {
-                elements.forEach(function(elementId) {
-                    var element = document.querySelector('[id="' + elementId + '"]');
-                    if (element) {
-                        element.style.display = displayStyle;
-                    }
-                });
-            }
-
-            function handleRadioChange() {
-                if (sellRadio.checked) {
-                    toggleElements(elementsToShow, 'block');
-                    toggleElements(elementsToHide, 'none');
-                } else if (missedGuestRadio.checked) {
-                    toggleElements(elementsToShow, 'none');
-                    toggleElements(elementsToHide, 'block');
-                }
-            }
-
-            sellRadio.addEventListener('change', handleRadioChange);
-            missedGuestRadio.addEventListener('change', handleRadioChange);
-
-            toggleElements(elementsToShow, 'none');
-            toggleElements(elementsToHide, 'none');
-        });
-    }
-</script>
-
-<script>
-if (window.location.pathname === '/add-data') {    
+if (window.location.pathname === '/add-data') {
     document.addEventListener('DOMContentLoaded', function() {
         var sellRadio = document.getElementById('sell');
         var missedGuestRadio = document.getElementById('missed');
-        var cancellationNote = document.getElementById('cancellation-note');
-        var candidateFC = document.getElementById('candidateFC');
-
-        function toggleElement(element, displayStyle) {
-            if (element) {
-                element.style.display = displayStyle;
-            }
+        
+        var elementsToShow = ['born', 'member_code', 'card_number', 'gender', 'status', 'address',
+            'description', 'formFile',
+            'output', 'nickname', 'email', 'ig', 'emergency_contact', 'ec_name', 'member_package',
+            'start_date',
+            'method_payment', 'fitness_consultant','registration_payment', 'first_payment'
+        ];
+        var elementsToHide = ['cancellation-note', 'candidateFC'];
+        // handleRadioChange()
+        function toggleElements(elements, displayStyle) {
+            elements.forEach(function(elementId) {
+                var element = document.querySelector('[id="' + elementId + '"]');
+                if (element) {
+                    element.style.display = displayStyle;
+                }
+            });
         }
 
         function handleRadioChange() {
-            if (sellRadio.checked) {
-                toggleElement(cancellationNote, 'block');
-                toggleElement(candidateFC, 'block');
-            } else if (missedGuestRadio.checked) {
-                toggleElement(cancellationNote, 'none');
-                toggleElement(candidateFC, 'none');
+            if (missedGuestRadio.checked) {
+                toggleElements(elementsToShow, 'block');
+                toggleElements(elementsToHide, 'none');
+            } else if (sellRadio.checked) {
+                toggleElements(elementsToShow, 'none');
+                toggleElements(elementsToHide, 'block');
             }
         }
 
         sellRadio.addEventListener('change', handleRadioChange);
         missedGuestRadio.addEventListener('change', handleRadioChange);
 
-        // Initial state
-        toggleElement(cancellationNote, 'block');
-        toggleElement(candidateFC, 'block');
+        toggleElements(elementsToShow, 'none');
+        // toggleElements(elementsToHide, 'none');
+        handleRadioChange();
     });
-}    
+}
 </script>
 
 </body>

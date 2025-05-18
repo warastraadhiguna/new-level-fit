@@ -10,6 +10,7 @@ use App\Models\Member\LeaveDay;
 use App\Models\Member\Member;
 use App\Models\Member\MemberPackage;
 use App\Models\Member\MemberRegistration;
+use App\Models\Member\MemberRegistrationPayment;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
 use App\Models\User;
@@ -41,13 +42,25 @@ class MemberRegistrationController extends Controller
             2 => [],
         ];
 
+        $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
+        $paymentMessages = [];
+
         foreach ($memberRegistrations as $memberRegistration) {
             $diff = BirthdayDiff($memberRegistration->born);
             if ($diff >= 0 && $diff <= 2) {
                 $birthdayMessages[$diff][$memberRegistration->member_id] = $memberRegistration->member_name;
             }
-        }
 
+            $paymentDayDiff = PaymentExpiredDateDiff($memberRegistration->start_date);
+            $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
+            if ($paymentDay < $expiredPaymentNumber && $memberRegistration->payment_summary < ($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price)) {
+                $paymentMessages[$paymentDay][] =
+                [
+                    "message" => $memberRegistration->member_name . " (". formatRupiah(($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price) - $memberRegistration->payment_summary) . ")",
+                    "id" => $memberRegistration->id
+                ];
+            }
+        }
         $idCodeMaxCount = env("ID_CODE_MAX_COUNT", 3);
         $data = [
             'title'                 => 'Member Active List',
@@ -55,6 +68,7 @@ class MemberRegistrationController extends Controller
             'content'               => 'admin/member-registration/index',
             'idCodeMaxCount'        => $idCodeMaxCount,
             'birthdayMessages'      => $birthdayMessages,
+            'paymentMessages'       =>  $paymentMessages
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -277,7 +291,7 @@ class MemberRegistrationController extends Controller
 
                 $data['member_id'] = $newMember->id;
 
-                $createMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
+                $newMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
                     'member_id',
                     'member_package_id',
                     'start_date',
@@ -289,6 +303,22 @@ class MemberRegistrationController extends Controller
                     'admin_price',
                     'days'
                 ])));
+
+                $firstPayment = str_replace(".", "", $request->first_payment);
+                if ($package->package_price + $package->admin_price < $firstPayment) {
+                    DB::rollback();
+
+                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
+                } else {
+                    MemberRegistrationPayment::create([
+                        "member_registration_id" =>  $newMemberRegistration->id,
+                        "user_id" =>  Auth::user()->id,
+                        "value" =>  $firstPayment,
+                        "note" =>  "First Payment",
+                        "method_payment_id" => $data["method_payment_id"]
+                    ]);
+                }
+
             } elseif ($request->status == 'one_day_visit') {
                 $data += $request->validate([
                     'start_date'            => 'nullable',
@@ -308,11 +338,12 @@ class MemberRegistrationController extends Controller
                 $existingMember = Member::where('phone_number', $data['phone_number'])
                     ->orWhere('full_name', $data['full_name'])
                     ->first();
+                $newMemberRegistrationId = 0;
 
                 if ($existingMember) {
                     $data['member_id'] = $existingMember->id;
 
-                    MemberRegistration::create(array_intersect_key($data, array_flip([
+                    $newMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
                         'member_id',
                         'member_package_id',
                         'start_date',
@@ -323,6 +354,8 @@ class MemberRegistrationController extends Controller
                         'admin_price',
                         'days'
                     ])));
+
+                    $newMemberRegistrationId = $newMemberRegistration->id;
                 } else {
                     // Create new member
                     $newMember = Member::create(array_intersect_key($data, array_flip([
@@ -334,7 +367,7 @@ class MemberRegistrationController extends Controller
                     $data['member_id'] = $newMember->id;
 
                     // Create member registration
-                    MemberRegistration::create(array_intersect_key($data, array_flip([
+                    $newMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
                         'member_id',
                         'member_package_id',
                         'start_date',
@@ -345,7 +378,19 @@ class MemberRegistrationController extends Controller
                         'admin_price',
                         'days'
                     ])));
+
+                    $newMemberRegistrationId = $newMemberRegistration->id;
                 }
+
+                $package = MemberPackage::findOrFail($data['member_package_id']);
+
+                MemberRegistrationPayment::create([
+                    "member_registration_id" =>  $newMemberRegistrationId,
+                    "user_id" =>  Auth::user()->id,
+                    "value" =>  $package->package_price + $package->admin_price,
+                    "note" =>  "First Payment",
+                    "method_payment_id" => $data["method_payment_id"]
+                ]);
             } else {
                 $fc = Auth::user()->role;
                 // $user = Auth::user()->id;
@@ -568,10 +613,13 @@ class MemberRegistrationController extends Controller
             // dd("Member Pending");
         }
 
+        $memberRegistrationPayments = MemberRegistrationPayment::with("user", "methodPayment")->where("member_registration_id", $id)->get();
+
         $data = [
             'title'                 => 'Edit Member Active',
             'memberRegistration'    => MemberRegistration::find($id),
             // 'memberRegistrations'   => $memberActive->first(),
+            'memberRegistrationPayments' => $memberRegistrationPayments,
             'memberRegistrations'   => $memberActive[0],
             'memberPackage'         => MemberPackage::get(),
             'methodPayment'         => MethodPayment::get(),

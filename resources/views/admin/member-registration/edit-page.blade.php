@@ -108,13 +108,165 @@
                 </div>
                 <div class="d-flex justify-content-between">
                     <button type="submit" class="btn btn-primary">Update</button>
-                    @if ($memberRegistration->members->status == 'sell')
-                        <a href="{{ route('member-active.index') }}" class="btn btn-info text-right">Back</a>
-                    @else
-                        <a href="{{ route('oneDayVisit') }}" class="btn btn-info text-right">Back</a>
-                    @endif
+                    <div class="d-flex">
+                        <button type="button" class="btn btn-secondary me-2" onclick="window.scrollTo(0, document.body.scrollHeight)">Payment</button>
+                        @if ($memberRegistration->members->status == 'sell')
+                            <a href="{{ route('member-active.index') }}" class="btn btn-info">Back</a>
+                        @else
+                            <a href="{{ route('oneDayVisit') }}" class="btn btn-info">Back</a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+            <hr/>    
+</div> <span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status : {{ $memberRegistrationPayments->sum('value') < ($memberRegistration->package_price+ $memberRegistration->admin_price)? "UNPAID" : "PAID" }}</span>
+
+<div class="row">
+    @if ($memberRegistrationPayments->sum('value') < ($memberRegistration->package_price+ $memberRegistration->admin_price))     
+        <div class="col-xl-12">
+            <div class="page-title flex-wrap">
+                <div>                    
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#modalAdd">
+                        + New Payment
+                    </button>        
+                </div>
+            </div>
+        </div>    
+    @endif        
+    <div class="card">
+        <div class="card-body">
+            <table class="table-responsive-lg table display">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Payment Date</th>
+                        <th>Value</th>
+                        <th>Method Payment</th>                        
+                        <th>Note</th>       
+                        <th>Staff</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($memberRegistrationPayments as $memberRegistrationPayment)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ DateFormat($memberRegistrationPayment->created_at, "DD MMMM YY H:m:s") }}</td>
+                            <td>{{ formatRupiah($memberRegistrationPayment->value) }}</td>
+                            <td>{{ $memberRegistrationPayment->methodPayment->name }}</td>                            
+                            <td>{{ $memberRegistrationPayment->note }}</td>
+                            <td>{{ $memberRegistrationPayment->user->full_name }}</td>
+                            <td>
+                                @if (Auth::user()->role == 'ADMIN')
+                                    <form action="{{ route('member-registration-payment.destroy', $memberRegistrationPayment->id) }}"
+                                        method="POST">
+                                        @method('delete')
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn light btn-danger btn-xs btn-block mb-1"
+                                            onclick="return confirm('Delete {{ $memberRegistrationPayment->value }} payment ?')">Delete</button>
+                                    </form>
+                                @endif    
+                            </td>                                                                      
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>                                
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalAdd" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-center">
+        <div class="modal-content">
+            <form action="{{ route('member-registration-payment.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Create Payment</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xl-12">
+                            <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Method Payment</label>
+                                <select id="single-select3" name="method_payment_id" class="form-control" required>
+                                    <option value="">
+                                        <- Choose ->
+                                    </option>
+                                    @foreach ($methodPayment as $item)
+                                        <option value="{{ $item->id }}" {{ old('method_payment_id') == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>                        
+                        <div class="col-xl-12">
+                            <div class="mb-3">                                
+                                <label for="exampleFormControlInput1" class="form-label">Underpayment</label>
+                                <input type="text"  placeholder="0"  class="form-control" value="{{   formatRupiah(($memberRegistration->package_price+ $memberRegistration->admin_price) - $memberRegistrationPayments->sum('value')) }}"
+                                    autocomplete="off" readonly>
+                            </div>
+                        </div>                        
+                        <div class="col-xl-12">
+                            <div class="mb-3">                               
+                                <input type="hidden" name="member_registration_id" value="{{ $memberRegistration->id }}">
+                                <label for="exampleFormControlInput1" class="form-label">Value</label>
+                                <input type="text" name="value" id="value" placeholder="0"  class="form-control"
+                                    autocomplete="off" required>
+                            </div>
+                        </div>
+                        <div class="col-xl-12">
+                            <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Note</label>
+                                <input type="hidden" name="value_sum" value="{{  $memberRegistrationPayments->sum('value')}}">
+                                <input type="hidden" name="price" value="{{  $memberRegistration->package_price+ $memberRegistration->admin_price}}">
+                                <input type="text" name="note" placeholder="Note..."    class="form-control"
+                                    autocomplete="off" >
+                            </div>
+                        </div>                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+
+  const input = document.getElementById('value');
+
+  input.addEventListener('input', function(e) {
+    // Ambil nilai input
+    let value = e.target.value;
+
+    // Hapus semua karakter selain angka dan titik
+    // (titik ini kita anggap sebagai pemisah ribuan, bukan desimal)
+    value = value.replace(/[^0-9.]/g, '');
+
+    // Hapus titik yang bukan pemisah ribuan (misal titik ganda atau titik di akhir)
+    // Untuk memudahkan, kita hapus semua titik dulu, lalu pasang titik pemisah ribuan kembali:
+    let numbersOnly = value.replace(/\./g, '');
+
+    // Format angka dengan titik sebagai pemisah ribuan
+    // Contoh: 1234567 -> 1.234.567
+    let formatted = '';
+    let len = numbersOnly.length;
+
+    for (let i = 0; i < len; i++) {
+      // dari kanan ke kiri, tambahkan titik tiap 3 angka
+      if (i > 0 && (len - i) % 3 === 0) {
+        formatted += '.';
+      }
+      formatted += numbersOnly.charAt(i);
+    }
+
+    // Set value input ke format yang sudah diubah
+    e.target.value = formatted;
+  });
+</script>

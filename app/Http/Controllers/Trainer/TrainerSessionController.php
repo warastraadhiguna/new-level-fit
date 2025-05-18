@@ -4,15 +4,13 @@ namespace App\Http\Controllers\Trainer;
 
 use App\Exports\TrainerSessionActiveExport;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\TrainerSessionStoreRequest;
 use App\Models\Member\Member;
 use App\Models\MethodPayment;
-use App\Models\Staff\FitnessConsultant;
 use App\Models\Staff\PersonalTrainer;
-use App\Models\Trainer\LOTrainerSession;
 use App\Models\Trainer\PtLeaveDay;
 use App\Models\Trainer\TrainerPackage;
 use App\Models\Trainer\TrainerSession;
+use App\Models\Trainer\TrainerSessionPayment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,10 +40,22 @@ class TrainerSessionController extends Controller
             2 => [],
         ];
 
-        foreach ($trainerSessions as $memberRegistration) {
-            $diff = BirthdayDiff($memberRegistration->born);
+        $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
+        $paymentMessages = [];
+        foreach ($trainerSessions as $trainerSession) {
+            $diff = BirthdayDiff($trainerSession->born);
             if ($diff >= 0 && $diff <= 2) {
-                $birthdayMessages[$diff][$memberRegistration->member_id] = $memberRegistration->member_name;
+                $birthdayMessages[$diff][$trainerSession->member_id] = $trainerSession->member_name;
+            }
+
+            $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
+            $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+                $paymentMessages[$paymentDay][] =
+                [
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "id" => $trainerSession->id
+                ];
             }
         }
 
@@ -57,6 +67,7 @@ class TrainerSessionController extends Controller
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
+            'paymentMessages'       =>  $paymentMessages
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -129,7 +140,7 @@ class TrainerSessionController extends Controller
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'user_id'               => 'nullable',
-                'description'           => 'nullable'
+                'description'           => 'nullable',
             ]);
             $data['fc_id']      = $fc->id;
         } else {
@@ -146,25 +157,48 @@ class TrainerSessionController extends Controller
             ]);
         }
 
-        $package = TrainerPackage::findOrFail($data['trainer_package_id']);
+        DB::beginTransaction();
+        try {
 
-        $data['user_id'] = Auth::user()->id;
+            $package = TrainerPackage::findOrFail($data['trainer_package_id']);
 
-        $startTime = date('H:i:s', strtotime('00:00:00'));
+            $data['user_id'] = Auth::user()->id;
 
-        $data['start_date'] =  $data['start_date'] . ' ' .  $startTime;
-        $dateTime = new \DateTime($data['start_date']);
-        $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
-        unset($startTime);
+            $startTime = date('H:i:s', strtotime('00:00:00'));
 
-        $data['package_price'] = $package->package_price;
-        $data['admin_price'] = $package->admin_price;
-        $data['days'] = $package->days;
-        $data['number_of_session'] = $package->number_of_session;
+            $data['start_date'] =  $data['start_date'] . ' ' .  $startTime;
+            $dateTime = new \DateTime($data['start_date']);
+            $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
+            unset($startTime);
 
-        TrainerSession::create($data);
+            $data['package_price'] = $package->package_price;
+            $data['admin_price'] = $package->admin_price;
+            $data['days'] = $package->days;
+            $data['number_of_session'] = $package->number_of_session;
 
-        return redirect()->back()->with('success', 'Trainer Session Added Successfully');
+            $newTrainerSession = TrainerSession::create($data);
+
+            $firstPayment = str_replace(".", "", $request->first_payment);
+            if ($package->package_price + $package->admin_price < $firstPayment) {
+                DB::rollback();
+
+                return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
+            } else {
+                TrainerSessionPayment::create([
+                    "trainer_session_id" =>  $newTrainerSession->id,
+                    "user_id" =>  Auth::user()->id,
+                    "value" =>  $firstPayment,
+                    "note" =>  "First Payment",
+                    "method_payment_id" => $data['method_payment_id']
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Trainer Session Added Successfully');
+        } catch (\Throwable $th) {
+            DB::rollback();
+            throw $th;
+        }
     }
 
     public function show($id)
@@ -265,13 +299,15 @@ class TrainerSessionController extends Controller
     {
         $trainerSession = TrainerSession::find($id);
         // dd($trainerSession);
-        $trainerSessionss = TrainerSession::getActivePTListById($id);
+        // $trainerSessionss = TrainerSession::getActivePTListById($id);
         // dd($trainerSession);
+
+        $trainerSessionPayments = TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get();
 
         $data = [
             'title'                 => 'Edit Trainer Session',
             'trainerSession'        => TrainerSession::find($id),
-            // 'trainerSessions'       => $trainerSessionss[0],
+            'trainerSessionPayments' => $trainerSessionPayments,
             'trainerSessions'       => $trainerSession,
             'members'               => Member::get(),
             'personalTrainers'      => PersonalTrainer::get(),
@@ -468,7 +504,7 @@ class TrainerSessionController extends Controller
     public function history()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();

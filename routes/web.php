@@ -92,6 +92,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('trainer-report-excel', [MemberRegistrationController::class, 'excel'])->name('trainer-report-excel');
 
     Route::resource('trainer-session', '\App\Http\Controllers\Trainer\TrainerSessionController');
+
+    Route::resource('trainer-session-payment', '\App\Http\Controllers\Trainer\TrainerSessionPaymentController');
+
     Route::resource('trainer-session-over', '\App\Http\Controllers\Trainer\TrainerSessionOverController');
     Route::get('trainer-session-over-pdf', [TrainerSessionOverController::class, 'pdfReport'])->name('trainer-session-over-pdf');
     Route::resource('trainer-session-check-in', '\App\Http\Controllers\Trainer\TrainerSessionCheckInController');
@@ -130,6 +133,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
 
     Route::resource('member-list', '\App\Http\Controllers\Report\MemberListController');
     Route::resource('member-active', '\App\Http\Controllers\Member\MemberRegistrationController');
+    Route::resource('member-registration-payment', '\App\Http\Controllers\Member\MemberRegistrationPaymentController');
     Route::get('member-one-visit-detail/{id}', [MemberRegistrationController::class, 'showOneVisit'])->name('member-one-visit-detail');
     Route::get('mmember-active-excel', [MemberRegistrationController::class, 'excel'])->name('member-active-excel');
     Route::get('mmember-expired-excel', [MemberRegistrationOverController::class, 'excel'])->name('member-expired-excel');

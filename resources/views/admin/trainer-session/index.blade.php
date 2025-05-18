@@ -99,6 +99,26 @@
                     @endforeach
                 @endif
             @endforeach
+            <hr/>
+            @foreach ($paymentMessages as $key => $messages)
+                @if (!empty($messages))
+                    @foreach ($messages as $message)
+                        <div class="alert alert-primary solid alert-dismissible fade show bg-danger">
+                            <a href="/trainer-session/{{ $message["id"] }}/edit" class="birthdayy" target="_blank">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke-width="2" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>{!! "$key days to <strong>". $message['message'] ."</strong>'s payment expired date" !!}</span>
+                            </a>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                aria-label="Close">X</button>
+                        </div>
+                    @endforeach
+                @endif
+            @endforeach
 
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
@@ -113,6 +133,7 @@
                                 <th>Last Check In</th>
                                 <th>Date</th>
                                 <th>Session</th>
+                                <th>Payment</th>                                     
                                 <th>Status</th>
                                 <th>Trainer</th>
                                 <th>Action</th>
@@ -192,6 +213,13 @@
                                         <h6>Session Total : {{ $item->ts_number_of_session }}</h6>
                                         <h6>Remaining Session : {{ $item->remaining_sessions }}</h6>
                                     </td>
+                                    <td>
+                                            @if ($item->payment_summary >= ($item->ts_package_price+$item->ts_admin_price))
+                                                <span class="badge badge-primary badge-lg">Paid</span>
+                                            @else
+                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->ts_package_price+$item->ts_admin_price - $item->payment_summary) }}</span>                                            
+                                            @endif
+                                    </td>                                    
                                     <td>
                                         @if ($item->leave_day_status == 'Freeze')
                                             <span class="badge badge-secondary d-inline-block" tabindex="0"
