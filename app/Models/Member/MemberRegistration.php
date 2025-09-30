@@ -69,7 +69,7 @@ class MemberRegistration extends Model
     public static function getActiveList($card_number = "", $member_id = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
-            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price,
+            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'store_branch_id', bs.name as 'branch_store_name',
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,
@@ -93,7 +93,7 @@ class MemberRegistration extends Model
             DATEDIFF(CONCAT(YEAR(CURDATE()), ' - ', MONTH(mbr.born), ' - ', DAY(mbr.born)), CURDATE()) as days_until_birthday,
             ifnull((select sum(value) from member_registration_payments mrp where mbr_reg.id=mrp.member_registration_id),0) as payment_summary
             from members as mbr
-
+            inner join branch_stores bs on mbr.branch_store_id = bs.id
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
             inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id

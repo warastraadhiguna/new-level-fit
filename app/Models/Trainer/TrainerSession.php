@@ -9,6 +9,7 @@ use App\Models\Staff\PersonalTrainer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TrainerSession extends Model
@@ -127,8 +128,9 @@ class TrainerSession extends Model
         AS leave_days_view ON mbr.id = leave_days_view.mbr_reg_member_id
         
         WHERE
+        mbr.branch_store_id = ". Auth::user()->branch_store_id ."  and
             NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY) "
-            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . "
+            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . " 
             order by cits_view.updated_at_check_in desc";
         $activeTrainerSessions = DB::select($sql);
 
@@ -699,7 +701,7 @@ class TrainerSession extends Model
         WHERE
             NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY) AND
             IFNULL(train_sess.number_of_session - count_check_in_view.check_in_count, train_sess.number_of_session) > 0"
-            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . "
+            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . " 
             order by cits_view.updated_at_check_in desc";
         $activeTrainerSessions = DB::select($sql);
 

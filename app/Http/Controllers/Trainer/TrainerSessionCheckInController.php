@@ -31,7 +31,6 @@ class TrainerSessionCheckInController extends Controller
         }
 
         $trainerSession = TrainerSession::checkInPT($request->card_number);
-        // dd($trainerSession[0]->trainer_id);
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
@@ -48,6 +47,9 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
 
+        if ($expiredMemberRegistration[0]->store_branch_id !== Auth::user()->store_branch_id) {
+            return redirect()->back()->with('errorr', 'Trainer Session hanya bisa dilakukan di cabang lain');
+        }
 
         $memberPhoto    = $trainerSession[0]->photos;
         $memberName     = $trainerSession[0]->member_name;

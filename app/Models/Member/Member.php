@@ -3,6 +3,7 @@
 namespace App\Models\Member;
 
 use App\Models\Appointment;
+use App\Models\BranchStore;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\TrainerSession;
 use App\Models\User;
@@ -15,6 +16,7 @@ class Member extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'branch_store_id',
         'full_name',
         'nickname',
         'member_code',
@@ -73,5 +75,10 @@ class Member extends Model
     public function appointment()
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
     }
 }

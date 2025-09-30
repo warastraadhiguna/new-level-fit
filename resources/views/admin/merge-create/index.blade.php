@@ -171,7 +171,7 @@
                     <div class="col-xl-6" id="member_package">
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Member Package</label>
-                            <select id="single-select2" name="member_package_id" class="form-control" required>
+                            <select id="single-select2" name="member_package_id" class="form-control">
                                 <option value="">
                                     <- Choose ->
                                 </option>
@@ -188,13 +188,13 @@
                         <div class="mb-3">
                             <label class="form-label">Start Date</label>
                             <input type="text" name="start_date" value="{{ old('start_date') }}"
-                                class="form-control editDate mdate-custom3" placeholder="Choose start date" required>
+                                class="form-control editDate mdate-custom3" placeholder="Choose start date">
                         </div>
                     </div>
                     <div class="col-xl-6" id="method_payment">
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Method Payment</label>
-                            <select id="single-select3" name="method_payment_id" class="form-control" required>
+                            <select id="single-select3" name="method_payment_id" class="form-control">
                                 <option value="">
                                     <- Choose ->
                                 </option>
@@ -208,14 +208,14 @@
                         <div class="mb-3">
                             <label class="form-label">First Payment</label>
                             <input type="text" name="first_payment" value="{{ old('first_payment') }}"
-                                class="form-control" placeholder="First Payment" required>
+                                class="form-control" placeholder="First Payment">
                         </div>
                     </div>                    
                     @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
-                                <select id="single-select4" name="fc_id" class="form-control" required>
+                                <select id="single-select4" name="fc_id" class="form-control">
                                     <option value="">
                                         <- Choose ->
                                     </option>

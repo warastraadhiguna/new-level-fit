@@ -409,7 +409,7 @@ if (window.location.pathname === '/add-data') {
                 toggleElements(elementsToHide, 'none');
             } else if (sellRadio.checked) {
                 toggleElements(elementsToShow, 'none');
-                toggleElements(elementsToHide, 'block');
+                toggleElements(elementsToHide, 'block');                
             }
         }
 

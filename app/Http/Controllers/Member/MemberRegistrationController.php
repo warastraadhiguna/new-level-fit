@@ -271,8 +271,10 @@ class MemberRegistrationController extends Controller
 
                 $data['admin_price'] = $package->admin_price;
                 $data['days'] = $package->days;
+                $data['branch_store_id'] = Auth::user()->branch_store_id;
 
                 $newMember = Member::create(array_intersect_key($data, array_flip([
+                    'branch_store_id',
                     'full_name',
                     'phone_number',
                     'status',
@@ -332,7 +334,7 @@ class MemberRegistrationController extends Controller
                 $data['user_id'] = Auth::user()->id;
                 $data['admin_price'] = $package->admin_price;
                 $data['days'] = $package->days;
-
+                $data['branch_store_id'] = Auth::user()->branch_store_id;
                 $data['start_date'] = Carbon::now()->tz('Asia/Jakarta')->startOfDay();
 
                 $existingMember = Member::where('phone_number', $data['phone_number'])
@@ -361,7 +363,8 @@ class MemberRegistrationController extends Controller
                     $newMember = Member::create(array_intersect_key($data, array_flip([
                         'full_name',
                         'phone_number',
-                        'status'
+                        'status',
+                        'branch_store_id'
                     ])));
 
                     $data['member_id'] = $newMember->id;
@@ -393,6 +396,7 @@ class MemberRegistrationController extends Controller
                 ]);
             } else {
                 $fc = Auth::user()->role;
+                $data['branch_store_id'] = Auth::user()->branch_store_id;
                 // $user = Auth::user()->id;
                 if ($fc == 'FC') {
                     $data['fc_candidate_id'] = Auth::user()->id;
@@ -401,7 +405,8 @@ class MemberRegistrationController extends Controller
                         'phone_number',
                         'status',
                         'fc_candidate_id',
-                        'cancellation_note'
+                        'cancellation_note',
+                        'branch_store_id'
                     ])));
                 } else {
                     $newMember = Member::create(array_intersect_key($data, array_flip([
@@ -409,7 +414,8 @@ class MemberRegistrationController extends Controller
                         'phone_number',
                         'status',
                         'fc_candidate_id',
-                        'cancellation_note'
+                        'cancellation_note',
+                        'branch_store_id'
                     ])));
                 }
             }
