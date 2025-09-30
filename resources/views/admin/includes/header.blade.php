@@ -210,13 +210,13 @@
                                                     alt="">
                                             </li>
                                             <li class="ms-2">
-                                                <h4 class="mb-0">Nella Vita</h4>
-                                                <span>Admin</span>
+                                                <h4 class="mb-0">{{ Auth::user()->full_name }}</h4>
+                                                <span>{{ Auth::user()->role }}</span>
                                             </li>
                                         </ul>
 
                                     </div>
-                                    <div class="card-body p-3">
+                                    {{-- <div class="card-body p-3">
                                         <a href="app-profile.html" class="dropdown-item ai-icon ">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
@@ -300,7 +300,7 @@
                                             <span class="ms-2 text-primary">Logout </span>
                                         </a>
 
-                                    </div>
+                                    </div> --}}
                                 </div>
                             </div>
                         </div>

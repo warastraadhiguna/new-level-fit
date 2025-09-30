@@ -22,6 +22,7 @@ class PersonalTrainerController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'branch_store_id'    => 'required',
             'full_name'     => 'required|string|max:200',
             'phone_number'  => '',
             'gender'        => 'required',
@@ -43,6 +44,7 @@ class PersonalTrainerController extends Controller
     {
         $item = PersonalTrainer::find($id);
         $data = $request->validate([
+            'branch_store_id'    => 'required',
             'full_name'     => 'string|max:200',
             'phone_number'  => 'nullable',
             'gender'        => 'nullable',

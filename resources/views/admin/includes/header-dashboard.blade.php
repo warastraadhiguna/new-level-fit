@@ -470,21 +470,22 @@
                                     {{-- <img src="images/user.jpg" alt=""> --}}
                                 </div>
                             </a>
-                            {{-- <div class="dropdown-menu dropdown-menu-end pb-0" style="">
+                            <div class="dropdown-menu dropdown-menu-end pb-0" style="">
                                 <div class="card mb-0">
                                     <div class="card-header p-3">
                                         <ul class="d-flex align-items-center">
                                             <li>
-                                                <img src="images/user.jpg" class="ms-0" alt="">
+                                                <img src="{{ asset('admingym/images/user.jpg') }}" class="ms-0"
+                                                    alt="">
                                             </li>
                                             <li class="ms-2">
-                                                <h4 class="mb-0">Nella Vita</h4>
-                                                <span>Admin</span>
+                                                <h4 class="mb-0">{{ Auth::user()->full_name }}</h4>
+                                                <span>{{ Auth::user()->role }}</span>
                                             </li>
                                         </ul>
 
                                     </div>
-                                    <div class="card-body p-3">
+                                    {{-- <div class="card-body p-3">
                                         <a href="app-profile.html" class="dropdown-item ai-icon ">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 xmlns:xlink="http://www.w3.org/1999/xlink" width="24px"
@@ -571,9 +572,9 @@
                                             <span class="ms-2 text-primary">Logout </span>
                                         </a>
 
-                                    </div>
+                                    </div> --}}
                                 </div>
-                            </div> --}}
+                            </div>
                         </div>
                     </li>
                 </ul>

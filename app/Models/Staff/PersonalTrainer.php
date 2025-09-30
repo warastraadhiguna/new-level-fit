@@ -2,6 +2,7 @@
 
 namespace App\Models\Staff;
 
+use App\Models\BranchStore;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ class PersonalTrainer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_store_id',
         'full_name',
         'gender',
         'role',
@@ -23,5 +25,10 @@ class PersonalTrainer extends Model
     public function users()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
     }
 }

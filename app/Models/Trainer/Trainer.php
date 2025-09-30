@@ -2,6 +2,7 @@
 
 namespace App\Models\Trainer;
 
+use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
@@ -15,6 +16,7 @@ class Trainer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_store_id',
         'transaction_type_id',
         'member_id',
         'trainer_id',
@@ -61,5 +63,10 @@ class Trainer extends Model
     public function users()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
     }
 }

@@ -13,6 +13,7 @@ use App\Exports\StaffExport;
 use App\Exports\TotalSellingLeadGeneralReportExport;
 use App\Exports\TotalSellingPTReportExport;
 use App\Http\Controllers\Controller;
+use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\Staff\ClassInstructor;
 use App\Models\Staff\PersonalTrainer;
@@ -40,11 +41,12 @@ class StaffController extends Controller
             'title'                 => 'Staff List',
             'administrator'         => User::where('role', 'ADMIN')->get(),
             'classInstructor'       => ClassInstructor::get(),
-            'customerService'       => User::where('role', 'CS')->get(),
-            'customerServicePos'    => User::where('role', 'CSPOS')->get(),
-            'fitnessConsultant'     => User::where('role', 'FC')->get(),
-            'personalTrainer'       => PersonalTrainer::get(),
+            'customerService'       => User::with("branchStore")->where('role', 'CS')->get(),
+            'customerServicePos'    => User::with("branchStore")->where('role', 'CSPOS')->get(),
+            'fitnessConsultant'     => User::with("branchStore")->where('role', 'FC')->get(),
+            'personalTrainer'       => PersonalTrainer::with("branchStore")->get(),
             'users'                 => User::get(),
+            'branch_stores'         => BranchStore::get(),
             "page"                  => Request()->input('page'),
             'content'               => 'admin/staff/index'
         ];
@@ -55,7 +57,7 @@ class StaffController extends Controller
     public function ptTotalReport()
     {
         $fromDate       = Request()->input('fromDate');
-        $fromDate       = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate       = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate         = Request()->input('toDate');
         $toDate         = $toDate ? DateFormat($toDate) : NowDate();
@@ -170,7 +172,7 @@ class StaffController extends Controller
     public function ptDetailReport()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();
@@ -458,7 +460,7 @@ class StaffController extends Controller
     public function csDetailReportMemberCheckIn()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();
@@ -498,7 +500,7 @@ class StaffController extends Controller
     public function csTotalReportPT()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();
@@ -538,7 +540,7 @@ class StaffController extends Controller
     public function csDetailReportPT()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
 
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();
@@ -578,7 +580,7 @@ class StaffController extends Controller
     public function fcTotalReportMemberCheckIn()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate   = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate   = $fromDate ? DateFormat($fromDate) : NowDate();
         $fcId       = Request()->input('fcId');
 
         $toDate     = Request()->input('toDate');
@@ -716,7 +718,7 @@ class StaffController extends Controller
     public function fcTotalReportPT()
     {
         $fromDate   = Request()->input('fromDate');
-        $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
+        $fromDate  = $fromDate ? DateFormat($fromDate) : NowDate();
         $fcId       = Request()->input('fcId');
 
         $toDate     = Request()->input('toDate');

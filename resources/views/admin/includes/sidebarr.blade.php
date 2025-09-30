@@ -76,7 +76,7 @@
 
             @if (Auth::user()->role == 'ADMIN')
                 <li>
-                    <a href="{{ route('staff.index') }}" href="javascript:void(0);" aria-expanded="false">
+                    <a href="{{ route('staff.index') }}?page=cs" href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person</i>
                         <span class="nav-text">Staff List</span>
                     </a>
