@@ -24,7 +24,7 @@
 
     <!-- FAVICONS ICON -->
     <link rel="shortcut icon" type="{{ asset('admingym/image/png') }}"
-        href="{{ asset('admingym/images/gym/fav-icon.png') }}">
+        href="{{ asset('admingym/images/gym/fav-icon'. Auth::user()->branch_store_id  .'.ico') }}">
     <link href="{{ asset('admingym/vendor/wow-master/css/libs/animate.css') }}" rel="stylesheet">
     <link href="{{ asset('admingym/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link rel="stylesheet"
@@ -112,7 +112,7 @@
                             fill="white" />
                     </svg>
                 </div> --}}
-                <img src="{{ asset('LEVELFIT.png') }}" class="img-fluid" alt="">
+                <img src="{{ asset('LEVELFIT'. Auth::user()->branch_store_id  .'.png') }}" class="img-fluid" alt="">
             </a>
 
 
