@@ -47,7 +47,7 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
 
-        if ($expiredMemberRegistration[0]->store_branch_id !== Auth::user()->store_branch_id) {
+        if ($expiredMemberRegistration[0]->branch_store_id !== Auth::user()->branch_store_id) {
             return redirect()->back()->with('errorr', 'Trainer Session hanya bisa dilakukan di cabang lain');
         }
 
