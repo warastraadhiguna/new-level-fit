@@ -9,6 +9,62 @@
         $totalIncomeOfAdminActiveMember += $item->admin_price;
     @endphp
 @endforeach
+
+@if(Auth::user()->role === 'ADMIN' )
+<!-- Modal -->
+<div class="modal fade modal-sm" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Change Branch</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form action="{{ route('administrator-branch-update') }}" method="POST"
+                enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="mb-3">
+                            <select name="branch_store_id" class="form-control" aria-label="Default select example"
+                                required>
+                                @foreach($branch_stores as $branch_store)                                        
+                                    <option value="{{ $branch_store->id }}" {{ Auth::user()->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>    
+                </div>
+                <div class="row">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+<div class="row">
+    <div class="col-xl-6 col-xxl-6 col-lg-6 col-sm-6">
+        <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            <div class="widget-stat card bg-info">
+                <div class="card-body  p-4">
+                    <div class="media">
+                        <span class="me-3">
+                            <i class="la la-exchange-alt"></i>
+                        </span>
+                        <div class="media-body text-white text-end">
+                            {{-- <p class="mb-1 text-white">Change Location</p> --}}
+                            <h3 class="text-white">{{ Auth::user()->branchStore->name }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+@endif
+
 <div class="row">
     <div class="col-xl-3 col-sm-3 col-md-6">
         <div class="card">

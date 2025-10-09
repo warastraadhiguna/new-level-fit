@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use App\Models\Staff\PersonalTrainer;
@@ -301,7 +302,7 @@ class DashboardController extends Controller
             'incomeOfActivePT'                  => $incomeOfPT,
             'incomeOfActiveLGT'                 => $incomeOfActiveLGT,
             'incomeOfOneDayVisit'               => $incomeOfOneDayVisit,
-
+            'branch_stores'                     => BranchStore::get(),
             'totalMember'                       => $totalMembers,
             'totalMemberRegister'               => MemberRegistration::where('days', '>', 1)->count(),
             'memberRegisterActive'              => $memberRegisterActive,

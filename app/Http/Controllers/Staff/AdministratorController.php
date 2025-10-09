@@ -21,6 +21,7 @@ class AdministratorController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'branch_store_id'    => 'required',
             'full_name' => 'required|string|max:200',
             'email'     => 'required|email',
             'gender'    => 'required',
@@ -33,15 +34,20 @@ class AdministratorController extends Controller
         return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Administrator Berhasil Ditambahkan');
     }
 
-    public function edit(string $id)
+    public function branchUpdate(Request $request)
     {
-        //
+        $request->user()->update([
+            'branch_store_id' => $request->branch_store_id,
+        ]);
+
+        return back()->with('success', 'Cabang Berhasil Diubah');
     }
 
     public function update(Request $request, string $id)
     {
         $item = User::find($id);
         $data = $request->validate([
+            'branch_store_id'    => 'required',
             'full_name' => 'string|max:200',
             'email'     => 'email',
             'gender'    => 'required',

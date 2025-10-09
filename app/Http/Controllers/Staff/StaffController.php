@@ -39,7 +39,7 @@ class StaffController extends Controller
 
         $data = [
             'title'                 => 'Staff List',
-            'administrator'         => User::where('role', 'ADMIN')->get(),
+            'administrator'         => User::with("branchStore")->where('role', 'ADMIN')->get(),
             'classInstructor'       => ClassInstructor::get(),
             'customerService'       => User::with("branchStore")->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->where('role', 'CSPOS')->get(),

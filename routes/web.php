@@ -10,6 +10,7 @@ use App\Http\Controllers\Member\MissedGuestController;
 use App\Http\Controllers\MergeCreateDataController;
 use App\Http\Controllers\Report\MemberExpiredListController;
 use App\Http\Controllers\Report\MemberListController;
+use App\Http\Controllers\Staff\AdministratorController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
 use App\Http\Controllers\Trainer\TrainerSessionCheckInController;
@@ -82,6 +83,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('staff', '\App\Http\Controllers\Staff\StaffController');
     Route::get('cetak-staff-pdf', [StaffController::class, 'cetak_pdf'])->name('cetak-staff-pdf');
     Route::resource('administrator', '\App\Http\Controllers\Staff\AdministratorController');
+
+    Route::put('administrator-branch-update', [AdministratorController::class, 'branchUpdate'])->name('administrator-branch-update');
+
     Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');
     Route::resource('customer-service', '\App\Http\Controllers\Staff\CustomerServiceController');
     Route::resource('customer-service-pos', '\App\Http\Controllers\Staff\CustomerPosServiceController');
