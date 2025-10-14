@@ -91,10 +91,23 @@ class TrainerSessionController extends Controller
             2 => [],
         ];
 
-        foreach ($trainerSessions as $memberRegistration) {
-            $diff = BirthdayDiff($memberRegistration->born);
+
+        $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
+        $paymentMessages = [];
+        foreach ($trainerSessions as $trainerSession) {
+            $diff = BirthdayDiff($trainerSession->born);
             if ($diff >= 0 && $diff <= 2) {
-                $birthdayMessages[$diff][$memberRegistration->member_id] = $memberRegistration->member_name;
+                $birthdayMessages[$diff][$trainerSession->member_id] = $trainerSession->member_name;
+            }
+
+            $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
+            $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+                $paymentMessages[$paymentDay][] =
+                [
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "id" => $trainerSession->id
+                ];
             }
         }
 
@@ -106,6 +119,7 @@ class TrainerSessionController extends Controller
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
+            'paymentMessages'   =>  $paymentMessages
         ];
 
         return view('admin.layouts.wrapper', $data);

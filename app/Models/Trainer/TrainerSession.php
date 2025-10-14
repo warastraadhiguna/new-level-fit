@@ -91,7 +91,7 @@ class TrainerSession extends Model
         WHEN NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL train_sess.days DAY) THEN 'Running'
         ELSE 'Not Started'
         END as STATUS,
-            ifnull((select sum(value) from trainer_session_payments tsp where train_sess.id=tsp.trainer_session_id),0) as payment_summary
+        ifnull((select sum(value) from trainer_session_payments tsp where train_sess.id=tsp.trainer_session_id),0) as payment_summary
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
@@ -139,7 +139,7 @@ class TrainerSession extends Model
 
     public static function getPendingPTList($card_number = "", $trainner_session_id = "")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
         train_pack.package_name,
@@ -156,8 +156,8 @@ class TrainerSession extends Model
         CASE WHEN NOW() > DATE_ADD(train_sess.start_date, INTERVAL train_sess.days DAY) THEN 'Over'
         WHEN NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL train_sess.days DAY) THEN 'Running'
         ELSE 'Not Started'
-        END as STATUS
-    
+        END as STATUS,
+        ifnull((select sum(value) from trainer_session_payments tsp where train_sess.id=tsp.trainer_session_id),0) as payment_summary
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
