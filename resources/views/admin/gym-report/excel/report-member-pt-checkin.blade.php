@@ -15,6 +15,7 @@
                 <tr style="background-color: #f5e400;">
                     <th>No</th>
                     <th>Member Name</th>
+                    <th>Trainer Name</th>                    
                     <th>Check In Time</th>
                     <th>Check Out Time</th>
                 </tr>
@@ -26,6 +27,9 @@
                         <td>
                             <h6>{{ $item->member_name }}</h6>
                         </td>
+                        <td>
+                            {{ $item->trainer_name }}
+                        </td>                        
                         <td>
                             {{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}
                         </td>

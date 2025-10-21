@@ -37,7 +37,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Member Name</th>
-                                {{-- <th>Trainer Name</th> --}}
+                                <th>Trainer Name</th>
                                 <th>Check In Time</th>
                                 <th>Check Out Time</th>
                             </tr>
@@ -49,9 +49,9 @@
                                     <td>
                                         {{ $item->member_name }}
                                     </td>
-                                    {{-- <td>
+                                    <td>
                                         {{ $item->trainer_name }}
-                                    </td> --}}
+                                    </td>
                                     <td>
                                         {{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}
                                     </td>

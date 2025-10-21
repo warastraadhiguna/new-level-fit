@@ -30,14 +30,14 @@ class MemberPTCheckInReportExport implements FromView
                     'cits.id as cits_id',
                     'members.id as member_id',
                     'members.full_name as member_name',
-                    // 'cits.pt_id as pt_id',
-                    // 'pt.full_name as trainer_name',
+                    'cits.pt_id as pt_id',
+                    'pt.full_name as trainer_name',
                     'cits.check_in_time',
                     'cits.check_out_time'
                 )
                 ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
                 ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-                // ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
+                ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
                 ->whereDate('cits.check_in_time', '>=', $fromDate)
                 ->whereDate('cits.check_in_time', '<=', $toDate)
                 ->where('member_id', '=', $memberId)
@@ -48,14 +48,14 @@ class MemberPTCheckInReportExport implements FromView
                     'cits.id as cits_id',
                     'members.id as member_id',
                     'members.full_name as member_name',
-                    // 'cits.pt_id as pt_id',
-                    // 'pt.full_name as trainer_name',
+                    'cits.pt_id as pt_id',
+                    'pt.full_name as trainer_name',
                     'cits.check_in_time',
                     'cits.check_out_time'
                 )
                 ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
                 ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-                // ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
+                ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
                 ->whereDate('cits.check_in_time', '>=', $fromDate)
                 ->whereDate('cits.check_in_time', '<=', $toDate)
                 ->get();
