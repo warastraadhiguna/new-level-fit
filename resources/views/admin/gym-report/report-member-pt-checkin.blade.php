@@ -36,6 +36,7 @@
                         <thead>
                             <tr>
                                 <th>No</th>
+                                <th>Member Code</th>                                
                                 <th>Member Name</th>
                                 <th>Trainer Name</th>
                                 <th>Check In Time</th>
@@ -46,6 +47,9 @@
                             @foreach ($result as $item)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
+                                    <td>
+                                        {{ $item->member_code }}
+                                    </td>                                    
                                     <td>
                                         {{ $item->member_name }}
                                     </td>

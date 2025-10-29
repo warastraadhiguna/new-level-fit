@@ -245,6 +245,7 @@ class StaffController extends Controller
             $results = DB::table('members')
                 ->select(
                     'cits.id as cits_id',
+                    'members.member_code',
                     'members.id as member_id',
                     'members.full_name as member_name',
                     'cits.pt_id as pt_id',
@@ -264,6 +265,7 @@ class StaffController extends Controller
             $results = DB::table('members')
                 ->select(
                     'cits.id as cits_id',
+                    'members.member_code',
                     'members.id as member_id',
                     'members.full_name as member_name',
                     'cits.pt_id as pt_id',
