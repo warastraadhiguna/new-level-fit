@@ -2,6 +2,7 @@
 
 namespace App\Models\Trainer;
 
+use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
@@ -32,6 +33,7 @@ class TrainerSession extends Model
         'method_payment_id',
         'fc_id',
         'user_id',
+        'branch_store_id'
     ];
 
     protected $hidden = [];
@@ -71,9 +73,14 @@ class TrainerSession extends Model
         return $this->belongsTo(MethodPayment::class, 'method_payment_id', 'id');
     }
 
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
+    }    
+
     public static function getActivePTList($card_number = "", $trainner_session_id = "")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
         train_pack.package_name,
@@ -93,8 +100,8 @@ class TrainerSession extends Model
         END as STATUS,
         ifnull((select sum(value) from trainer_session_payments tsp where train_sess.id=tsp.trainer_session_id),0) as payment_summary
         FROM members AS mbr
-        
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
+        INNER JOIN branch_stores as bs on train_sess.branch_store_id = bs.id
         INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
@@ -128,7 +135,7 @@ class TrainerSession extends Model
         AS leave_days_view ON mbr.id = leave_days_view.mbr_reg_member_id
         
         WHERE
-        mbr.branch_store_id = ". Auth::user()->branch_store_id ."  and
+        train_sess.branch_store_id = ". Auth::user()->branch_store_id ."  and
             NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY) "
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . " 
             order by cits_view.updated_at_check_in desc";
@@ -139,7 +146,7 @@ class TrainerSession extends Model
 
     public static function getPendingPTList($card_number = "", $trainner_session_id = "")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
         train_pack.package_name,
@@ -161,6 +168,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
+        INNER JOIN branch_stores as bs on train_sess.branch_store_id = bs.id        
         INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
@@ -196,6 +204,7 @@ class TrainerSession extends Model
         WHERE
             -- IFNULL(train_sess.number_of_session - count_check_in_view.check_in_count, train_sess.number_of_session) = 0
         -- AND NOW() < DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY)
+        train_sess.branch_store_id = ". Auth::user()->branch_store_id ."  and
         NOW() < train_sess.start_date"
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . "
             order by cits_view.updated_at_check_in desc";

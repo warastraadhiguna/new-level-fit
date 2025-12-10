@@ -16,7 +16,7 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Image</th>
+                                {{-- <th>Image</th> --}}
                                 <th>Member's Data</th>
                                 <th>Trainer Name</th>
                                 <th>last Check In</th>
@@ -29,7 +29,7 @@
                             @foreach ($trainerSessions as $item)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>
+                                    {{-- <td>
                                         <div class="trans-list">
                                             @if ($item->photos)
                                                 <img src="{{ Storage::url($item->photos) }}" class="lazyload"
@@ -39,7 +39,7 @@
                                                     alt="default image">
                                             @endif
                                         </div>
-                                    </td>
+                                    </td> --}}
                                     <td>
                                         <h6>{{ $item->member_name }},</h6>
                                         <h6>{{ $item->member_code }}</h6>

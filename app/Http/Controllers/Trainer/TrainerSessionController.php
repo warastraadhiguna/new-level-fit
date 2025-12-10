@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Trainer;
 
 use App\Exports\TrainerSessionActiveExport;
 use App\Http\Controllers\Controller;
+use App\Models\BranchStore;
 use App\Models\Member\Member;
+use App\Models\Member\MemberRegistration;
 use App\Models\MethodPayment;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\PtLeaveDay;
@@ -130,11 +132,12 @@ class TrainerSessionController extends Controller
         $data = [
             'title'             => 'New Trainer Session',
             'trainerSession'    => TrainerSession::all(),
-            'members'           => Member::where('status', 'sell')->get(),
+            'members'           => MemberRegistration::getNonExpiredList(),
             'personalTrainers'  => PersonalTrainer::get(),
             'trainerPackages'   => TrainerPackage::get(),
             'methodPayment'     => MethodPayment::get(),
             'users'             => User::get(),
+            'branch_stores'     => BranchStore::get(),            
             'fitnessConsultant' => User::where('role', 'FC')->get(),
             'content'           => 'admin/trainer-session/create',
         ];
@@ -155,6 +158,7 @@ class TrainerSessionController extends Controller
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',
+                'branch_store_id'       => 'required',                        
             ]);
             $data['fc_id']      = $fc->id;
         } else {
@@ -167,7 +171,8 @@ class TrainerSessionController extends Controller
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'fc_id'                 => 'required|exists:users,id',
                 'user_id'               => 'nullable',
-                'description'           => 'nullable'
+                'description'           => 'nullable',
+                'branch_store_id'       => 'required',                
             ]);
         }
 
@@ -311,24 +316,17 @@ class TrainerSessionController extends Controller
 
     public function edit(string $id)
     {
-        $trainerSession = TrainerSession::find($id);
-        // dd($trainerSession);
-        // $trainerSessionss = TrainerSession::getActivePTListById($id);
-        // dd($trainerSession);
-
-        $trainerSessionPayments = TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get();
-
         $data = [
             'title'                 => 'Edit Trainer Session',
             'trainerSession'        => TrainerSession::find($id),
-            'trainerSessionPayments' => $trainerSessionPayments,
-            'trainerSessions'       => $trainerSession,
-            'members'               => Member::get(),
+            'trainerSessionPayments' => TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get(),
+            'members'               => MemberRegistration::getNonExpiredList(),
             'personalTrainers'      => PersonalTrainer::get(),
             'trainerPackages'       => TrainerPackage::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'methodPayment'         => MethodPayment::get(),
-            'content'               => 'admin/trainer-session/edit'
+            'branch_stores'         => BranchStore::get(),                    
+            'content'               => 'admin/trainer-session/edit',
         ];
         return view('admin.layouts.wrapper', $data);
     }
@@ -336,7 +334,7 @@ class TrainerSessionController extends Controller
     public function update(Request $request, string $id)
     {
         $fc = Auth::user()->id;
-        $trainerSessions = DB::table('trainer_sessions as a')
+        $trainerSession = DB::table('trainer_sessions as a')
             ->select(
                 'a.id',
                 'a.start_date',
@@ -348,7 +346,7 @@ class TrainerSessionController extends Controller
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->where('a.id', $id)
-            ->get();
+            ->first();
 
         $item = TrainerSession::find($id);
         $data = $request->validate([
@@ -359,6 +357,7 @@ class TrainerSessionController extends Controller
             'trainer_id'            => 'nullable',
             'method_payment_id'     => 'nullable',
             'fc_id'                 => 'nullable',
+            'branch_store_id'       => 'required',                 
         ]);
         $data['user_id'] = Auth::user()->id;
 
@@ -381,7 +380,7 @@ class TrainerSessionController extends Controller
         $expiredDateString = $request->input('expired_date');
         $data['expired_date'] = Carbon::parse($expiredDateString)->format('Y-m-d') . ' ' . $expiredTime;
         // dd($data['expired_date']);
-        if ($data['expired_date'] !== $trainerSessions->first()->expired_date) {
+        if ($data['expired_date'] !== $trainerSession->expired_date) {
 
             $expiredDate = new \DateTime($request->input('expired_date'));
             $daysDifference = $expiredDate->diff($dateTime)->days;
@@ -402,7 +401,7 @@ class TrainerSessionController extends Controller
 
     public function freeze(Request $request, string $id)
     {
-        $item = TrainerSession::find($id);
+         $item = TrainerSession::find($id);
         if (!$item) {
             return redirect()->route('trainer-session.index')->with('errorr', 'Trainer Session not found');
         }
@@ -541,7 +540,6 @@ class TrainerSessionController extends Controller
 
     public function historyDetail($id)
     {
-        // dd($id);
         $ts = TrainerSession::find($id);
         $status = $ts->members;
         $memberId = $ts->members->id;

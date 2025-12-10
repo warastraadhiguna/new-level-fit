@@ -11,6 +11,11 @@ function DateFormat($date, $format = 'Y-MM-DD')
     return \Carbon\Carbon::parse($date)->isoFormat($format);
 }
 
+function ConvertToDate($string)
+{
+    return \Carbon\Carbon::parse($string);
+}
+
 function DateDiff($oldDate, $newDate, $startZero = false)
 {
     $oldDate = \Carbon\Carbon::parse($oldDate);

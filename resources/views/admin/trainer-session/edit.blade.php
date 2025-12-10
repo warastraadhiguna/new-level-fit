@@ -75,9 +75,9 @@
                     </div>
                     <div class="col-xl-6" id="parentInput2">
                         <div class="mb-3">
-                            <label class="form-label">Expired Date</label>
+                            <label class="form-label">Expired Date </label>
                             <input type="text" name="expired_date" id="input2"
-                                value="{{ old('expired_date', DateFormat($trainerSessions->expired_date, 'DD MMMM YYYY')) }}"
+                                value="{{ old('expired_date', DateFormat(ConvertToDate($trainerSession->start_date)->addDays($trainerSession->days), 'DD MMMM YYYY')) }}"
                                 class="form-control mdate-custom" required autocomplete="off">
                         </div>
                     </div>
@@ -109,6 +109,17 @@
                             </div>
                         </div>
                     @endif
+                    <div class="col-xl-6">
+                        <div class="mb-3">
+                            <label for="exampleFormControlInput1" class="form-label">Branch</label>
+                                <select name="branch_store_id" class="form-control" aria-label="Default select example"
+                                    required>
+                                    @foreach($branch_stores as $branch_store)                                        
+                                        <option value="{{ $branch_store->id }}" {{ $trainerSession->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
+                                    @endforeach
+                                </select>
+                        </div>
+                    </div>                       
                     <div class="col-xl-6">
                         <div class="mb-3">
                             <label for="exampleFormControlTextarea1" class="form-label text-primary">

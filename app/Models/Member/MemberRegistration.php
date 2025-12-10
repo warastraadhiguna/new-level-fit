@@ -185,6 +185,31 @@ class MemberRegistration extends Model
         return $activeMemberRegistrations;
     }
 
+    public static function getNonExpiredList()
+    {
+        $sql = "SELECT
+                m.id,
+                m.full_name,
+                m.member_code,
+                m.phone_number
+            FROM members m
+            JOIN (
+                SELECT r.member_id, r.start_date, r.days
+                FROM member_registrations r
+                JOIN (
+                    SELECT
+                        member_id,
+                        MAX(start_date) AS max_start_date
+                    FROM member_registrations
+                    GROUP BY member_id
+                ) latest ON latest.member_id = r.member_id
+                        AND latest.max_start_date = r.start_date
+            ) last_reg ON last_reg.member_id = m.id
+            WHERE DATE_ADD(last_reg.start_date, INTERVAL last_reg.days DAY) >= NOW() order by m.full_name";
+        
+        return DB::select($sql);
+    }
+
     public static function getActiveListById($cardNumber = "", $memberRegistrationId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
