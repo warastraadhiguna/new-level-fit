@@ -15,17 +15,21 @@
                 <tr style="background-color: #f5e400;">
                     <th>No</th>
                     <th>Member Name</th>
+                    <th>Branch</th>                              
                     <th>Check In Time</th>
                     <th>Check Out Time</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($result as $item)
+                @foreach ($results as $item)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>
                             <h6>{{ $item->member_name }}</h6>
                         </td>
+                        <td>
+                            {{ $item->branch_store_name}}
+                        </td>                        
                         <td>
                             {{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}
                         </td>

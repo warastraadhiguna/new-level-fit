@@ -9,15 +9,17 @@ use App\Models\Member\MemberRegistration;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\TrainerSession;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        $branchId = Auth::user()->branch_store_id;
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
-
+        
         // Income of Member Registrations
         $incomeOfMember = DB::table('member_registrations as a')
             ->select(
@@ -28,7 +30,9 @@ class DashboardController extends Controller
                 DB::raw('SUM(a.package_price) as total_price'),
                 DB::raw('SUM(a.admin_price) as admin_price')
             )
+            ->join('members', 'member_id', '=', 'members.id')
             ->where('a.days', '>', '1')
+            ->where('branch_store_id', $branchId)
             ->whereBetween('a.created_at', [$startDate, $endDate])
             ->groupBy(
                 'a.id',
@@ -50,6 +54,7 @@ class DashboardController extends Controller
                 DB::raw('SUM(a.admin_price) as admin_price')
             )
             ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
+            ->where('branch_store_id', $branchId)            
             ->whereNull('b.status')
             ->whereBetween('a.created_at', [$startDate, $endDate])
             ->groupBy(
@@ -75,6 +80,7 @@ class DashboardController extends Controller
             )
             ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
             ->where('b.status', 'LGT')
+            ->where('branch_store_id', $branchId)                  
             ->whereBetween('a.created_at', [$startDate, $endDate])
             ->groupBy(
                 'a.id',
@@ -97,7 +103,9 @@ class DashboardController extends Controller
                 DB::raw('SUM(a.admin_price) as admin_price')
             )
             ->join('member_packages as b', 'a.member_package_id', '=', 'b.id')
+            ->join('members', 'member_id', '=', 'members.id')            
             ->where('a.days', '=', '1')
+            ->where('branch_store_id', $branchId)                  
             ->whereBetween('a.created_at', [$startDate, $endDate])
             ->groupBy(
                 'a.id',
@@ -122,21 +130,28 @@ class DashboardController extends Controller
                 'a.status',
             )
             ->where('a.status', '=', 'sell')
+            ->where('branch_store_id', $branchId)                
             ->count();
 
 
         // MEMBER REGISTRATION
         $memberRegisterActive = DB::table('member_registrations as a')
-            ->where('a.days', '>', '1')
+            ->join('members', 'member_id', '=', 'members.id')       
+            ->where('branch_store_id', $branchId)                  
+            ->where('a.days', '>', '1')           
             ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->count();
 
         $memberRegisterExpired = DB::table('member_registrations as a')
+            ->join('members', 'member_id', '=', 'members.id')       
+            ->where('branch_store_id', $branchId)              
             ->where('a.days', '>', '1')
             ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->count();
 
         $memberRegisterPending = DB::table('member_registrations as a')
+            ->join('members', 'member_id', '=', 'members.id')       
+            ->where('branch_store_id', $branchId)              
             ->where('a.days', '>', '1')
             ->whereRaw('NOW() < a.start_date')
             ->count();
@@ -147,6 +162,7 @@ class DashboardController extends Controller
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
             ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
             ->join('users as e', 'a.user_id', '=', 'e.id')
+            ->where('a.branch_store_id', $branchId)              
             ->whereNull('c.status')
             ->count();
 
@@ -165,6 +181,7 @@ class DashboardController extends Controller
                                     GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
             ->leftJoin(DB::raw("(select a.* from check_in_trainer_sessions a inner join (SELECT max(id) as id FROM check_in_trainer_sessions
                                     group by trainer_session_id) as b on a.id=b.id) as cits"), 'cits.trainer_session_id', '=', 'a.id')
+            ->where('branch_store_id', $branchId)                                      
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
             ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
@@ -182,6 +199,7 @@ class DashboardController extends Controller
                                     GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
             ->leftJoin(DB::raw("(select a.* from check_in_trainer_sessions a inner join (SELECT max(id) as id FROM check_in_trainer_sessions
                                     group by trainer_session_id) as b on a.id=b.id) as cits"), 'cits.trainer_session_id', '=', 'a.id')
+            ->where('branch_store_id', $branchId)                                      
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
             ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
@@ -196,6 +214,7 @@ class DashboardController extends Controller
             //     $join->on('a.trainer_package_id', '=', 'c.id')
             //         ->where('c.status', 'LGT');
             // })
+            ->where('a.branch_store_id', $branchId)              
             ->where('c.status', '=', 'LGT')
             ->count();
 
@@ -228,6 +247,7 @@ class DashboardController extends Controller
                 'f.id'
             )
             // ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->where('b.branch_store_id', $branchId)             
             ->where('b.status', 'one_day_visit')
             ->count();
 
@@ -260,6 +280,7 @@ class DashboardController extends Controller
                 'f.id'
             )
             ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->where('a.branch_store_id', $branchId)                 
             ->where('c.status', 'LGT')
             ->count();
 
@@ -293,6 +314,7 @@ class DashboardController extends Controller
             )
             // ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->where('a.branch_store_id', $branchId)                 
             ->where('c.status', 'LGT')
             ->count();
 

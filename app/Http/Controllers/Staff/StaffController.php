@@ -5,10 +5,7 @@ namespace App\Http\Controllers\Staff;
 use App\Exports\DetailSellingLeadGeneralReportExport;
 use App\Exports\DetailSellingPTReportExport;
 use App\Exports\LOReportExport;
-use App\Exports\MemberCheckInReport;
-use App\Exports\MemberCheckInReportExport;
 use App\Exports\MemberPTCheckInReportExport;
-use App\Exports\ReportMemberPTCheckInExport;
 use App\Exports\StaffExport;
 use App\Exports\TotalSellingLeadGeneralReportExport;
 use App\Exports\TotalSellingPTReportExport;
@@ -18,12 +15,10 @@ use App\Models\Member\Member;
 use App\Models\Staff\ClassInstructor;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\CheckInTrainerSession;
-use App\Models\Trainer\Trainer;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use GuzzleHttp\Psr7\Request;
 
 class StaffController extends Controller
 {
@@ -221,170 +216,6 @@ class StaffController extends Controller
             'users'                 => User::get(),
             'page'                  => Request()->input('page'),
             'content'               => 'admin/gym-report/pt-detail'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
-
-    public function reportMemberPTCheckIn()
-    {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-        $memberId   = Request()->input('memberId');
-        $pdf        = Request()->input('pdf');
-        $excel      = Request()->input('excel');
-
-        $member = Member::all();
-
-        if (!$fromDate || !$toDate) {
-            $fromDate = NowDate();
-            $toDate   = NowDate();
-        }
-
-        if ($memberId) {
-            $results = DB::table('members')
-                ->select(
-                    'cits.id as cits_id',
-                    'members.member_code',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cits.pt_id as pt_id',
-                    'pt.full_name as trainer_name',
-                    'cits.check_in_time',
-                    'cits.check_out_time'
-                )
-                ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
-                ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-                ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
-                ->whereDate('cits.check_in_time', '>=', $fromDate)
-                ->whereDate('cits.check_in_time', '<=', $toDate)
-                ->where('member_id', '=', $memberId)
-                // ->get();
-                ->paginate(10);
-        } else {
-            $results = DB::table('members')
-                ->select(
-                    'cits.id as cits_id',
-                    'members.member_code',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cits.pt_id as pt_id',
-                    'pt.full_name as trainer_name',
-                    'cits.check_in_time',
-                    'cits.check_out_time'
-                )
-                ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
-                ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-                ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
-                ->whereDate('cits.check_in_time', '>=', $fromDate)
-                ->whereDate('cits.check_in_time', '<=', $toDate)
-                // ->get();
-                ->paginate(10);
-        }
-
-        // if ($pdf && $pdf == '1') {
-        //     $pdf = Pdf::loadView('admin/gym-report/report-member-pt-checkin', [
-        //         'result'   => $results,
-        //     ]);
-        //     return $pdf->stream('Report-PT-checkin-' . $fromDate . '-' . $toDate . '.pdf');
-        // }
-
-        if ($excel && $excel == "1") {
-            return Excel::download(new MemberPTCheckInReportExport(), 'Member-PT-checkin-report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
-        }
-
-        $data = [
-            'title'                 => 'Report Member PT Check In',
-            'administrator'         => User::where('role', 'ADMIN')->get(),
-            'customerService'       => User::where('role', 'CS')->get(),
-            'result'                => $results,
-            'fromDate'              => $fromDate,
-            'toDate'                => $toDate,
-            'members'               => $member,
-            'memberId'              => $memberId,
-            'users'                 => User::get(),
-            'content'               => 'admin/gym-report/report-member-pt-checkin'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
-
-    public function reportMemberCheckIn()
-    {
-        // $fromDate   = Request()->input('fromDate');
-        // $fromDate  = $fromDate ?  DateFormat($fromDate) : NowDate();
-
-        // $toDate     = Request()->input('toDate');
-        // $toDate = $toDate ? DateFormat($toDate) : NowDate();
-        // $pdf = Request()->input('pdf');
-
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-        $memberId   = Request()->input('memberId');
-        $pdf        = Request()->input('pdf');
-        $excel      = Request()->input('excel');
-
-        $member = Member::all();
-
-        if (!$fromDate || !$toDate) {
-            $fromDate = NowDate();
-            $toDate = NowDate();
-        }
-
-        if ($memberId) {
-            $results = DB::table('members')
-                ->select(
-                    'cim.id as cim_id',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cim.check_in_time',
-                    'cim.check_out_time'
-                )
-                ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
-                ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-                ->whereDate('cim.check_in_time', '>=', $fromDate)
-                ->whereDate('cim.check_in_time', '<=', $toDate)
-                ->where('member_id', '=', $memberId)
-                ->paginate(10);
-        } else {
-            $results = DB::table('members')
-                ->select(
-                    'cim.id as cim_id',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cim.check_in_time',
-                    'cim.check_out_time'
-                )
-                ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
-                ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-                ->whereDate('cim.check_in_time', '>=', $fromDate)
-                ->whereDate('cim.check_in_time', '<=', $toDate)
-                // ->get();
-                ->paginate(4);
-        }
-
-        // if ($pdf && $pdf == '1') {
-        //     $pdf = Pdf::loadView('admin/gym-report/report-member-checkin', [
-        //         'result'   => $results,
-        //     ]);
-        //     return $pdf->stream('Report-member-checkin-' . $fromDate . '-' . $toDate . '.pdf');
-        // }
-
-        if ($excel && $excel == "1") {
-            return Excel::download(new MemberCheckInReportExport(), 'Member-checkin-report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
-        }
-
-        $data = [
-            'title'                 => 'Report Member Check In',
-            'administrator'         => User::where('role', 'ADMIN')->get(),
-            'customerService'       => User::where('role', 'CS')->get(),
-            'result'                => $results,
-            'fromDate'              => $fromDate,
-            'toDate'                => $toDate,
-            'members'               => $member,
-            'memberId'              => $memberId,
-            'users'                 => User::get(),
-            'content'               => 'admin/gym-report/report-member-checkin'
         ];
 
         return view('admin.layouts.wrapper', $data);

@@ -44,9 +44,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($result as $item)
+                            @foreach ($results as $item)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ ($results->currentPage() - 1) * $results->perPage() + $loop->iteration }}</td>
                                     <td>
                                         {{ $item->member_code }}
                                     </td>                                    
@@ -66,7 +66,7 @@
                             @endforeach
                         </tbody>
                     </table>
-                    {{ $result->links('pagination::bootstrap-4') }}
+                    {{ $results->appends(request()->query())->links('pagination::bootstrap-4') }}
                 </div>
             </div>
             <!--/column-->

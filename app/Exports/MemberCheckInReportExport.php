@@ -3,8 +3,6 @@
 namespace App\Exports;
 
 use App\Models\Member\Member;
-use App\Models\Member\MemberRegistration;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -33,10 +31,12 @@ class MemberCheckInReportExport implements FromView
                     'members.id as member_id',
                     'members.full_name as member_name',
                     'cim.check_in_time',
-                    'cim.check_out_time'
+                    'cim.check_out_time',
+                    'branch_stores.name as branch_store_name'    
                 )
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
+                ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')                  
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
                 ->whereDate('cim.check_in_time', '<=', $toDate)
                 ->where('member_id', '=', $memberId)
@@ -49,8 +49,10 @@ class MemberCheckInReportExport implements FromView
                     'members.id as member_id',
                     'members.full_name as member_name',
                     'cim.check_in_time',
-                    'cim.check_out_time'
+                    'cim.check_out_time',
+                    'branch_stores.name as branch_store_name'    
                 )
+                ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')                  
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
@@ -60,7 +62,7 @@ class MemberCheckInReportExport implements FromView
         }
 
         return view('admin.gym-report.excel.report-member-checkin', [
-            'result' => $results
+            'results' => $results
         ]);
     }
 

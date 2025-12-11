@@ -30,10 +30,10 @@ class Trainer extends Model
 
     protected $hidden = [];
 
-    public function trainerTransactionType()
-    {
-        return $this->belongsTo(TrainerTransactionType::class, 'transaction_type_id', 'id');
-    }
+    // public function trainerTransactionType()
+    // {
+    //     return $this->belongsTo(TrainerTransactionType::class, 'transaction_type_id', 'id');
+    // }
 
     public function members()
     {

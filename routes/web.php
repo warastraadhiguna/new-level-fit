@@ -10,6 +10,7 @@ use App\Http\Controllers\Member\MissedGuestController;
 use App\Http\Controllers\MergeCreateDataController;
 use App\Http\Controllers\Report\MemberExpiredListController;
 use App\Http\Controllers\Report\MemberListController;
+use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Staff\AdministratorController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
@@ -70,7 +71,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('pt-history', [TrainerSessionController::class, 'history'])->name('pt-history');
     Route::get('pt-history/detail/{id}', [TrainerSessionController::class, 'historyDetail'])->name('detail-pt-history');
 
-    Route::resource('trainer', '\App\Http\Controllers\Trainer\TrainerController');
     Route::resource('trainer-package', '\App\Http\Controllers\Trainer\TrainerPackageController');
     Route::resource('trainer-package-type', '\App\Http\Controllers\Trainer\TrainerPackageTypeController');
     Route::resource('trainer-transaction-type', '\App\Http\Controllers\Trainer\TrainerTransactionTypeController');
@@ -192,8 +192,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('pt-total-report', [StaffController::class, 'ptTotalReport'])->name('pt-total-report');
     Route::get('pt-detail-report', [StaffController::class, 'ptDetailReport'])->name('pt-detail-report');
 
-    Route::get('report-member-checkin', [StaffController::class, 'reportMemberCheckIn'])->name('report-member-checkin');
-    Route::get('report-member-pt-checkin', [StaffController::class, 'reportMemberPTCheckIn'])->name('report-member-pt-checkin');
+    Route::get('report-member-checkin', [ReportController::class, 'reportMemberCheckIn'])->name('report-member-checkin');
+    Route::get('report-member-pt-checkin', [ReportController::class, 'reportMemberPTCheckIn'])->name('report-member-pt-checkin');
     Route::get('cs-detail-report-member-checkin', [StaffController::class, 'csDetailReportMemberCheckIn'])->name('cs-detail-report-member-checkin');
     Route::get('cs-total-report-pt', [StaffController::class, 'csTotalReportPT'])->name('cs-total-report-pt');
     Route::get('cs-detail-report-pt', [StaffController::class, 'csDetailReportPT'])->name('cs-detail-report-pt');

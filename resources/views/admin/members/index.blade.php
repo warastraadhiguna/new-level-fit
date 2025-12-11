@@ -18,6 +18,7 @@
                                 <th>No</th>
                                 <th>Image</th>
                                 <th>Full Name</th>
+                                <th>Branch</th>                                
                                 <th>Phone Number</th>
                                 <th>No Member</th>
                                 <th>Date of Birth</th>
@@ -41,8 +42,10 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->full_name }}</h6>
+                                        <h6>{{ $item->full_name }}</h6>                                          
                                     </td>
+                                    <td>
+                                        <h6>{{ $item->branch_store_name }}</h6></td>
                                     <td>
                                         <h6>{{ $item->phone_number ?? 'No Data' }}</h6>
                                     </td>

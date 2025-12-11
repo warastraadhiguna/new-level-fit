@@ -5,7 +5,6 @@ namespace App\Models\Trainer;
 use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\MethodPayment;
-use App\Models\Staff\FitnessConsultant;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

@@ -16,13 +16,14 @@
                     <th>No</th>
                     <th>Member Code</th>                    
                     <th>Member Name</th>
+                    <th>Branch</th>                     
                     <th>Trainer Name</th>                    
                     <th>Check In Time</th>
                     <th>Check Out Time</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($result as $item)
+                @foreach ($results as $item)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>
@@ -31,6 +32,9 @@
                         <td>
                             <h6>{{ $item->member_name }}</h6>
                         </td>
+                        <td>
+                            {{ $item->branch_store_name}}
+                        </td>                         
                         <td>
                             {{ $item->trainer_name }}
                         </td>                        

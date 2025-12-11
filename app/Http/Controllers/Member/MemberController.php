@@ -64,11 +64,13 @@ class MemberController extends Controller
                 'a.lo_pt_by',
                 'a.lo_end',
                 'a.created_at',
+                'branch_stores.name as branch_store_name',
                 DB::raw("CASE WHEN NOW() < DATE_ADD(a.created_at, INTERVAL a.lo_days DAY) THEN 'Running' ELSE 'Over' END as lo_status")
             )
+            ->join("branch_stores", "branch_store_id", "=", "branch_stores.id")
             ->where('a.status', '=', 'sell')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('updated_at', 'desc')
+            ->orderBy('a.created_at', 'desc')
+            ->orderBy('a.updated_at', 'desc')
             ->get();
 
         $data = [
