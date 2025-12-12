@@ -151,11 +151,13 @@ class MemberRegistrationController extends Controller
 
     public function create()
     {
+        $branchId = Auth::user()->branch_store_id;
+                
         $data = [
             'title'                 => 'Create Member Registration',
             'memberRegistration'    => MemberRegistration::get(),
             'members'               => Member::get(),
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => FitnessConsultant::get(),
             'content'               => 'admin/member-registration/create-page',
@@ -568,6 +570,7 @@ class MemberRegistrationController extends Controller
     public function edit(string $id)
     {
         $mr = MemberRegistration::find($id);
+        $branchId = Auth::user()->branch_store_id;
         $status = $mr->members->status;
 
         if ($status == "one_day_visit") {
@@ -627,7 +630,7 @@ class MemberRegistrationController extends Controller
             // 'memberRegistrations'   => $memberActive->first(),
             'memberRegistrationPayments' => $memberRegistrationPayments,
             'memberRegistrations'   => $memberActive[0],
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'         => MethodPayment::get(),
             'users'                 => User::where('role', 'FC')->get(),
             'content'               => 'admin/member-registration/edit-page',
@@ -700,12 +703,14 @@ class MemberRegistrationController extends Controller
 
     public function renewal(string $id)
     {
+        $branchId = Auth::user()->branch_store_id;
+                
         $data = [
             'title'                 => 'Renewal Member Active',
             'memberRegistration'    => MemberRegistration::find($id),
             'members'               => Member::get(),
             'memberLastCode'        => Member::latest('id')->first(),
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'content'               => 'admin/member-registration/renewal',
