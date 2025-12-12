@@ -15,7 +15,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('gym:auto-checkout')
+            ->dailyAt('23:59')
+            ->timezone('Asia/Jakarta')
+            ->withoutOverlapping();
     }
 
     /**

@@ -29,17 +29,17 @@ class StaffController extends Controller
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
-            return Excel::download(new StaffExport(), 'staff, ' . $fromDate . ' to ' . $toDate . '.xlsx');
+            return Excel::download(new StaffExport(), fileName: 'staff, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 
         $data = [
             'title'                 => 'Staff List',
             'administrator'         => User::with("branchStore")->where('role', 'ADMIN')->get(),
-            'classInstructor'       => ClassInstructor::get(),
             'customerService'       => User::with("branchStore")->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->where('role', 'CSPOS')->get(),
             'fitnessConsultant'     => User::with("branchStore")->where('role', 'FC')->get(),
             'personalTrainer'       => PersonalTrainer::with("branchStore")->get(),
+            'classInstructors'      => ClassInstructor::get(),
             'users'                 => User::get(),
             'branch_stores'         => BranchStore::get(),
             "page"                  => Request()->input('page'),

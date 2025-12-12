@@ -28,6 +28,12 @@
                             Personal Trainer
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $page == 'ci' ? 'show active' : '' }}" data-bs-toggle="tab"
+                            href="#classInstructor">
+                            Class Instructor
+                        </a>
+                    </li>                    
                     @if (Auth::user()->role == 'ADMIN')
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'admin' ? 'show active' : '' }}" data-bs-toggle="tab"
@@ -42,6 +48,7 @@
                     @include('admin.staff.fitness-consultant.index')
                     @include('admin.staff.personal-trainer.index')
                     @include('admin.staff.administrator.index')
+                    @include('admin.staff.class-instructor.index')                    
                 </div>
             </div>
         </div>
