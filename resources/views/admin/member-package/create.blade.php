@@ -28,6 +28,17 @@
                         </div>
                         <div class="col-xl-6">
                             <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Branch</label>
+                                <select name="branch_store_id" class="form-control" aria-label="Default select example"
+                                    required>
+                                    @foreach($branch_stores as $branch_store)                                        
+                                        <option value="{{ $branch_store->id }}">{{ $branch_store->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>                        
+                        <div class="col-xl-6">
+                            <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Number Of Days</label>
                                 <input type="number" name="days" value="{{ old('days') }}" class="form-control"
                                     id="exampleFormControlInput1" autocomplete="off" required>

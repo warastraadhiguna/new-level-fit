@@ -24,7 +24,8 @@ class MemberPackageStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'package_name'          => 'required|string',
+            'package_name'          => 'required|string',            
+            'branch_store_id'       => 'required',
             'days'                  => 'required|numeric',
             'package_type_id'       => 'exists:member_package_types,id',
             'package_category_id'   => 'exists:member_package_categories,id',

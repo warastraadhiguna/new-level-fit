@@ -86,7 +86,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
 
     Route::put('administrator-branch-update', [AdministratorController::class, 'branchUpdate'])->name('administrator-branch-update');
 
-    Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');
     Route::resource('customer-service', '\App\Http\Controllers\Staff\CustomerServiceController');
     Route::resource('customer-service-pos', '\App\Http\Controllers\Staff\CustomerPosServiceController');
     Route::resource('fitness-consultant', '\App\Http\Controllers\Staff\FitnessConsultantController');
@@ -96,7 +95,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('trainer-report-excel', [MemberRegistrationController::class, 'excel'])->name('trainer-report-excel');
 
     Route::resource('trainer-session', '\App\Http\Controllers\Trainer\TrainerSessionController');
-
     Route::resource('trainer-session-payment', '\App\Http\Controllers\Trainer\TrainerSessionPaymentController');
 
     Route::resource('trainer-session-over', '\App\Http\Controllers\Trainer\TrainerSessionOverController');

@@ -2,6 +2,7 @@
 
 namespace App\Models\Member;
 
+use App\Models\BranchStore;
 use App\Models\User;
 use App\Traits\HasFormatRupiah;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class MemberPackage extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'branch_store_id',
         'package_name',
         'days',
         'package_type_id',
@@ -42,4 +44,9 @@ class MemberPackage extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
+    }    
 }

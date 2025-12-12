@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MemberPackageStoreRequest;
 use App\Http\Requests\MemberPackageUpdateRequest;
+use App\Models\BranchStore;
 use App\Models\Member\MemberPackage;
 use App\Models\Member\MemberPackageCategory;
 use App\Models\Member\MemberPackageType;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class MemberPackageController extends Controller
@@ -18,10 +18,11 @@ class MemberPackageController extends Controller
     {
         $data = [
             'title'                     => 'Member Package List',
-            'memberPackage'             => MemberPackage::get(),
+            'memberPackage'             => MemberPackage::with("branchStore")->get(),
             'memberPackageType'         => MemberPackageType::get(),
             'memberPackageCategories'   => MemberPackageCategory::get(),
             'users'                     => User::get(),
+            'branch_stores'             => BranchStore::get(),
             'content'                   => 'admin/member-package/index'
         ];
 
