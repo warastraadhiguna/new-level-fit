@@ -12,11 +12,14 @@ use App\Models\Trainer\TrainerPackage;
 use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MergeCreateDataController extends Controller
 {
     public function index()
     {
+        $branchId = Auth::user()->branch_store_id;
+        
         $data = [
             'title'             => 'Lead',
             // Create Member
@@ -26,7 +29,7 @@ class MergeCreateDataController extends Controller
 
             // Create Member Registration
             'memberRegistration'    => MemberRegistration::get(),
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
 
