@@ -91,6 +91,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('fitness-consultant', '\App\Http\Controllers\Staff\FitnessConsultantController');
     Route::resource('personal-trainer', '\App\Http\Controllers\Staff\PersonalTrainerController');
     Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');    
+    Route::resource('class-session', '\App\Http\Controllers\Class\ClassSessionController');    
+    Route::resource('class-schedule', '\App\Http\Controllers\Class\ClassScheduleController');    
+
     Route::resource('physiotherapy', '\App\Http\Controllers\Staff\PhysiotherapyController');
     Route::resource('pt-leader', '\App\Http\Controllers\Staff\PTLeaderController');
     Route::get('trainer-report-excel', [MemberRegistrationController::class, 'excel'])->name('trainer-report-excel');

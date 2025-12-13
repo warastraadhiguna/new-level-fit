@@ -28,7 +28,7 @@
             @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-                        <i class="material-symbols-outlined">person</i>
+                        <i class="material-symbols-outlined">diversity_3</i>
                         <span class="nav-text">Members</span>
                     </a>
                     <ul aria-expanded="false">
@@ -43,7 +43,7 @@
             @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS')
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-                        <i class="material-symbols-outlined">person</i>
+                        <i class="material-symbols-outlined">person_3</i>
                         <span class="nav-text">Member CheckIn</span>
                     </a>
                     <ul aria-expanded="false">
@@ -58,7 +58,7 @@
 
             <li>
                 <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-                    <i class="material-symbols-outlined">person</i>
+                    <i class="material-symbols-outlined">group</i>
                     <span class="nav-text">PT</span>
                 </a>
                 <ul aria-expanded="false">
@@ -127,6 +127,16 @@
             </li>
 
             @if (Auth::user()->role == 'ADMIN')
+                <li>
+                    <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
+                        <i class="material-icons"> flight_class </i>
+                        <span class="nav-text">Class</span>
+                    </a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('class-session.index') }}">Class Session</a></li>
+                        <li><a href="{{ route('class-schedule.index') }}">Class Schedule</a></li>                        
+                    </ul>
+                </li>            
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-icons"> insert_drive_file </i>

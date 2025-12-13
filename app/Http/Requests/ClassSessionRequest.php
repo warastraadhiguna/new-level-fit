@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ClassStoreRequest extends FormRequest
+class ClassSessionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -15,7 +15,12 @@ class ClassStoreRequest extends FormRequest
     {
         return true;
     }
-
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'price' => str_replace(',', '', $this->price),
+        ]);
+    }
     /**
      * Get the validation rules that apply to the request.
      *
@@ -24,19 +29,11 @@ class ClassStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'date_time'             => 'required|string',
-            'class_name'            => 'required',
+            'name'                  => 'required',
             'class_instructor_id'   => 'required|exists:class_instructors,id',
-            'member_total'          => 'required',
-            'class_price'           => 'required|numeric',
-            'user_id'               => ''
+            'price'                 => 'required|numeric',
+            'capacity'              => 'required|numeric',            
+            'note'                  => 'required'
         ];
-    }
-
-    protected function prepareForValidation()
-    {
-        $this->merge([
-            'class_price' => str_replace(',', '', $this->class_price)
-        ]);
     }
 }
