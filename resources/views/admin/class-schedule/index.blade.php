@@ -55,13 +55,14 @@
                                     @if (Auth::user()->role == 'ADMIN')
                                         <td>
                                             <div>
+                                                <a href="{{ route("class-detail.index", "class-schedule=" . $item->id) }}" class="btn light btn-primary btn-xs mb-1 btn-block">Detail</a>
                                                 <button type="button"
                                                     class="btn light btn-warning btn-xs mb-1 btn-block"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalEdit{{ $item->id }}">
                                                     Edit
                                                 </button>
-                                             
+
                                                 <form action="{{ route('class-schedule.destroy', $item->id) }}"
                                                     onclick="return confirm('Delete Class Schedule Data ? ')"
                                                     method="POST">

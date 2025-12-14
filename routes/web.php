@@ -93,6 +93,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');    
     Route::resource('class-session', '\App\Http\Controllers\Class\ClassSessionController');    
     Route::resource('class-schedule', '\App\Http\Controllers\Class\ClassScheduleController');    
+    Route::resource('class-detail', '\App\Http\Controllers\Class\ClassDetailController');    
 
     Route::resource('physiotherapy', '\App\Http\Controllers\Staff\PhysiotherapyController');
     Route::resource('pt-leader', '\App\Http\Controllers\Staff\PTLeaderController');
