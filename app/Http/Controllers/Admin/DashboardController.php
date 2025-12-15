@@ -319,7 +319,7 @@ class DashboardController extends Controller
             ->count();
 
         $data = [
-            'title'                             => 'Dashboard Admin Level FIT',
+            'title'                             => 'Dashboard Admin',
             'incomeOfActiveMember'              => $incomeOfMember,
             'incomeOfActivePT'                  => $incomeOfPT,
             'incomeOfActiveLGT'                 => $incomeOfActiveLGT,
