@@ -66,4 +66,20 @@ class PersonalTrainerController extends Controller
             return redirect()->back()->with('errorr', 'Gagal menghapus personal trainer ' . $personalTrainer->full_name . ', personal trainer ini sedang dipakai member');
         }
     }
+
+    public function restore($id)
+    {
+        PersonalTrainer::withTrashed()->find($id)->restore();
+        return redirect()->back()->with('success', 'Data berhasil di restore');
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            PersonalTrainer::onlyTrashed()->find($id)->forceDelete();;
+            return redirect()->back()->with('success', 'Data Deleted Permanently and Successfully');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('errorr', 'Gagal menghapus data');
+        }
+    }    
 }

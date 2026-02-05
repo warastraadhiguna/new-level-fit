@@ -46,9 +46,9 @@
                                         <h6>{{ $item->users->full_name }}</h6>
                                     </td>
                                     <td>
-                                        <a href="{{ route('restore-member-package-data', $item->id) }}" onclick="return confirm('Delete Data ?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
+                                        <a href="{{ route('restore-member-package-data', $item->id) }}" onclick="return confirm('Restore data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
                                         <form action="{{ route('member-packages-force-delete', $item->id) }}"
-                                            onclick="return confirm('Hapus Permanen Data ? ')"
+                                            onclick="return confirm('Permanently delete? ')"
                                             method="POST">
                                             @method('delete')
                                             @csrf

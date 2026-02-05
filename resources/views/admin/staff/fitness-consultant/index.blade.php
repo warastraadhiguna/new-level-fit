@@ -182,6 +182,7 @@
     <div class="row">
         <div class="col-xl-12">
             <div class="row">
+                @if ($pageType == "new")                       
                 <div class="col-xl-12">
                     <div class="page-title flex-wrap">
                         <div>
@@ -192,6 +193,7 @@
                         </div>
                     </div>
                 </div>
+                @endif                 
                 <!--column-->
                 <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                     <div class="table-responsive full-data">
@@ -226,6 +228,7 @@
                                         @if (Auth::user()->role == 'ADMIN')
                                             <td>
                                                 <div>
+                                                @if ($pageType == "new")                                                        
                                                     <button type="button"
                                                         class="btn light btn-warning btn-xs mb-1 btn-block"
                                                         data-bs-toggle="modal"
@@ -242,6 +245,17 @@
                                                         <button type="submit"
                                                             class="btn light btn-danger btn-xs btn-block">Delete</button>
                                                     </form>
+                                                @else
+                                                    <a href="{{ route('restore-fitness-consultant', $item->id) }}" onclick="return confirm('Restore Data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
+                                                    <form action="{{ route('fitness-consultant-force-delete', $item->id) }}"
+                                                        onclick="return confirm('Permanently delete? ')"
+                                                        method="POST">
+                                                        @method('delete')
+                                                        @csrf
+                                                        <button type="submit"
+                                                            class="btn light btn-danger btn-xs btn-block">Force Delete</button>
+                                                    </form>                                                    
+                                                @endif                                                        
                                                 </div>
                                             </td>
                                         @endif

@@ -1,6 +1,12 @@
 <div class="col-xl-12">
     <div class="page-title flex-wrap justify-content-end">
-        <a href="{{ route('ptReportExcel') }}" class="btn btn-info">Download Excel</a>
+        {{-- <a href="{{ route('ptReportExcel') }}" class="btn btn-info">Download Excel</a> --}}
+        @if ($pageType == "new")
+            <a href="{{ route('old-staff', ['page' => 'cs']) }}" class="btn btn-secondary ms-3">Old Data</a>  
+        @else
+            <a href="{{ route('staff.index', ['page' => 'cs']) }}" class="btn btn-primary ms-3">Current Data</a>              
+        @endif
+                
     </div>
 </div>
 

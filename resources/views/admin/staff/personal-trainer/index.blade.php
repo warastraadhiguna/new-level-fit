@@ -200,6 +200,7 @@
     <div class="row">
         <div class="col-xl-12">
             <div class="row">
+                @if ($pageType == "new")                
                 <div class="col-xl-12">
                     <div class="page-title flex-wrap">
                         <div>
@@ -210,6 +211,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
                 <!--column-->
                 <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                     <div class="table-responsive full-data">
@@ -264,21 +266,33 @@
                                         @if (Auth::user()->role == 'ADMIN')
                                             <td>
                                                 <div>
-                                                    <button type="button"
-                                                        class="btn light btn-warning btn-xs mb-1 btn-block"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalEditPersonalTrainer{{ $item->id }}">
-                                                        Edit
-                                                    </button>
-                                                    <form action="{{ route('personal-trainer.destroy', $item->id) }}"
-                                                        onclick="return confirm('Hapus Data {{ $item->full_name }}? ')"
-                                                        method="POST">
-                                                        @method('delete')
-                                                        @csrf
-                                                        <input type="hidden" name="page" value="pt">
-                                                        <button type="submit"
-                                                            class="btn light btn-danger btn-xs btn-block">Delete</button>
-                                                    </form>
+                                                    @if ($pageType == "new")            
+                                                        <button type="button"
+                                                            class="btn light btn-warning btn-xs mb-1 btn-block"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalEditPersonalTrainer{{ $item->id }}">
+                                                            Edit
+                                                        </button>
+                                                        <form action="{{ route('personal-trainer.destroy', $item->id) }}"
+                                                            onclick="return confirm('Hapus Data {{ $item->full_name }}? ')"
+                                                            method="POST">
+                                                            @method('delete')
+                                                            @csrf
+                                                            <input type="hidden" name="page" value="pt">
+                                                            <button type="submit"
+                                                                class="btn light btn-danger btn-xs btn-block">Delete</button>
+                                                        </form>
+                                                    @else
+                                                        <a href="{{ route('restore-personal-trainer', $item->id) }}" onclick="return confirm('Restore Data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
+                                                        <form action="{{ route('personal-trainer-force-delete', $item->id) }}"
+                                                            onclick="return confirm('Permanently delete? ')"
+                                                            method="POST">
+                                                            @method('delete')
+                                                            @csrf
+                                                            <button type="submit"
+                                                                class="btn light btn-danger btn-xs btn-block">Force Delete</button>
+                                                        </form>                                                    
+                                                    @endif
                                                 </div>
                                             </td>
                                         @endif

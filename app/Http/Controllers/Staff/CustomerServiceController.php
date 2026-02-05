@@ -66,4 +66,20 @@ class CustomerServiceController extends Controller
             return redirect('/staff?page=' . Request()->input('page'))->with('errorr', 'Gagal menghapus customer service ' . $customerService->full_name . ', customer service ini sedang dipakai member');
         }
     }
+
+    public function restore($id)
+    {
+        User::withTrashed()->find($id)->restore();
+        return redirect()->back()->with('success', 'Data berhasil di restore');
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            User::onlyTrashed()->find($id)->forceDelete();;
+            return redirect()->back()->with('success', 'Data Deleted Permanently and Successfully');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('errorr', 'Gagal menghapus data');
+        }
+    }      
 }

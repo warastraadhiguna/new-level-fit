@@ -6,11 +6,13 @@ use App\Models\BranchStore;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PersonalTrainer extends Model
 {
     use HasFactory;
-
+    use SoftDeletes;
+    
     protected $fillable = [
         'branch_store_id',
         'full_name',

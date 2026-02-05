@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Staff;
 use App\Exports\DetailSellingLeadGeneralReportExport;
 use App\Exports\DetailSellingPTReportExport;
 use App\Exports\LOReportExport;
-use App\Exports\MemberPTCheckInReportExport;
 use App\Exports\StaffExport;
 use App\Exports\TotalSellingLeadGeneralReportExport;
 use App\Exports\TotalSellingPTReportExport;
@@ -24,14 +23,6 @@ class StaffController extends Controller
 {
     public function index()
     {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
-        $excel = Request()->input('excel');
-        if ($excel && $excel == "1") {
-            return Excel::download(new StaffExport(), fileName: 'staff, ' . $fromDate . ' to ' . $toDate . '.xlsx');
-        }
-
         $data = [
             'title'                 => 'Staff List',
             'administrator'         => User::with("branchStore")->where('role', 'ADMIN')->get(),
@@ -43,11 +34,32 @@ class StaffController extends Controller
             'users'                 => User::get(),
             'branch_stores'         => BranchStore::get(),
             "page"                  => Request()->input('page'),
+            "pageType"              => "new",
             'content'               => 'admin/staff/index'
         ];
 
         return view('admin.layouts.wrapper', $data);
     }
+
+    public function showOldStaff()
+    {
+        $data = [
+            'title'                 => 'Old Staff List',
+            'administrator'         => User::with("branchStore")->onlyTrashed()->where('role', 'ADMIN')->get(),
+            'customerService'       => User::with("branchStore")->onlyTrashed()->where('role', 'CS')->get(),
+            'customerServicePos'    => User::with("branchStore")->onlyTrashed()->where('role', 'CSPOS')->get(),
+            'fitnessConsultant'     => User::with("branchStore")->onlyTrashed()->where('role', 'FC')->get(),
+            'personalTrainer'       => PersonalTrainer::with("branchStore")->onlyTrashed()->get(),
+            'classInstructors'      => ClassInstructor::onlyTrashed()->get(),
+            'users'                 => User::get(),
+            'branch_stores'         => BranchStore::get(),
+            "page"                  => Request()->input('page'),
+            "pageType"              => "old",            
+            'content'               => 'admin/staff/index'
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }    
 
     public function ptTotalReport()
     {

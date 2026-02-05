@@ -12,6 +12,10 @@ use App\Http\Controllers\Report\MemberExpiredListController;
 use App\Http\Controllers\Report\MemberListController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Staff\AdministratorController;
+use App\Http\Controllers\Staff\ClassInstructorController;
+use App\Http\Controllers\Staff\CustomerServiceController;
+use App\Http\Controllers\Staff\FitnessConsultantController;
+use App\Http\Controllers\Staff\PersonalTrainerController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
 use App\Http\Controllers\Trainer\TrainerSessionCheckInController;
@@ -81,16 +85,30 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('referral', '\App\Http\Controllers\Admin\RefferalController');
 
     Route::resource('staff', '\App\Http\Controllers\Staff\StaffController');
+    Route::get('old-staff', [StaffController::class, 'showOldStaff'])->name('old-staff');
+    
     Route::get('cetak-staff-pdf', [StaffController::class, 'cetak_pdf'])->name('cetak-staff-pdf');
     Route::resource('administrator', '\App\Http\Controllers\Staff\AdministratorController');
 
     Route::put('administrator-branch-update', [AdministratorController::class, 'branchUpdate'])->name('administrator-branch-update');
 
     Route::resource('customer-service', '\App\Http\Controllers\Staff\CustomerServiceController');
+    Route::get('restore-customer-service/{id}', [CustomerServiceController::class, 'restore'])->name('restore-customer-service');    
+    Route::delete('customer-service-force-delete/{id}', [CustomerServiceController::class, 'forceDelete'])->name('customer-service-force-delete'); 
+
     Route::resource('customer-service-pos', '\App\Http\Controllers\Staff\CustomerPosServiceController');
     Route::resource('fitness-consultant', '\App\Http\Controllers\Staff\FitnessConsultantController');
+    Route::get('restore-fitness-consultant/{id}', [FitnessConsultantController::class, 'restore'])->name('restore-fitness-consultant');    
+    Route::delete('fitness-consultant-force-delete/{id}', [FitnessConsultantController::class, 'forceDelete'])->name('fitness-consultant-force-delete');    
+
     Route::resource('personal-trainer', '\App\Http\Controllers\Staff\PersonalTrainerController');
-    Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');    
+    Route::get('restore-personal-trainer/{id}', [PersonalTrainerController::class, 'restore'])->name('restore-personal-trainer');    
+    Route::delete('personal-trainer-force-delete/{id}', [PersonalTrainerController::class, 'forceDelete'])->name('personal-trainer-force-delete');    
+
+    Route::resource('class-instructor', '\App\Http\Controllers\Staff\ClassInstructorController');  
+    Route::get('restore-class-instructor/{id}', [ClassInstructorController::class, 'restore'])->name('restore-class-instructor');    
+    Route::delete('class-instructor-force-delete/{id}', [ClassInstructorController::class, 'forceDelete'])->name('class-instructor-force-delete');        
+    
     Route::resource('class-session', '\App\Http\Controllers\Class\ClassSessionController');    
     Route::resource('class-schedule', '\App\Http\Controllers\Class\ClassScheduleController');    
     Route::resource('class-detail', '\App\Http\Controllers\Class\ClassDetailController');    
