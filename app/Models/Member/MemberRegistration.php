@@ -69,6 +69,10 @@ class MemberRegistration extends Model
 
     public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = "no")
     {
+        $defaultSql = "NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY) AND mbr_reg.days > 1";
+        //ini karena nando sudah ngaco. jadi aku juga mau pakai untuk yang belum bayar. tapi masalahnya ternyata ini untuk
+        //yang aktif, padahal yang belum bayar juga mungkin pending. sehingga aku akali di tanggalnya
+
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
@@ -120,10 +124,10 @@ class MemberRegistration extends Model
                 WHERE NOW() BETWEEN ld.submission_date AND DATE_ADD(ld.submission_date, INTERVAL (ifnull(total_days,0)) DAY)) as lds_continue_view
             on mbr_reg.id = lds_continue_view.member_registration_id_continue
 
-            where NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY) AND mbr_reg.days > 1"
-
-            . ($isUnpaidMember == "yes"? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
-            ($isUnpaidMember == "no"? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)" : ""))
+            where mbr_reg.id > 0 AND "
+            //--maaf ini akal2an untuk kasus nando di atas
+            . ($isUnpaidMember == "yes"? " IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
+            ($isUnpaidMember == "no"? " $defaultSql AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)" :  $defaultSql))
 
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($member_id ? " and mbr.id='$member_id' " : '') .  "
             order by cim_view.updated_at_check_in desc";
@@ -131,7 +135,6 @@ class MemberRegistration extends Model
 
         return $activeMemberRegistrations;
     }
-
     public static function getExpiredList($memberId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,

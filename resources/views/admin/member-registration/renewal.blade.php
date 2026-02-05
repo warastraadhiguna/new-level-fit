@@ -166,6 +166,13 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-xl-6" id="first_payment">
+                            <div class="mb-3">
+                                <label class="form-label">First Payment</label>
+                                <input type="text" name="first_payment" value="{{ old('first_payment') }}"
+                                    class="form-control" placeholder="First Payment" required>
+                            </div>
+                        </div>                          
                         @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                             <div class="col-xl-6" id="fitness_consultant">
                                 <div class="mb-3">

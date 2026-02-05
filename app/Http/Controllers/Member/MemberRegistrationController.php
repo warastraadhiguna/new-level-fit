@@ -834,9 +834,25 @@ class MemberRegistrationController extends Controller
                     'gender',
                     'address',
                     'photos'
-                ])));
+                ])));             
 
-                MemberRegistration::create($data);
+                $newMemberRegistration = MemberRegistration::create($data);
+
+                $firstPayment = str_replace(".", "", $request->first_payment);
+                if ($package->package_price + $package->admin_price < $firstPayment) {
+                    DB::rollback();
+
+                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
+                } else {
+                    MemberRegistrationPayment::create([
+                        "member_registration_id" =>  $newMemberRegistration->id,
+                        "user_id" =>  Auth::user()->id,
+                        "value" =>  $firstPayment,
+                        "note" =>  "First Payment",
+                        "method_payment_id" => $data["method_payment_id"]
+                    ]);
+                }
+
                 DB::commit();
 
                 return redirect()->route('member-active.index')->with('success', 'Renewal Successfully');
@@ -895,7 +911,22 @@ class MemberRegistrationController extends Controller
 
                 $data['member_id'] = $memberRegistration->member_id;
 
-                MemberRegistration::create($data);
+                $newMemberRegistration = MemberRegistration::create($data);
+
+                $firstPayment = str_replace(".", "", $request->first_payment);
+                if ($package->package_price + $package->admin_price < $firstPayment) {
+                    DB::rollback();
+
+                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
+                } else {
+                    MemberRegistrationPayment::create([
+                        "member_registration_id" =>  $newMemberRegistration->id,
+                        "user_id" =>  Auth::user()->id,
+                        "value" =>  $firstPayment,
+                        "note" =>  "First Payment",
+                        "method_payment_id" => $data["method_payment_id"]
+                    ]);
+                }
 
                 DB::commit();
 
