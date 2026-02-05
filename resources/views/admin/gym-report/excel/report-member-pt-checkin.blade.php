@@ -16,6 +16,7 @@
                     <th>No</th>
                     <th>Member Code</th>                    
                     <th>Member Name</th>
+                    <th>Package Name</th>                          
                     <th>Branch</th>                     
                     <th>Trainer Name</th>                    
                     <th>Check In Time</th>
@@ -32,6 +33,9 @@
                         <td>
                             <h6>{{ $item->member_name }}</h6>
                         </td>
+                        <td>
+                            <h6>{{ $item->package_name }}</h6>
+                        </td>                        
                         <td>
                             {{ $item->branch_store_name}}
                         </td>                         
