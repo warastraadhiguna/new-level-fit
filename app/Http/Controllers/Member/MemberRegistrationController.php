@@ -42,23 +42,10 @@ class MemberRegistrationController extends Controller
             2 => [],
         ];
 
-        $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
-        $paymentMessages = [];
-
         foreach ($memberRegistrations as $memberRegistration) {
             $diff = BirthdayDiff($memberRegistration->born);
             if ($diff >= 0 && $diff <= 2) {
                 $birthdayMessages[$diff][$memberRegistration->member_id] = $memberRegistration->member_name;
-            }
-
-            $paymentDayDiff = PaymentExpiredDateDiff($memberRegistration->start_date);
-            $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
-            if ($paymentDay < $expiredPaymentNumber && $memberRegistration->payment_summary < ($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price)) {
-                $paymentMessages[$paymentDay][] =
-                [
-                    "message" => $memberRegistration->member_name . " (". formatRupiah(($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price) - $memberRegistration->payment_summary) . ")",
-                    "id" => $memberRegistration->id
-                ];
             }
         }
         $idCodeMaxCount = env("ID_CODE_MAX_COUNT", 3);
@@ -67,8 +54,35 @@ class MemberRegistrationController extends Controller
             'memberRegistrations'   => $memberRegistrations,
             'content'               => 'admin/member-registration/index',
             'idCodeMaxCount'        => $idCodeMaxCount,
-            'birthdayMessages'      => $birthdayMessages,
-            'paymentMessages'       =>  $paymentMessages
+            'birthdayMessages'      => $birthdayMessages
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }
+
+    public function unpaid()
+    {
+        $memberRegistrations = MemberRegistration::getActiveList("", "", true);
+
+        // $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
+        // $paymentMessages = [];
+
+        // foreach ($memberRegistrations as $memberRegistration) {
+        //     $paymentDayDiff = PaymentExpiredDateDiff($memberRegistration->start_date);
+        //     $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
+        //     if ($paymentDay < $expiredPaymentNumber && $memberRegistration->payment_summary < ($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price)) {
+        //         $paymentMessages[$paymentDay][] =
+        //         [
+        //             "message" => $memberRegistration->member_name . " (". formatRupiah(($memberRegistration->mr_package_price + $memberRegistration->mr_admin_price) - $memberRegistration->payment_summary) . ")",
+        //             "id" => $memberRegistration->id
+        //         ];
+        //     }
+        // }
+
+        $data = [
+            'title'                 => 'Unpaid Member List',
+            'memberRegistrations'   => $memberRegistrations,
+            'content'               => 'admin/member-registration/unpaid',
         ];
 
         return view('admin.layouts.wrapper', $data);

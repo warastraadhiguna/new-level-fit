@@ -50,6 +50,7 @@
                         <li><a href="{{ route('member-active.index') }}">Member Active</a></li>
                         <li><a href="{{ route('member-pending') }}">Member Pending</a></li>
                         <li><a href="{{ route('member-expired.index') }}">Member Expired</a>
+                        <li><a href="{{ route('member-unpaid') }}">Unpaid Member</a>
                         <li><a href="{{ route('history-member-registration') }}">History</a>
                         </li>
                     </ul>

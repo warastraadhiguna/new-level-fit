@@ -66,7 +66,7 @@ class MemberRegistration extends Model
         return $this->hasMany(LeaveDay::class);
     }
 
-    public static function getActiveList($card_number = "", $member_id = "")
+    public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = false)
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
@@ -120,6 +120,8 @@ class MemberRegistration extends Model
             on mbr_reg.id = lds_continue_view.member_registration_id_continue
 
             where NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY) AND mbr_reg.days > 1"
+            . ($isUnpaidMember? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
+            " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)")
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($member_id ? " and mbr.id='$member_id' " : '') .  "
             order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);

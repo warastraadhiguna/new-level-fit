@@ -49,58 +49,6 @@
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
-            <div id="filteredDataContainer"></div>
-            <div class="col-xl-12">
-                <div class="page-title flex-wrap justify-content-between">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
-                        id="checkInButton">Input Card Number</button>
-                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                        Download Excel
-                    </button>
-                </div>
-            </div>
-            @foreach ($birthdayMessages as $key => $messages)
-                @if (!empty($messages))
-                    @foreach ($messages as $memberId => $memberName)
-                        @php
-                            $bgClass = '';
-                            switch ($key) {
-                                case 0:
-                                    $bgClass = 'bg-info fireworks';
-                                    $birthdayMessage = "Today is $memberName's birthday";
-                                    break;
-                                case 1:
-                                    $bgClass = 'bg-warning';
-                                    $birthdayMessage = "$key day to <strong>$memberName</strong>'s birthday";
-                                    break;
-                                case 2:
-                                    $bgClass = 'bg-warning';
-                                    $birthdayMessage = "$key days to <strong>$memberName</strong>'s birthday";
-                                    break;
-                                default:
-                                    $bgClass = 'bg-primary';
-                                    $birthdayMessage = "$key days to <strong>$memberName</strong>'s birthday";
-                                    break;
-                            }
-                        @endphp
-                        <div class="alert alert-primary solid alert-dismissible fade show {{ $bgClass }}">
-                            <a href="/member/{{ $memberId }}" class="birthdayy" target="_blank">
-                                <svg viewBox="0 0 24 24" width="24" height="24" stroke-width="2" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round" class="me-2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                <span>{!! $birthdayMessage !!}</span>
-                            </a>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                aria-label="Close">X</button>
-                        </div>
-                    @endforeach
-                @endif
-            @endforeach
-            <hr/>
-
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
@@ -277,44 +225,6 @@
                                             </button>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    @if ($idCodeMaxCount - $item->id_code_count == 0)
-                                                        @if (Auth::user()->role == 'ADMIN')
-                                                            <a href="{{ route('resetCheckIn', $item->member_id) }}"
-                                                                class="btn light btn-warning btn-xs mb-1 btn-block">Reset
-                                                                Check In
-                                                                ?</a>
-                                                        @else
-                                                            <button type="button"
-                                                                class="btn light btn-warning btn-xs mb-1 btn-block"
-                                                                data-bs-toggle="popover"
-                                                                data-bs-title="Check In tanpa kartu"
-                                                                data-bs-content="Member ini sudah check in tanpa kartu sebanyak 3 kali, untuk reset check in tanpa kartu silahkan hubungi admin">Klik
-                                                                Disini</button>
-                                                        @endif
-                                                    @else
-                                                        @if ($item->leave_day_status == 'Freeze')
-                                                            <a
-                                                                class="btn light btn-info btn-xs mb-1 btn-block">Freeze</a>
-                                                        @else
-                                                            @if ($now > $item->expired_leave_days)
-                                                                @if ($item->start_date < $now)
-                                                                    @if ((!$item->check_in_time && !$item->check_out_time) || ($item->check_in_time && $item->check_out_time))
-                                                                        <a href="{{ route('secondCheckIn', $item->id) }}"
-                                                                            class="btn light btn-info btn-xs mb-1 btn-block">Check
-                                                                            In
-                                                                            ({{ $idCodeMaxCount - $item->id_code_count }})</a>
-                                                                    @elseif ($item->check_in_time && !$item->check_out_time)
-                                                                        <a href="{{ route('secondCheckIn', $item->id) }}"
-                                                                            class="btn light btn-info btn-xs mb-1 btn-block">Check
-                                                                            Out
-                                                                            ({{ $idCodeMaxCount - $item->id_code_count }})</a>
-                                                                    @endif
-                                                                @endif
-                                                            @endif
-                                                        @endif
-                                                    @endif
-                                                </li>
-                                                <li>
                                                     @if (Auth::user()->role == 'ADMIN')
                                                         <a href="{{ route('member-active.edit', $item->id) }}"
                                                             class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
@@ -342,17 +252,6 @@
                                                                 Cuti</button>
                                                         </form>
                                                     @endif
-                                                </li>
-                                                <li>
-                                                    <button type="button"
-                                                        class="btn light btn-light btn-xs mb-1 btn-block"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target=".freeze{{ $item->id }}"
-                                                        id="checkInButton">Freeze</button>
-                                                </li>
-                                                <li>
-                                                    <a href="{{ route('renewal', $item->id) }}"
-                                                        class="btn light btn-dark btn-xs mb-1 btn-block">Renewal</a>
                                                 </li>
                                                 <li>
                                                     @if (Auth::user()->role == 'ADMIN')

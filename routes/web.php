@@ -145,6 +145,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('mmember-active-excel', [MemberRegistrationController::class, 'excel'])->name('member-active-excel');
     Route::get('mmember-expired-excel', [MemberRegistrationOverController::class, 'excel'])->name('member-expired-excel');
     Route::resource('member-expired', '\App\Http\Controllers\Member\MemberRegistrationOverController');
+    Route::get('member-unpaid', [MemberRegistrationController::class, 'unpaid'])->name('member-unpaid');
+
     Route::resource('members', '\App\Http\Controllers\Member\MemberController');
     Route::get('all-member', [MemberListController::class, 'allData'])->name('all-member');
     Route::get('member-filter', [MemberListController::class, 'filter'])->name('member-filter');
