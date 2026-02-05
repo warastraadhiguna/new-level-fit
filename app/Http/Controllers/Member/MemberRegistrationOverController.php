@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Exports\MemberExpiredExport;
 use App\Http\Controllers\Controller;
 use App\Models\Member\Member;
+use App\Models\Member\MemberRegistration;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,32 +22,7 @@ class MemberRegistrationOverController extends Controller
             return Excel::download(new MemberExpiredExport(), 'member-expired, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 
-        $memberRegistrationsOver = Member::select(
-            'b.id as mr_id',
-            'a.id',
-            'a.full_name',
-            'a.member_code',
-            'a.photos',
-            'b.days',
-            'b.start_date',
-            'max_end_date',
-            'total_package_price',
-            'total_admin_price',
-            'c.registered_member_id'
-        )
-            ->from('members as a')
-            ->join(DB::raw('(select a.id as id_max, b.id, b.days, b.start_date, max(DATE_ADD(b.start_date, INTERVAL b.days DAY)) as max_end_date, sum(package_price) as total_package_price,
-            DATE_ADD(b.start_date, INTERVAL b.days DAY) as expired_date_date,                
-            sum(admin_price) as total_admin_price from members a inner join member_registrations b on a.id=b.member_id
-                            where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now() group by a.id, b.id, b.days, b.start_date) as b'), function ($join) {
-                $join->on('a.id', '=', 'b.id_max');
-            })
-            ->leftJoin(DB::raw('(select distinct member_id as registered_member_id from member_registrations where DATE_ADD(start_date, INTERVAL days DAY) >= now()) as c'), function ($join) {
-                $join->on('a.id', '=', 'c.registered_member_id');
-            })
-            ->whereNull('c.registered_member_id')
-            ->where('b.days', '>', '1')
-            ->get();
+        $memberRegistrationsOver = MemberRegistration::expiredRegistrations()->get();
 
         $data = [
             'title'                     => 'Member Expired List',

@@ -28,12 +28,20 @@ class MemberCheckInController extends Controller
             return;
         }
 
-        $memberRegistration = MemberRegistration::getActiveList($request->card_number);
+        $memberRegistration = MemberRegistration::getActiveList($request->card_number, "", "");
         if (!$memberRegistration) {
-            return redirect()->back()->with('error', 'Member active not found or has ended');
+            if(MemberRegistration::expiredRegistrations($request->card_number)->exists()){
+                return redirect()->back()->with('error', 'Member expired');
+            }
+            
+            return redirect()->back()->with('error', 'Member pending');
         }
         if ($memberRegistration[0]->leave_day_status == "Freeze") {
             return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang cuti!!');
+        }
+
+        if($memberRegistration[0]->mr_package_price + $memberRegistration[0]->mr_admin_price - $memberRegistration[0]->payment_summary > 0){
+            return redirect()->back()->with('error', 'Unpaid Member');
         }
 
 

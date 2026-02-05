@@ -6,6 +6,7 @@ namespace App\Models\Member;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +67,7 @@ class MemberRegistration extends Model
         return $this->hasMany(LeaveDay::class);
     }
 
-    public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = false)
+    public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = "no")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
@@ -120,8 +121,10 @@ class MemberRegistration extends Model
             on mbr_reg.id = lds_continue_view.member_registration_id_continue
 
             where NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY) AND mbr_reg.days > 1"
-            . ($isUnpaidMember? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
-            " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)")
+
+            . ($isUnpaidMember == "yes"? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
+            ($isUnpaidMember == "no"? " AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)" : ""))
+
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($member_id ? " and mbr.id='$member_id' " : '') .  "
             order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);
@@ -266,6 +269,53 @@ class MemberRegistration extends Model
 
         return $activeMemberRegistrations;
     }
+
+    public function scopeExpiredRegistrations(Builder $query, $cardNumber = "")
+    {
+        $result = $query
+            ->from('members as a')
+            ->select(
+                'b.id as mr_id',
+                'a.id',
+                'a.full_name',
+                'a.member_code',
+                'a.photos',
+                'b.days',
+                'b.start_date',
+                'max_end_date',
+                'total_package_price',
+                'total_admin_price',
+                'c.registered_member_id'
+            )
+            ->join(DB::raw('(
+                select 
+                    a.id as id_max,
+                    b.id,
+                    b.days,
+                    b.start_date,
+                    max(DATE_ADD(b.start_date, INTERVAL b.days DAY)) as max_end_date,
+                    sum(package_price) as total_package_price,
+                    DATE_ADD(b.start_date, INTERVAL b.days DAY) as expired_date_date,
+                    sum(admin_price) as total_admin_price
+                from members a
+                inner join member_registrations b on a.id = b.member_id
+                where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now()
+                group by a.id, b.id, b.days, b.start_date
+            ) as b'), function ($join) {
+                $join->on('a.id', '=', 'b.id_max');
+            })
+            ->leftJoin(DB::raw('(
+                select distinct member_id as registered_member_id
+                from member_registrations
+                where DATE_ADD(start_date, INTERVAL days DAY) >= now()
+            ) as c'), function ($join) {
+                $join->on('a.id', '=', 'c.registered_member_id');
+            })
+            ->whereNull('c.registered_member_id')
+            ->where('b.days', '>', 1);
+        return $cardNumber? $result->where('a.card_number', $cardNumber) : $result;
+    }
+
 
     public static function getPendingList($memberId = "")
     {

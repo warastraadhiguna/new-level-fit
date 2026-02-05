@@ -62,7 +62,7 @@ class MemberRegistrationController extends Controller
 
     public function unpaid()
     {
-        $memberRegistrations = MemberRegistration::getActiveList("", "", true);
+        $memberRegistrations = MemberRegistration::getActiveList("", "", "yes");
 
         // $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
         // $paymentMessages = [];
