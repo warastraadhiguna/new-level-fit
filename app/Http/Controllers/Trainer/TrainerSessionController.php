@@ -129,12 +129,14 @@ class TrainerSessionController extends Controller
 
     public function create()
     {
+        $branchId = Auth::user()->branch_store_id;
+                
         $data = [
             'title'             => 'New Trainer Session',
             'trainerSession'    => TrainerSession::all(),
             'members'           => MemberRegistration::getNonExpiredList(),
             'personalTrainers'  => PersonalTrainer::get(),
-            'trainerPackages'   => TrainerPackage::get(),
+            'trainerPackages'   => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'     => MethodPayment::get(),
             'users'             => User::get(),
             'branch_stores'     => BranchStore::get(),            
@@ -316,13 +318,15 @@ class TrainerSessionController extends Controller
 
     public function edit(string $id)
     {
+        $branchId = Auth::user()->branch_store_id;
+                
         $data = [
             'title'                 => 'Edit Trainer Session',
             'trainerSession'        => TrainerSession::find($id),
             'trainerSessionPayments' => TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get(),
             'members'               => MemberRegistration::getNonExpiredList(),
             'personalTrainers'      => PersonalTrainer::get(),
-            'trainerPackages'       => TrainerPackage::get(),
+            'trainerPackages'       => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'methodPayment'         => MethodPayment::get(),
             'branch_stores'         => BranchStore::get(),                    

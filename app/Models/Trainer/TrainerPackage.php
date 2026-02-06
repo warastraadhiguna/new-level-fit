@@ -2,6 +2,7 @@
 
 namespace App\Models\Trainer;
 
+use App\Models\BranchStore;
 use App\Models\User;
 use App\Traits\HasFormatRupiah;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ class TrainerPackage extends Model
     use HasFactory;
 
     protected $fillable = [
+        'branch_store_id',        
         'package_name',
         'number_of_session',
         'days',
@@ -29,4 +31,9 @@ class TrainerPackage extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class);
+    }        
 }

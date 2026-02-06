@@ -24,6 +24,7 @@ class MemberPackageUpdateRequest extends FormRequest
     public function rules()
     {
         return [
+            'branch_store_id'       => 'required',            
             'package_name'          => 'string',
             'days'                  => 'numeric',
             'package_type_id'       => 'exists:member_package_types,id',

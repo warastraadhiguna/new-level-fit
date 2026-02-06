@@ -31,20 +31,17 @@
                                         id="exampleFormControlInput1" autocomplete="off" required>
                                 </div>
                             </div>
-                            {{-- <div class="col-xl-6">
+                            <div class="col-xl-6">
                                 <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Package Type</label>
-                                    <select name="package_type_id" class="form-control"
-                                        aria-label="Default select example">
-                                        <option value="{{ $value->package_type_id }}" selected>
-                                            {{ old('package_type_id', $value->trainerPackageType->package_type_name) }}
-                                        </option>
-                                        @foreach ($trainerPackageType as $item)
-                                            <option value="{{ $item->id }}">{{ $item->package_type_name }}</option>
+                                    <label for="exampleFormControlInput1" class="form-label">Branch</label>
+                                    <select name="branch_store_id" class="form-control" aria-label="Default select example"
+                                        required>
+                                        @foreach($branch_stores as $branch_store)                                        
+                                            <option value="{{ $branch_store->id }}" {{ $value->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                            </div> --}}
+                            </div>  
                             <div class="col-xl-3">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Number Of Session</label>

@@ -18,6 +18,7 @@
                         <thead>
                             <tr>
                                 <th>Package Name</th>
+                                <th>Branch</th>                                  
                                 <th>Number Of Session</th>
                                 <th>Number Of Days</th>
                                 <th>Package Price</th>
@@ -36,6 +37,9 @@
                                     <td>
                                         <h6>{{ $item->package_name }}</h6>
                                     </td>
+                                    <td>
+                                        <h6>{{ $item->branchStore->name }}</h6>
+                                    </td>                                       
                                     <td>
                                         <h6>{{ $item->number_of_session }}</h6>
                                     </td>

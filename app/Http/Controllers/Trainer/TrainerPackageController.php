@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Trainer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TrainerPackageStoreRequest;
 use App\Http\Requests\TrainerPackageUpdateRequest;
+use App\Models\BranchStore;
+use App\Models\Member\MemberPackage;
 use App\Models\Trainer\TrainerPackage;
-use App\Models\Trainer\TrainerPackageType;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class TrainerPackageController extends Controller
@@ -17,8 +17,10 @@ class TrainerPackageController extends Controller
     {
         $data = [
             'title'                 => 'Trainer Package List',
+            'memberPackage'         => MemberPackage::with("branchStore")->get(),            
             'trainerPackage'        => TrainerPackage::get(),
             'users'                 => User::get(),
+            'branch_stores'         => BranchStore::get(),            
             'content'               => 'admin/trainer-package/index'
         ];
 

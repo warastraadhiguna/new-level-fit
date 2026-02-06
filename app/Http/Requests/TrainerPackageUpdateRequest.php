@@ -24,6 +24,7 @@ class TrainerPackageUpdateRequest extends FormRequest
     public function rules()
     {
         return [
+            'branch_store_id'       => 'required',            
             'package_name'          => 'string',
             'package_type_id'       => 'requiredexists:trainer_package_types,id',
             'number_of_session'     => 'required',
