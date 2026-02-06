@@ -28,41 +28,25 @@ class ReportController extends Controller
             $toDate = NowDate();
         }
 
-        if ($memberId) {
-            $results = DB::table('members')
-                ->select(
-                    'cim.id as cim_id',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cim.check_in_time',
-                    'cim.check_out_time',
-                    'branch_stores.name as branch_store_name'
-                )
-                ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
-                ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-                ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')
-                ->whereDate('cim.check_in_time', '>=', $fromDate)
-                ->whereDate('cim.check_in_time', '<=', $toDate)
-                ->where('member_id', '=', $memberId)
-                ->paginate(10);
-        } else {
-            $results = DB::table('members')
-                ->select(
-                    'cim.id as cim_id',
-                    'members.id as member_id',
-                    'members.full_name as member_name',
-                    'cim.check_in_time',
-                    'cim.check_out_time',
-                    'branch_stores.name as branch_store_name'                    
-                )
-                ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
-                ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-                ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')                
-                ->whereDate('cim.check_in_time', '>=', $fromDate)
-                ->whereDate('cim.check_in_time', '<=', $toDate)
-                // ->get();
-                ->paginate(10);
-        }
+        $results = DB::table('members')
+            ->select(
+                'cim.id as cim_id',
+                'members.id as member_id',
+                'members.full_name as member_name',
+                'cim.check_in_time',
+                'cim.check_out_time',
+                'branch_stores.name as branch_store_name'
+            )
+            ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+            ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
+            ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')
+            ->whereDate('cim.check_in_time', '>=', $fromDate)
+            ->whereDate('cim.check_in_time', '<=', $toDate)
+            ->when($memberId, function ($q) use ($memberId) {
+                $q->where('members.id', $memberId);
+            })
+            ->orderBy('cim.check_in_time', 'desc') 
+            ->paginate(10);
 
         if ($excel && $excel == "1") {
             return Excel::download(new MemberCheckInReportExport(), 'Member-checkin-report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
@@ -123,6 +107,7 @@ class ReportController extends Controller
             ->where('ts.branch_store_id', $branchId)
             ->when($memberId, fn ($q) => $q->where('members.id', $memberId))            
             ->when($ptId, fn ($q) => $q->where('pt.id', $ptId))
+            ->orderBy('cits.check_in_time', 'desc')             
             ->paginate(10);
 
 

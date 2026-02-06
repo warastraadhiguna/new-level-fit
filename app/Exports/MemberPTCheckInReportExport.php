@@ -47,6 +47,7 @@ class MemberPTCheckInReportExport implements FromView
                 $query->where('members.id', $memberId);
             })
             ->when($ptId, fn ($q) => $q->where('pt.id', $ptId))            
+            ->orderBy('cits.check_in_time', 'desc')                
             ->get();
 
         return view('admin.gym-report.excel.report-member-pt-checkin', [
