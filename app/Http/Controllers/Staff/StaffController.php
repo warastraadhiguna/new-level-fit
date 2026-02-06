@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class StaffController extends Controller
 {
@@ -124,22 +125,23 @@ class StaffController extends Controller
             $toDate = NowDate();
         }
 
-        if ($ptId) {
-            $results = Member::select('members.full_name as member_name', 'members.lo_start_date', 'members.lo_end', 'pt.full_name as pt_name')
-                ->join('personal_trainers as pt', 'members.lo_pt_by', '=', 'pt.id')
-                ->where('lo_is_used', 1)
-                ->where('members.lo_pt_by', '=', $ptId)
-                ->whereDate('lo_start_date', '>=', $fromDate)
-                ->whereDate('lo_end', '<=', $toDate)
-                ->get();
-        } else {
-            $results = Member::select('members.full_name as member_name', 'members.lo_start_date', 'members.lo_end', 'pt.full_name as pt_name')
-                ->join('personal_trainers as pt', 'members.lo_pt_by', '=', 'pt.id')
-                ->where('lo_is_used', 1)
-                ->whereDate('lo_start_date', '>=', $fromDate)
-                ->whereDate('lo_end', '<=', $toDate)
-                ->get();
-        }
+        $branchId = Auth::user()->branch_store_id;
+        
+        $results = Member::select(
+                'members.full_name as member_name',
+                'members.lo_start_date',
+                'members.lo_end',
+                'pt.full_name as pt_name'
+            )
+            ->join('personal_trainers as pt', 'members.lo_pt_by', '=', 'pt.id')
+            ->where('members.lo_is_used', 1)
+            ->whereDate('members.lo_start_date', '>=', $fromDate)
+            ->whereDate('members.lo_end', '<=', $toDate)
+            ->where("pt.branch_store_id", $branchId)
+            ->when($ptId, function ($query) use ($ptId) {
+                $query->where('members.lo_pt_by', $ptId);
+            })
+            ->get();
 
         // if ($pdf && $pdf == '1') {
         //     $pdf = Pdf::loadView('admin/gym-report/lo', [
@@ -151,8 +153,6 @@ class StaffController extends Controller
         if ($excel && $excel == "1") {
             return Excel::download(new LOReportExport(), 'LO-Report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
-
-
 
         $data = [
             'title'                 => 'LO Report',
