@@ -39,8 +39,15 @@ class Member extends Model
         'lo_start_date',
         'lo_days',
         'lo_pt_by',
-        'lo_end'
+        'lo_end',
+        'google_id', 
+        'avatar',
+        'last_login_at'
     ];
+	
+    protected $casts = [
+        'last_login_at' => 'datetime',
+    ];	
 
     public function users()
     {

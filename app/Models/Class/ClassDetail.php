@@ -17,7 +17,7 @@ class ClassDetail extends Model
         'name',        
         'phone',   
         'email',
-        'status'
+        'canceled_at'
     ];
 
     public function user()
@@ -29,4 +29,9 @@ class ClassDetail extends Model
     {
         return $this->belongsTo(Member::class);
     }      
+	
+    public function classSchedule()
+    {
+        return $this->belongsTo(ClassSchedule::class);
+    }     	
 }
