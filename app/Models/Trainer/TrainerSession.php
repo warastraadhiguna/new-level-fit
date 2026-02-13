@@ -211,7 +211,33 @@ class TrainerSession extends Model
 
         return $activeTrainerSessions;
     }
+    public static function getPTWaitingList($card_number = "", $trainner_session_id = "")
+    {
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, branch_stores.name as branch_store_name,
+        mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
+        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
+        trainer_packages.package_name,
+        personal_trainers.full_name AS trainer_name,
+	
+        ifnull((select sum(value) from trainer_session_payments tsp where train_sess.id=tsp.trainer_session_id),0) as payment_summary
+        FROM members AS mbr
+        
+        INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
+        INNER JOIN branch_stores on train_sess.branch_store_id = branch_stores.id        
+        INNER JOIN trainer_packages ON trainer_packages.id = train_sess.trainer_package_id AND trainer_packages.status IS NULL
+        LEFT JOIN personal_trainers ON personal_trainers.id = train_sess.trainer_id
+        INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
+        INNER JOIN users ON users.id = train_sess.user_id
+                
+        WHERE
+        train_sess.branch_store_id = ". Auth::user()->branch_store_id ."  and
+        (train_sess.trainer_id is null or train_sess.start_date is null)"
+            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . "
+            order by train_sess.created_at desc";
+        $activeTrainerSessions = DB::select($sql);
 
+        return $activeTrainerSessions;
+    }
     public static function getActivePTListById($id = "")
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.id AS member_id, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,

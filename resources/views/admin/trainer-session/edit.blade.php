@@ -32,8 +32,8 @@
                             <label for="exampleFormControlInput1" class="form-label">Trainer Name</label>
                             <select id="single-select2" name="trainer_id" class="form-control">
                                 <option value="{{ $trainerSession->trainer_id }}" selected>
-                                    {{ old('trainer_id', $trainerSession->personalTrainers->full_name) }} |
-                                    {{ old('trainer_id', $trainerSession->personalTrainers->phone_number) }}
+                                    {{ old('trainer_id', $trainerSession->personalTrainers?$trainerSession->personalTrainers->full_name : "-") }} |
+                                    {{ old('trainer_id', $trainerSession->personalTrainers? $trainerSession->personalTrainers->phone_number: "-") }}
                                 </option>
                                 @foreach ($personalTrainers as $item)
                                     <option value="{{ $item->id }}">
@@ -69,8 +69,8 @@
                         <div class="mb-3">
                             <label class="form-label">Start Date</label>
                             <input type="text" name="start_date" id="input1"
-                                value="{{ old('start_date', DateFormat($trainerSession->start_date, 'DD MMMM YYYY')) }}"
-                                class="form-control mdate-custom">
+                                value="{{ old('start_date', $trainerSession->start_date? DateFormat($trainerSession->start_date, 'DD MMMM YYYY') : "") }}"
+                                class="form-control mdate-custom" required>
                         </div>
                     </div>
                     <div class="col-xl-6" id="parentInput2">
@@ -108,18 +108,7 @@
                                 </select>
                             </div>
                         </div>
-                    @endif
-                    <div class="col-xl-6">
-                        <div class="mb-3">
-                            <label for="exampleFormControlInput1" class="form-label">Branch</label>
-                                <select name="branch_store_id" class="form-control" aria-label="Default select example"
-                                    required>
-                                    @foreach($branch_stores as $branch_store)                                        
-                                        <option value="{{ $branch_store->id }}" {{ $trainerSession->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
-                                    @endforeach
-                                </select>
-                        </div>
-                    </div>                       
+                    @endif                     
                     <div class="col-xl-6">
                         <div class="mb-3">
                             <label for="exampleFormControlTextarea1" class="form-label text-primary">

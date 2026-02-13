@@ -66,7 +66,7 @@
                         <div class="mb-3">
                             <label class="form-label">Start Date</label>
                             <input type="text" name="start_date" value="{{ old('start_date') }}"
-                                class="form-control editDate mdate-custom3" placeholder="Choose start date" required>
+                                class="form-control editDate mdate-custom3" placeholder="Choose start date">
                         </div>
                     </div>
                     <div class="col-xl-6" id="method_payment">
@@ -104,17 +104,6 @@
                             </div>
                         </div>
                     @endif
-                    <div class="col-xl-6">
-                        <div class="mb-3">
-                            <label for="exampleFormControlInput1" class="form-label">Branch</label>
-                                    <select name="branch_store_id" class="form-control" aria-label="Default select example"
-                                        required>
-                                        @foreach($branch_stores as $branch_store)                                        
-                                            <option value="{{ $branch_store->id }}">{{ $branch_store->name }}</option>
-                                        @endforeach
-                                    </select>
-                        </div>
-                    </div>                    
                     <div class="col-xl-6">
                         <div class="mb-3">
                             <label for="exampleFormControlTextarea1" class="form-label text-primary">

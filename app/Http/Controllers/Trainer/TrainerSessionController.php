@@ -127,6 +127,50 @@ class TrainerSessionController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
+    public function waitingList()
+    {
+        $trainerSessions = TrainerSession::getPTWaitingList();
+
+        $birthdayMessages = [
+            0 => [],
+            1 => [],
+            2 => [],
+        ];
+
+
+        $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
+        $paymentMessages = [];
+        foreach ($trainerSessions as $trainerSession) {
+            $diff = BirthdayDiff($trainerSession->born);
+            if ($diff >= 0 && $diff <= 2) {
+                $birthdayMessages[$diff][$trainerSession->member_id] = $trainerSession->member_name;
+            }
+
+            $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
+            $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+                $paymentMessages[$paymentDay][] =
+                [
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "id" => $trainerSession->id
+                ];
+            }
+        }
+
+        $idCodeMaxCount = env("ID_CODE_MAX_COUNT", 3);
+
+        $data = [
+            'title'             => 'Trainer Session Waiting List',
+            'trainerSessions'   => $trainerSessions,
+            'content'           => 'admin/trainer-session/waiting-list',
+            'idCodeMaxCount'    =>  $idCodeMaxCount,
+            'birthdayMessages'  => $birthdayMessages,
+            'paymentMessages'   =>  $paymentMessages
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }    
+
     public function create()
     {
         $branchId = Auth::user()->branch_store_id;
@@ -138,8 +182,7 @@ class TrainerSessionController extends Controller
             'personalTrainers'  => PersonalTrainer::where("branch_store_id", $branchId)->get(),
             'trainerPackages'   => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'     => MethodPayment::get(),
-            'users'             => User::get(),
-            'branch_stores'     => BranchStore::get(),            
+            'users'             => User::get(),         
             'fitnessConsultant' => User::where('role', 'FC')->get(),
             'content'           => 'admin/trainer-session/create',
         ];
@@ -153,8 +196,8 @@ class TrainerSessionController extends Controller
         if ($fc->role == 'FC') {
             $data = $request->validate([
                 'member_id'             => 'required|exists:members,id',
-                'trainer_id'            => 'required|exists:personal_trainers,id',
-                'start_date'            => 'required',
+                'trainer_id'            => 'nullable|exists:personal_trainers,id',
+                'start_date'            => 'nullable',
                 'days'                  => 'nullable',
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
@@ -166,15 +209,14 @@ class TrainerSessionController extends Controller
         } else {
             $data = $request->validate([
                 'member_id'             => 'required|exists:members,id',
-                'trainer_id'            => 'required|exists:personal_trainers,id',
-                'start_date'            => 'required',
+                'trainer_id'            => 'nullable|exists:personal_trainers,id',
+                'start_date'            => 'nullable',
                 'days'                  => 'nullable',
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'fc_id'                 => 'required|exists:users,id',
                 'user_id'               => 'nullable',
-                'description'           => 'nullable',
-                'branch_store_id'       => 'required',                
+                'description'           => 'nullable',           
             ]);
         }
 
@@ -184,13 +226,16 @@ class TrainerSessionController extends Controller
             $package = TrainerPackage::findOrFail($data['trainer_package_id']);
 
             $data['user_id'] = Auth::user()->id;
+            $data['branch_store_id'] = Auth::user()->branch_store_id;            
+            if($data['start_date'])
+            {
+                $startTime = date('H:i:s', strtotime('00:00:00'));
 
-            $startTime = date('H:i:s', strtotime('00:00:00'));
-
-            $data['start_date'] =  $data['start_date'] . ' ' .  $startTime;
-            $dateTime = new \DateTime($data['start_date']);
-            $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
-            unset($startTime);
+                $data['start_date'] =  $data['start_date'] . ' ' .  $startTime;
+                $dateTime = new \DateTime($data['start_date']);
+                $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
+                unset($startTime);
+            }
 
             $data['package_price'] = $package->package_price;
             $data['admin_price'] = $package->admin_price;
@@ -328,8 +373,7 @@ class TrainerSessionController extends Controller
             'personalTrainers'      => PersonalTrainer::where("branch_store_id", $branchId)->get(),
             'trainerPackages'       => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
-            'methodPayment'         => MethodPayment::get(),
-            'branch_stores'         => BranchStore::get(),                    
+            'methodPayment'         => MethodPayment::get(),          
             'content'               => 'admin/trainer-session/edit',
         ];
         return view('admin.layouts.wrapper', $data);
@@ -360,10 +404,10 @@ class TrainerSessionController extends Controller
             'trainer_package_id'    => 'required',
             'trainer_id'            => 'nullable',
             'method_payment_id'     => 'nullable',
-            'fc_id'                 => 'nullable',
-            'branch_store_id'       => 'required',                 
+            'fc_id'                 => 'nullable',             
         ]);
         $data['user_id'] = Auth::user()->id;
+        $data['branch_store_id'] = Auth::user()->branch_store_id;       
 
         $selectedPackage = TrainerPackage::find($data["trainer_package_id"]);
         $currentPackage = TrainerPackage::find($item->trainer_package_id);

@@ -136,6 +136,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('print-trainer-session-detail-pdf', [TrainerSessionController::class, 'print_trainer_session_detail_pdf'])->name('print-trainer-session-detail-pdf');
     Route::get('pt-agreement/{id}', [TrainerSessionController::class, 'agreement'])->name('pt-agreement');
     Route::get('session-pending', [TrainerSessionController::class, 'pending'])->name('trainer-session-pending');
+    Route::get('session-waiting-list', [TrainerSessionController::class, 'waitingList'])->name('trainer-session-waiting-list');
+
 
     Route::resource('buddy-referral', '\App\Http\Controllers\Admin\BuddyReferralController');
     // Route::resource('appointment', '\App\Http\Controllers\Admin\AppointmentController');
