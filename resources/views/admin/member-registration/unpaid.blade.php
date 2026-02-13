@@ -329,7 +329,6 @@
 
 
 @include('admin.member-registration.check-in')
-@include('admin.member-registration.check-in-2')
 
 <script>
     function reloadPage() {
