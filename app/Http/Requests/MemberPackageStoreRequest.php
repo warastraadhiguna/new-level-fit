@@ -32,6 +32,7 @@ class MemberPackageStoreRequest extends FormRequest
             'package_price'         => 'required|numeric',
             'admin_price'           => 'required|numeric',
             'description'           => '',
+            'is_all_club'           => 'required'
         ];
     }
 

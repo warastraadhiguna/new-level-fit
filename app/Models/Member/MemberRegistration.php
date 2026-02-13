@@ -78,7 +78,7 @@ class MemberRegistration extends Model
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,
-            mbr_pkg.package_name, mbr_pkg.days, mbr_pkg.package_price,
+            mbr_pkg.package_name, mbr_pkg.days, mbr_pkg.package_price, mbr_pkg.is_all_club,mbr_pkg.branch_store_id as member_package_branch_store_id,
             mtd_pay.name as method_payment_name, usr.full_name as staff_name,
             -- fit_cons.full_name as fc_name, fit_cons.phone_number as fc_phone_number,
             cim_view.current_check_in_members_id, cim_view.check_in_time, cim_view.check_out_time, cim_view.updated_at_check_in,

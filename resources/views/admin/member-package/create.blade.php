@@ -62,6 +62,16 @@
                         </div>
                         <div class="col-xl-6">
                             <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Status</label>
+                                <select name="is_all_club" class="form-control" aria-label="Default select example"
+                                    required>
+                                    <option value="0">One Club</option>                                    
+                                    <option value="1">All Club</option>
+                                </select>
+                            </div>
+                        </div>                            
+                        <div class="col-xl-6">
+                            <div class="mb-3">
                                 <label for="exampleFormControlTextarea1" class="form-label text-primary">
                                     Description
                                 </label>

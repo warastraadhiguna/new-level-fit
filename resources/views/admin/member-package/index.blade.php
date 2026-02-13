@@ -22,6 +22,7 @@
                                 <th>Package Price</th>
                                 <th>Admin Price</th>
                                 <th>Description</th>
+                                <th>Status</th>
                                 <th>Staff</th>
                                 @if (Auth::user()->role == 'ADMIN')
                                     <th>Action</th>
@@ -49,6 +50,9 @@
                                     <td>
                                         <h6>{{ $item->description }}</h6>
                                     </td>
+                                    <td>
+                                        <h6>{{ $item->is_all_club == "1" ? "All Club" : "One Club"  }}</h6>
+                                    </td>                                    
                                     <td>
                                         <h6>{{ $item->users->full_name }}</h6>
                                     </td>

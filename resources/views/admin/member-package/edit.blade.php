@@ -64,6 +64,16 @@
                                         class="form-control rupiah" id="exampleFormControlInput1" autocomplete="off">
                                 </div>
                             </div>
+                            <div class="col-xl-6">
+                                <div class="mb-3">
+                                    <label for="exampleFormControlInput1" class="form-label">Status</label>
+                                    <select name="is_all_club" class="form-control" aria-label="Default select example"
+                                        required>
+                                        <option value="0" {{ $value->is_all_club == '0'? 'selected' : '' }}>One Club</option>                                    
+                                        <option value="1" {{ $value->is_all_club == '1'? 'selected' : '' }}>All Club</option>
+                                    </select>
+                                </div>
+                            </div>                                 
                             <div class="col-xl-12">
                                 <div class="mb-3">
                                     <label for="exampleFormControlTextarea1" class="form-label text-primary">

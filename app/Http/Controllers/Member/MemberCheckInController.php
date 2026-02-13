@@ -63,6 +63,11 @@ class MemberCheckInController extends Controller
             
             return redirect()->back()->with('error', 'Member pending');
         }
+        
+        if($memberRegistration[0]->is_all_club== '0' && $memberRegistration[0]->member_package_branch_store_id != Auth::user()->branch_store_id){
+            return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' hanya bisa one club saja!!');
+        }
+
         if ($memberRegistration[0]->leave_day_status == "Freeze") {
             return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang cuti!!');
         }

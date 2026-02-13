@@ -24,7 +24,8 @@ class MemberPackage extends Model
         'package_price',
         'admin_price',
         'description',
-        'user_id'
+        'user_id',
+        'is_all_club'
     ];
 
     protected $hidden = [];
