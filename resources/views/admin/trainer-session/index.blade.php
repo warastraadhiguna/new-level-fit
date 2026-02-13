@@ -51,10 +51,6 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
-                        id="checkInButton" onclick="manipulateView()">Input Member Code</button> --}}
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
-                        id="checkInButton">Input Member Code</button>                        
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                         Download Excel
                     </button>
@@ -298,8 +294,6 @@
         </div>
     </div>
 </div>
-
-@include('admin.trainer-session.check-in-2')
 
 {{-- MODAL --}}
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">

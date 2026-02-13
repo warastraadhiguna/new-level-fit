@@ -65,6 +65,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     // Route::get('print-member-card', [MemberController::class, 'print_member_card'])->name('print-member-card');
     Route::resource('print-member-card', '\App\Http\Controllers\Member\MemberPrintCardController');
     Route::resource('member-check-in', '\App\Http\Controllers\Member\MemberCheckInController');
+    Route::resource('trainer-session-check-in', '\App\Http\Controllers\Trainer\TrainerSessionCheckInController'); 
     Route::get('check-in/{id}', [MemberCheckInController::class, 'secondStore'])->name('secondCheckIn');
     Route::get('pt-check-in/{id}', [TrainerSessionCheckInController::class, 'secondStore'])->name('PTSecondCheckIn');
     Route::post('lgt-check-in', [TrainerSessionCheckInController::class, 'lgtStore'])->name('LGTCheckIn');
@@ -122,7 +123,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
 
     Route::resource('trainer-session-over', '\App\Http\Controllers\Trainer\TrainerSessionOverController');
     Route::get('trainer-session-over-pdf', [TrainerSessionOverController::class, 'pdfReport'])->name('trainer-session-over-pdf');
-    Route::resource('trainer-session-check-in', '\App\Http\Controllers\Trainer\TrainerSessionCheckInController');
     Route::put('trainer-session-freeze/{id}/freeze', [TrainerSessionController::class, 'freeze'])->name('trainer-session-freeze');
     Route::resource('running-session', '\App\Http\Controllers\Trainer\RunningSessionController');
     Route::get('cutiTrainerSession/{id}', [TrainerSessionController::class, 'cuti'])->name('cutiTrainerSession');

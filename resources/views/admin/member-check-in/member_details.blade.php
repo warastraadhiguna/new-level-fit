@@ -174,7 +174,7 @@
         newWindow.document.write(contentHTML);
 
         setTimeout(function() {
-            window.location.href = "{{ route('member-active.index') }}";
+            window.location.href = "{{ route('member-check-in.index') }}";
         }, 0);
     }
 

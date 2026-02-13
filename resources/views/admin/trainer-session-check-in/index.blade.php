@@ -1,3 +1,11 @@
+<div class="row mb-5">
+    <div class="col-xl-12">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
+                        id="checkInButton">
+                Input Member Code
+            </button>      
+    </div>
+</div>
 <div class="modal fade bd-example-modal-sm" id="checkIn2" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -36,3 +44,42 @@
         </div>
     </div>
 </div>
+
+
+<div class="row">
+    <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
+        <div class="table-responsive full-data">
+            <table class="table table-bordered" border="1" style="text-align: center;" width="100%">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Member Code</th>
+                        <th>Member Name</th>
+                        <th>Package Name</th>
+                        <th>Trainer Name</th>
+                        <th>Check In Time</th>
+                        <th>Check Out Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($results as $item)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $item->member_code }}</td>
+                            <td>{{ $item->member_name }}</td>
+                            <td><h6>{{ $item->package_name }}</h6></td>
+                            <td>{{ $item->trainer_name }}</td>
+                            <td>{{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}</td>
+                            <td>{{ $item->check_out_time? DateFormat($item->check_out_time, 'DD MMMM YYYY, HH:mm:ss') : "-" }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">No data found</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

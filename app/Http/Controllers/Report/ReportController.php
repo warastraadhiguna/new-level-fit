@@ -110,7 +110,6 @@ class ReportController extends Controller
             ->orderBy('cits.check_in_time', 'desc')             
             ->paginate(10);
 
-
         if ($excel && $excel == "1") {
             return Excel::download(new MemberPTCheckInReportExport(), 'Member-PT-checkin-report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }

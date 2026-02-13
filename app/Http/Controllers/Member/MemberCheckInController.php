@@ -13,6 +13,33 @@ use Illuminate\Support\Facades\Validator;
 
 class MemberCheckInController extends Controller
 {
+    public function index()
+    {
+        $results = DB::table('members')
+            ->select(
+                'cim.id as cim_id',
+                'members.id as member_id',
+                'members.full_name as member_name',
+                'cim.check_in_time',
+                'cim.check_out_time',
+                'branch_stores.name as branch_store_name'
+            )
+            ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+            ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
+            ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')
+            ->whereDate('cim.check_in_time', '>=', NowDate())
+            ->whereDate('cim.check_in_time', '<=', NowDate())
+            ->orderBy('cim.check_in_time', 'desc') 
+            ->get();
+
+        $data = [
+            'title'                 => 'Membership Check In',
+            'results'                => $results,            
+            'content'               => 'admin.member-check-in.index',
+        ];
+
+        return view('admin.layouts.wrapper', $data);        
+    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -24,7 +51,7 @@ class MemberCheckInController extends Controller
         if ($validator->fails()) {
             $errorMessage = $validator->errors()->first('card_number');
             echo "<script>alert('$errorMessage');</script>";
-            echo "<script>window.location.href = '" . route('member-active.index') . "';</script>";
+            echo "<script>window.location.href = '" . route('member-check-in.index') . "';</script>";
             return;
         }
 
@@ -44,8 +71,6 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('error', 'Unpaid Member');
         }
 
-
-
         $memberPhoto    = $memberRegistration[0]->photos;
         $memberName     = $memberRegistration[0]->member_name;
         $nickName       = $memberRegistration[0]->nickname;
@@ -62,11 +87,8 @@ class MemberCheckInController extends Controller
         $startDate      = $memberRegistration[0]->start_date;
         $expiredDate    = $memberRegistration[0]->expired_date;
 
-
         $message = "";
         if ($memberRegistration[0]->current_check_in_members_id && !$memberRegistration[0]->check_out_time) {
-            // $checkInMember = CheckInMember::where([["member_registration_id", $memberRegistration->current_check_in_members_id], ["check_in_time", $memberRegistration->check_in_time]]);
-            //edited by angling
             $checkInMember = CheckInMember::find($memberRegistration[0]->current_check_in_members_id);
 
             $checkInMember->update([
@@ -74,17 +96,6 @@ class MemberCheckInController extends Controller
             ]);
             $message = 'Member Checked Out Successfully';
         } else {
-            //edited by angling
-            //$checkOutTime = null; // Default value
-
-            // $latestCheckIn = CheckInMember::where('member_registration_id', $memberRegistration->id)
-            //     ->orderBy('check_in_time', 'desc')
-            //     ->first();
-
-            // if ($latestCheckIn && $latestCheckIn->check_out_time === null) {
-            //     $checkOutTime = now()->tz('Asia/Jakarta');
-            // }
-
             $data = [
                 'member_registration_id' => $memberRegistration[0]->id,
                 'check_in_time' => now()->tz('Asia/Jakarta'),
@@ -95,8 +106,7 @@ class MemberCheckInController extends Controller
             $message = 'Member Checked In Successfully';
         }
 
-        // return redirect()->route('member-active.index')->with('message', $message);
-        return view('admin.member-registration.member_details')->with([
+        return view('admin.member-check-in.member_details')->with([
             'message' => $message,
             'memberPhoto'   => $memberPhoto,
             'memberName'    => $memberName,

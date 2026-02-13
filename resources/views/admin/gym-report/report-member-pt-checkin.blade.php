@@ -71,7 +71,7 @@
                                     <td><h6>{{ $item->package_name }}</h6></td>
                                     <td>{{ $item->trainer_name }}</td>
                                     <td>{{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}</td>
-                                    <td>{{ DateFormat($item->check_out_time, 'DD MMMM YYYY, HH:mm:ss') }}</td>
+                                    <td>{{ $item->check_out_time? DateFormat($item->check_out_time, 'DD MMMM YYYY, HH:mm:ss') : "-" }}</td>                                    
                                 </tr>
                             @empty
                                 <tr>

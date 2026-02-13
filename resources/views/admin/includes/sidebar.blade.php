@@ -44,9 +44,10 @@
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person_3</i>
-                        <span class="nav-text">Member CheckIn</span>
+                        <span class="nav-text">Membership</span>
                     </a>
                     <ul aria-expanded="false">
+                        <li><a href="{{ route('member-check-in.index') }}">Check In/Out</a></li>                        
                         <li><a href="{{ route('member-active.index') }}">Member Active</a></li>
                         <li><a href="{{ route('member-pending') }}">Member Pending</a></li>
                         <li><a href="{{ route('member-expired.index') }}">Member Expired</a>
@@ -65,6 +66,7 @@
                 <ul aria-expanded="false">
                     <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
                     @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS')
+                        <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>                          
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
                         <li><a href="{{ route('trainer-session-over.index') }}">PT Expired</a></li>

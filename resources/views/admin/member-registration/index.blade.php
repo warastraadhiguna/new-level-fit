@@ -52,8 +52,6 @@
             <div id="filteredDataContainer"></div>
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
-                        id="checkInButton">Input Card Number</button>
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                         Download Excel
                     </button>
@@ -430,7 +428,6 @@
 
 
 @include('admin.member-registration.check-in')
-@include('admin.member-registration.check-in-2')
 
 <script>
     function reloadPage() {

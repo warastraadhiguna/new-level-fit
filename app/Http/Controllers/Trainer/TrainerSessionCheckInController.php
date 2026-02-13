@@ -6,15 +6,46 @@ use App\Http\Controllers\Controller;
 use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use App\Models\Trainer\CheckInTrainerSession;
-use App\Models\Trainer\LGT;
 use App\Models\Trainer\TrainerSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
 class TrainerSessionCheckInController extends Controller
 {
+    public function index()
+    {
+        $results = DB::table('members')
+            ->select(
+                'cits.id as cits_id',
+                'members.member_code',
+                'members.id as member_id',
+                'members.full_name as member_name',
+                'cits.pt_id as pt_id',
+                'pt.full_name as trainer_name',
+                'tp.package_name',
+                'cits.check_in_time',
+                'cits.check_out_time',
+                'branch_stores.name as branch_store_name'
+            )
+            ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
+            ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
+            ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
+            ->join('branch_stores', 'ts.branch_store_id', '=', 'branch_stores.id')
+            ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [NowDate(), NowDate()])
+            ->where('ts.branch_store_id', Auth::user()->branch_store_id)
+            ->orderBy('cits.check_in_time', 'desc')             
+            ->paginate(10);
+                    
+        $data = [
+            'title'                 => 'Trainer Session Check In/Out',
+            'results'                => $results,            
+            'content'               => 'admin.trainer-session-check-in.index',
+        ];
+
+        return view('admin.layouts.wrapper', $data);   
+    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -26,7 +57,7 @@ class TrainerSessionCheckInController extends Controller
         if ($validator->fails()) {
             $errorMessage = $validator->errors()->first('card_number');
             echo "<script>alert('$errorMessage');</script>";
-            echo "<script>window.location.href = '" . route('trainer-session.index') . "';</script>";
+            echo "<script>window.location.href = '" . route('trainer-session-check-in.index') . "';</script>";
             return;
         }
 
@@ -90,7 +121,7 @@ class TrainerSessionCheckInController extends Controller
             $message = 'Trainer Session Checked In Successfully';
         }
 
-        return view('admin.trainer-session.member_details')->with([
+        return view('admin.trainer-session-check-in.member_details')->with([
             'message'           => $message,
             'memberPhoto'       => $memberPhoto,
             'memberName'        => $memberName,
