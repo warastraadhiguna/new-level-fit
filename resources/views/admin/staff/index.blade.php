@@ -34,12 +34,12 @@
                             Personal Trainer
                         </a>
                     </li>
-                    <li class="nav-item">
+                    {{-- <li class="nav-item">
                         <a class="nav-link {{ $page == 'ci' ? 'show active' : '' }}" data-bs-toggle="tab"
                             href="#classInstructor">
                             Class Instructor
                         </a>
-                    </li>                    
+                    </li>                     --}}
                     @if (Auth::user()->role == 'ADMIN')
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'admin' ? 'show active' : '' }}" data-bs-toggle="tab"

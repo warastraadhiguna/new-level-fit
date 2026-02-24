@@ -940,38 +940,64 @@ class MemberRegistrationController extends Controller
 
     public function freeze(Request $request, string $id)
     {
-        $item = MemberRegistration::find($id);
-        // Periksa apakah data ditemukan
-        if (!$item) {
-            return redirect()->route('member-active.index')->with('errorr', 'Member Registration not found');
-        }
+        $request->validate([
+            'expired_date' => ['required', 'in:30,60,90'],
+            'price' => ['required'],
+        ]);
 
-        $lastLeaveDay = LeaveDay::where("member_registration_id", $id)->orderBy("id", "desc")->first();
+        return DB::transaction(function () use ($request, $id) {
 
-        $now = Carbon::now()->tz('Asia/Jakarta');
-
-        $inputData = [
-            'member_registration_id' => $item->id,
-            'submission_date' => $now,
-            'price' => $request->input('price'),
-            'days' => $request->input('expired_date'),
-        ];
-
-        if ($lastLeaveDay) {
-            $submissionDateStr = new \DateTime($lastLeaveDay->submission_date);
-
-            $expiredDate = $submissionDateStr->modify("+{$lastLeaveDay->days} days");
-            if ($now <= $expiredDate) {
-                $inputData['leave_day_continue_id'] = $lastLeaveDay->leave_day_continue_id ? $lastLeaveDay->leave_day_continue_id : $lastLeaveDay->id;
-                $inputData['submission_date'] = $expiredDate;
+            $item = MemberRegistration::lockForUpdate()->find($id);
+            if (! $item) {
+                return redirect()->route('member-active.index')->with('errorr', 'Member Registration not found');
             }
-        }
 
-        $leaveDay = new LeaveDay($inputData);
-        $leaveDay->price = str_replace(',', '', $leaveDay['price']);
-        $leaveDay->save();
+            // lock juga leave_days untuk registration ini
+            $lastLeaveDay = LeaveDay::where("member_registration_id", $id)
+                ->lockForUpdate()
+                ->orderBy("id", "desc")
+                ->first();
 
-        return redirect()->route('member-active.index')->with('success', 'Cuti Membership Successfully Added');
+            $now = Carbon::now()->tz('Asia/Jakarta');
+
+            $submissionDate = $now;
+            $continueId = null;
+
+            if ($lastLeaveDay) {
+                $expiredDate = Carbon::parse($lastLeaveDay->submission_date)
+                    ->addDays((int) $lastLeaveDay->days);
+
+                if ($now->lte($expiredDate)) {
+                    $continueId = $lastLeaveDay->leave_day_continue_id ?: $lastLeaveDay->id;
+                    $submissionDate = $expiredDate;
+                }
+            }
+
+            // Normalisasi price
+            $price = (int) str_replace([',', '.'], '', (string) $request->input('price'));
+
+            // (opsional tapi sangat direkomendasikan)
+            // Cegah insert dobel untuk submission_date yang sama + member_registration_id yang sama + days yang sama
+            $exists = LeaveDay::where('member_registration_id', $item->id)
+                ->where('submission_date', $submissionDate)
+                ->where('days', (int) $request->input('expired_date'))
+                ->exists();
+
+            if ($exists) {
+                return redirect()->route('member-active.index')
+                    ->with('success', 'Cuti sudah tercatat (request duplikat diabaikan).');
+            }
+
+            LeaveDay::create([
+                'member_registration_id' => $item->id,
+                'submission_date' => $submissionDate,
+                'price' => $price,
+                'days' => (int) $request->input('expired_date'),
+                'leave_day_continue_id' => $continueId,
+            ]);
+
+            return redirect()->route('member-active.index')->with('success', 'Cuti Membership Successfully Added');
+        });
     }
 
     public function destroy($id)

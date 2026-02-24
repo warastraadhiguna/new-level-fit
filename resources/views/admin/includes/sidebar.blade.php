@@ -131,7 +131,7 @@
             </li>
 
             @if (Auth::user()->role == 'ADMIN')
-                <li>
+                {{-- <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-icons"> flight_class </i>
                         <span class="nav-text">Class</span>
@@ -140,7 +140,7 @@
                         <li><a href="{{ route('class-session.index') }}">Class Session</a></li>
                         <li><a href="{{ route('class-schedule.index') }}">Class Schedule</a></li>                        
                     </ul>
-                </li>            
+                </li>             --}}
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-icons"> insert_drive_file </i>

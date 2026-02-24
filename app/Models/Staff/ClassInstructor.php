@@ -13,7 +13,11 @@ class ClassInstructor extends Model
     protected $fillable = [
         'full_name',
         'gender',
+		'email',
         'phone_number',
-        'description'
+        'description',
+        'google_id', 
+        'avatar',
+        'last_login_at'				
     ];
 }

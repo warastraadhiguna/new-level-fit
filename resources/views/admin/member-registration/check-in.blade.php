@@ -2,8 +2,11 @@
     <div class="modal fade freeze{{ $item->id }}" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form id="freezeForm{{ $item->id }}" action="{{ route('member-registration-freeze', $item->id) }}"
-                    method="POST" enctype="multipart/form-data">
+                <form id="freezeForm{{ $item->id }}"
+                    action="{{ route('member-registration-freeze', $item->id) }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    onsubmit="return handleFreezeSubmit(event, {{ $item->id }})">
                     @method('PUT')
                     @csrf
                     <div class="modal-header">
@@ -78,9 +81,9 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        {{-- <button type="submit" class="btn btn-primary">Submit</button> --}}
-                        <button type="submit" class="btn btn-primary"
-                            onclick="return validateFreezeForm({{ $item->id }})">Submit</button>
+                        <button id="freezeBtn{{ $item->id }}" type="submit" class="btn btn-primary">
+                            Submit
+                        </button>
                         <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
                     </div>
                 </form>
@@ -90,15 +93,23 @@
 @endforeach
 
 <script>
-    function validateFreezeForm(itemId) {
-        var form = document.getElementById('freezeForm' + itemId);
-        var selectElement = form.querySelector('select[name="expired_date"]');
-        var selectedOption = selectElement.options[selectElement.selectedIndex].value;
+function handleFreezeSubmit(e, itemId) {
+    const form = document.getElementById('freezeForm' + itemId);
+    const selectElement = form.querySelector('select[name="expired_date"]');
+    const selectedValue = selectElement.value;
 
-        if (selectedOption === 'Select') {
-            alert('Mohon pilih periode cuti !!!');
-            return false;
-        }
-        return true;
+    if (selectedValue === 'Select' || selectedValue === '') {
+        alert('Mohon pilih periode cuti !!!');
+        e.preventDefault();
+        return false;
     }
+
+    // cegah double submit
+    const btn = document.getElementById('freezeBtn' + itemId);
+    btn.disabled = true;
+    btn.innerText = 'Processing...';
+
+    return true;
+}
 </script>
+
