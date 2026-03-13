@@ -8,11 +8,15 @@ use App\Models\Member\MemberRegistration;
 use App\Models\Trainer\CheckInTrainerSession;
 use App\Models\Trainer\TrainerSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+
 class TrainerSessionCheckInController extends Controller
 {
+    private const DUPLICATE_SCAN_WINDOW_SECONDS = 5;
+
     public function index()
     {
         $results = DB::table('members')
@@ -98,28 +102,10 @@ class TrainerSessionCheckInController extends Controller
         $startDate      = $trainerSession[0]->start_date;
         $expiredDate    = $trainerSession[0]->expired_date;
 
-        $message = "";
-        // $package = TrainerSession::findOrFail('trainer_session_id');
-        // dd($package);
-        if ($trainerSession[0]->current_check_in_trainer_sessions_id && !$trainerSession[0]->check_out_time) {
-            $checkInTrainerSession = CheckInTrainerSession::find($trainerSession[0]->current_check_in_trainer_sessions_id);
-            $checkInTrainerSession->update([
-                'check_out_time' => now()->tz('Asia/Jakarta'),
-            ]);
-            $message = 'Trainer Session Checked Out Successfully';
-        } else {
-            $data = [
-                'trainer_session_id'    => $trainerSession[0]->id,
-                'check_in_time'         => now()->tz('Asia/Jakarta'),
-                // 'pt_id'                 => $trainerSession[0]->trainer_id,
-                'user_id'               => Auth::user()->id,
-            ];
-
-            $data['pt_id']  = $trainerSession[0]->trainer_id;
-
-            CheckInTrainerSession::create($data);
-            $message = 'Trainer Session Checked In Successfully';
-        }
+        $message = $this->processTrainerSessionCheckInRequest(
+            $trainerSession[0]->id,
+            $trainerSession[0]->trainer_id
+        );
 
         return view('admin.trainer-session-check-in.member_details')->with([
             'message'           => $message,
@@ -422,5 +408,66 @@ class TrainerSessionCheckInController extends Controller
         $where = ['member_code' => $data]; // Adjust the condition based on your model
 
         return $model->where($where)->exists();
+    }
+
+    private function processTrainerSessionCheckInRequest(int $trainerSessionId, ?int $ptId): string
+    {
+        return DB::transaction(function () use ($trainerSessionId, $ptId) {
+            DB::table('trainer_sessions')
+                ->where('id', $trainerSessionId)
+                ->lockForUpdate()
+                ->first();
+
+            $now = now()->tz('Asia/Jakarta');
+            $latestCheckIn = CheckInTrainerSession::where('trainer_session_id', $trainerSessionId)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$latestCheckIn) {
+                CheckInTrainerSession::create([
+                    'trainer_session_id' => $trainerSessionId,
+                    'check_in_time' => $now,
+                    'pt_id' => $ptId,
+                    'user_id' => Auth::user()->id,
+                ]);
+
+                return 'Trainer Session Checked In Successfully';
+            }
+
+            if (!$latestCheckIn->check_out_time) {
+                if ($this->isDuplicateTrainerSessionScan($latestCheckIn->check_in_time, $now)) {
+                    return 'Duplicate scan ignored';
+                }
+
+                $latestCheckIn->update([
+                    'check_out_time' => $now,
+                ]);
+
+                return 'Trainer Session Checked Out Successfully';
+            }
+
+            if ($this->isDuplicateTrainerSessionScan($latestCheckIn->check_out_time, $now)) {
+                return 'Duplicate scan ignored';
+            }
+
+            CheckInTrainerSession::create([
+                'trainer_session_id' => $trainerSessionId,
+                'check_in_time' => $now,
+                'pt_id' => $ptId,
+                'user_id' => Auth::user()->id,
+            ]);
+
+            return 'Trainer Session Checked In Successfully';
+        });
+    }
+
+    private function isDuplicateTrainerSessionScan($timestamp, Carbon $referenceTime): bool
+    {
+        if (!$timestamp) {
+            return false;
+        }
+
+        return Carbon::parse($timestamp)->diffInSeconds($referenceTime) <= self::DUPLICATE_SCAN_WINDOW_SECONDS;
     }
 }
