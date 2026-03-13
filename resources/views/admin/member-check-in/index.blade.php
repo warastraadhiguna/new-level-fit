@@ -10,7 +10,7 @@
 <div class="modal fade bd-example-modal-sm" id="checkIn2" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
-            <form action="{{ route('member-check-in.store') }}" method="POST" enctype="multipart/form-data" autocomplete="off">
+            <form action="{{ route('member-check-in.store') }}" method="POST" enctype="multipart/form-data" autocomplete="off" id="member-check-in-form">
                 @csrf
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">Input Card Number</h1>
@@ -27,23 +27,70 @@
                         </div>
                     @endif
                     <div class="row">
-                        <input type="hidden" name="card_number">
                         <div class="col-xl-12">
                             <div class="mb-3">
                                 <p>Card Number</p>
-                                <input type="text" name="card_number" id="memberCode" class="form-control" autofocus>
+                                <input type="text" name="card_number" id="memberCardNumberInput" class="form-control" autofocus autocomplete="off">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary" id="memberCheckInSubmitButton">Submit</button>
                     <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('member-check-in-form');
+        const cardInput = document.getElementById('memberCardNumberInput');
+        const submitButton = document.getElementById('memberCheckInSubmitButton');
+
+        if (!form) {
+            return;
+        }
+
+        let isSubmitting = false;
+
+        const resetSubmitState = function() {
+            isSubmitting = false;
+
+            if (cardInput) {
+                cardInput.readOnly = false;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit';
+            }
+        };
+
+        form.addEventListener('submit', function(event) {
+            if (isSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            isSubmitting = true;
+
+            if (cardInput) {
+                cardInput.value = cardInput.value.trim();
+                cardInput.readOnly = true;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Processing...';
+            }
+        });
+
+        window.addEventListener('pageshow', resetSubmitState);
+    });
+</script>
 
 <div class="row">
     <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">

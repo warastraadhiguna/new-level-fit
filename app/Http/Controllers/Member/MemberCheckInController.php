@@ -7,12 +7,15 @@ use App\Models\Member\CheckInMember;
 use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class MemberCheckInController extends Controller
 {
+    private const DUPLICATE_SCAN_WINDOW_SECONDS = 5;
+
     public function index()
     {
         $results = DB::table('members')
@@ -92,24 +95,7 @@ class MemberCheckInController extends Controller
         $startDate      = $memberRegistration[0]->start_date;
         $expiredDate    = $memberRegistration[0]->expired_date;
 
-        $message = "";
-        if ($memberRegistration[0]->current_check_in_members_id && !$memberRegistration[0]->check_out_time) {
-            $checkInMember = CheckInMember::find($memberRegistration[0]->current_check_in_members_id);
-
-            $checkInMember->update([
-                'check_out_time' => now()->tz('Asia/Jakarta'),
-            ]);
-            $message = 'Member Checked Out Successfully';
-        } else {
-            $data = [
-                'member_registration_id' => $memberRegistration[0]->id,
-                'check_in_time' => now()->tz('Asia/Jakarta'),
-                'user_id' => Auth::user()->id,
-            ];
-
-            CheckInMember::create($data);
-            $message = 'Member Checked In Successfully';
-        }
+        $message = $this->processCheckInRequest($memberRegistration[0]->id);
 
         return view('admin.member-check-in.member_details')->with([
             'message' => $message,
@@ -251,5 +237,64 @@ class MemberCheckInController extends Controller
         } catch (\Throwable $th) {
             return redirect()->back()->with('errorr', 'Deleted Failed, please check other page where using this check in');
         }
+    }
+
+    private function processCheckInRequest(int $memberRegistrationId): string
+    {
+        return DB::transaction(function () use ($memberRegistrationId) {
+            DB::table('member_registrations')
+                ->where('id', $memberRegistrationId)
+                ->lockForUpdate()
+                ->first();
+
+            $now = now()->tz('Asia/Jakarta');
+            $latestCheckIn = CheckInMember::where('member_registration_id', $memberRegistrationId)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$latestCheckIn) {
+                CheckInMember::create([
+                    'member_registration_id' => $memberRegistrationId,
+                    'check_in_time' => $now,
+                    'user_id' => Auth::user()->id,
+                ]);
+
+                return 'Member Checked In Successfully';
+            }
+
+            if (!$latestCheckIn->check_out_time) {
+                if ($this->isDuplicateScan($latestCheckIn->check_in_time, $now)) {
+                    return 'Duplicate scan ignored';
+                }
+
+                $latestCheckIn->update([
+                    'check_out_time' => $now,
+                ]);
+
+                return 'Member Checked Out Successfully';
+            }
+
+            if ($this->isDuplicateScan($latestCheckIn->check_out_time, $now)) {
+                return 'Duplicate scan ignored';
+            }
+
+            CheckInMember::create([
+                'member_registration_id' => $memberRegistrationId,
+                'check_in_time' => $now,
+                'user_id' => Auth::user()->id,
+            ]);
+
+            return 'Member Checked In Successfully';
+        });
+    }
+
+    private function isDuplicateScan($timestamp, Carbon $referenceTime): bool
+    {
+        if (!$timestamp) {
+            return false;
+        }
+
+        return Carbon::parse($timestamp)->diffInSeconds($referenceTime) <= self::DUPLICATE_SCAN_WINDOW_SECONDS;
     }
 }

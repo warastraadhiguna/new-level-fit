@@ -246,29 +246,6 @@
     };
 </script>
 
-<script>
-    $(document).ready(function() {
-        $('#memberCode').on('input', function() {
-            var memberCode = $(this).val();
-
-            $.ajax({
-                url: '{{ route('member-check-in.store') }}',
-                method: 'POST',
-                data: {
-                    '_token': '{{ csrf_token() }}',
-                    'member_code': memberCode
-                },
-                success: function(response) {
-                    console.log(response);
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
-        });
-    });
-</script>
-
 {{-- <script>
     var loadFile = function(event) {
         var output = document.getElementById('outputEdit');
