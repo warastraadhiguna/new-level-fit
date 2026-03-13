@@ -22,9 +22,15 @@
     <!-- Page Title Here -->
     <title>{{ config('app.name') }} Management System</title>
 
+    @php
+        $currentBranchStore = Auth::user()->branchStore;
+        $adminFaviconUrl = $currentBranchStore ? $currentBranchStore->admin_favicon_url : asset('admingym/images/gym/fav-icon.png');
+        $adminLogoUrl = $currentBranchStore ? $currentBranchStore->admin_logo_url : null;
+        $adminBranchName = $currentBranchStore ? $currentBranchStore->name : config('app.name');
+    @endphp
+
     <!-- FAVICONS ICON -->
-    <link rel="shortcut icon" type="{{ asset('admingym/image/png') }}"
-        href="{{ asset('admingym/images/gym/fav-icon'. Auth::user()->branch_store_id  .'.ico') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ $adminFaviconUrl }}">
     <link href="{{ asset('admingym/vendor/wow-master/css/libs/animate.css') }}" rel="stylesheet">
     <link href="{{ asset('admingym/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link rel="stylesheet"
@@ -112,7 +118,11 @@
                             fill="white" />
                     </svg>
                 </div> --}}
-                <img src="{{ asset('LEVELFIT'. Auth::user()->branch_store_id  .'.png') }}" class="img-fluid" alt="">
+                @if ($adminLogoUrl)
+                    <img src="{{ $adminLogoUrl }}" class="img-fluid" alt="{{ $adminBranchName }}">
+                @else
+                    <span class="brand-title" style="font-size: 20px; font-weight: 700; color: #fff;">{{ $adminBranchName }}</span>
+                @endif
             </a>
 
 
