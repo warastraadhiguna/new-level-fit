@@ -110,7 +110,7 @@
                     <button type="submit" class="btn btn-primary">Update</button>
                     <div class="d-flex">
                         <button type="button" class="btn btn-secondary me-2" onclick="window.scrollTo(0, document.body.scrollHeight)">Payment</button>
-                        @if ($memberRegistration->members->status == 'sell')
+                        @if (data_get($memberRegistration, 'members.status') == 'sell')
                             <a href="{{ route('member-active.index') }}" class="btn btn-info">Back</a>
                         @else
                             <a href="{{ route('oneDayVisit') }}" class="btn btn-info">Back</a>
@@ -156,9 +156,9 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ DateFormat($memberRegistrationPayment->created_at, "DD MMMM YY H:m:s") }}</td>
                             <td>{{ formatRupiah($memberRegistrationPayment->value) }}</td>
-                            <td>{{ $memberRegistrationPayment->methodPayment->name }}</td>                            
+                            <td>{{ data_get($memberRegistrationPayment, 'methodPayment.name', '-') }}</td>                            
                             <td>{{ $memberRegistrationPayment->note }}</td>
-                            <td>{{ $memberRegistrationPayment->user->full_name }}</td>
+                            <td>{{ data_get($memberRegistrationPayment, 'user.full_name', 'Deleted user') }}</td>
                             <td>
                                 @if (Auth::user()->role == 'ADMIN')
                                     <form action="{{ route('member-registration-payment.destroy', $memberRegistrationPayment->id) }}"
