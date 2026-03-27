@@ -86,7 +86,7 @@
                             <label for="exampleFormControlInput1" class="form-label">Method Payment</label>
                             <select id="single-select10" name="method_payment_id" class="form-control">
                                 <option value="{{ $trainerSession->method_payment_id }}" selected>
-                                    {{ old('method_payment_id', $trainerSession->methodPayment->name) }}
+                                    {{ old('method_payment_id', data_get($trainerSession, 'methodPayment.name', 'Deleted method payment')) }}
                                 </option>
                                 @foreach ($methodPayment as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
@@ -170,9 +170,9 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ DateFormat($trainerSessionPayment->created_at, "DD MMMM YY H:m:s") }}</td>
                             <td>{{ formatRupiah($trainerSessionPayment->value) }}</td>
-                            <td>{{ $trainerSessionPayment->methodPayment->name }}</td>                                 
+                            <td>{{ data_get($trainerSessionPayment, 'methodPayment.name', 'Deleted method payment') }}</td>
                             <td>{{ $trainerSessionPayment->note }}</td>
-                            <td>{{ $trainerSessionPayment->user->full_name }}</td>
+                            <td>{{ data_get($trainerSessionPayment, 'user.full_name', 'Deleted user') }}</td>
                             <td>
                                 @if (Auth::user()->role == 'ADMIN')
                                     <form action="{{ route('trainer-session-payment.destroy', $trainerSessionPayment->id) }}"
