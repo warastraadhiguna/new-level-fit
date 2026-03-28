@@ -20,9 +20,9 @@
                             <label for="exampleFormControlInput1" class="form-label">Member Name</label>
                             <select id="single-select" name="member_id" class="form-control" disabled>
                                 <option value="{{ $trainerSession->member_id }}" selected>
-                                    {{ old('member_id', $trainerSession->members->full_name) }} |
-                                    {{ old('member_id', $trainerSession->members->member_code) }} |
-                                    {{ old('member_id', $trainerSession->members->phone_number) }}
+                                    {{ data_get($trainerSession, 'members.full_name', 'Deleted member') }} |
+                                    {{ data_get($trainerSession, 'members.member_code', '-') }} |
+                                    {{ data_get($trainerSession, 'members.phone_number', '-') }}
                                 </option>
                             </select>
                         </div>
@@ -48,12 +48,13 @@
                             <label for="exampleFormControlInput1" class="form-label">Trainer Package</label>
                             <select id="single-select3" name="trainer_package_id" class="form-control">
                                 <option value="{{ $trainerSession->trainer_package_id }}" selected>
-                                    {{ old('trainer_package_id', $trainerSession->trainerPackages->package_name) }} |
-                                    {{ old('trainer_package_id', formatRupiah($trainerSession->trainerPackages->package_price)) }}
+                                    {{ data_get($trainerSession, 'trainerPackages.package_name', 'Deleted trainer package') }} |
+                                    {{ formatRupiah(data_get($trainerSession, 'trainerPackages.package_price', 0)) }}
                                     |
-                                    {{ old('trainer_package_id', $trainerSession->trainerPackages->number_of_session) }}
+                                    {{ data_get($trainerSession, 'trainerPackages.number_of_session', 0) }}
                                     Session |
-                                    {{ old('trainer_package_id', $trainerSession->days) }} Days | {{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}
+                                    {{ old('trainer_package_id', $trainerSession->days) }} Days |
+                                    {{ data_get($trainerSession, 'trainerPackages.status') == 'LGT' ? 'LGT' : 'Non LGT' }}
                                 </option>
                                 @foreach ($trainerPackages as $item)
                                     <option value="{{ $item->id }}">
@@ -97,14 +98,14 @@
                     @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                         <div class="col-xl-6">
                             <div class="mb-3">
-                                <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
-                                <select id="single-select8" name="fc_id" class="form-control" required>
-                                    <option value="{{ $trainerSession->fc_id }}" selected>
-                                        {{ old('fc_id', $trainerSession->fitnessConsultants->full_name) }}
-                                    </option>
-                                    @foreach ($fitnessConsultant as $item)
-                                        <option value="{{ $item->id }}">{{ $item->full_name }}</option>
-                                    @endforeach
+                            <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
+                            <select id="single-select8" name="fc_id" class="form-control" required>
+                                <option value="{{ $trainerSession->fc_id }}" selected>
+                                        {{ data_get($trainerSession, 'fitnessConsultants.full_name', 'Deleted fitness consultant') }}
+                                </option>
+                                @foreach ($fitnessConsultant as $item)
+                                    <option value="{{ $item->id }}">{{ $item->full_name }}</option>
+                                @endforeach
                                 </select>
                             </div>
                         </div>

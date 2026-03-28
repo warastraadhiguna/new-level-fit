@@ -364,10 +364,17 @@ class TrainerSessionController extends Controller
     public function edit(string $id)
     {
         $branchId = Auth::user()->branch_store_id;
+        $trainerSession = TrainerSession::with([
+            'members',
+            'personalTrainers',
+            'trainerPackages',
+            'fitnessConsultants',
+            'methodPayment',
+        ])->findOrFail($id);
                 
         $data = [
             'title'                 => 'Edit Trainer Session',
-            'trainerSession'        => TrainerSession::find($id),
+            'trainerSession'        => $trainerSession,
             'trainerSessionPayments' => TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get(),
             'members'               => MemberRegistration::getNonExpiredList(),
             'personalTrainers'      => PersonalTrainer::where("branch_store_id", $branchId)->get(),
