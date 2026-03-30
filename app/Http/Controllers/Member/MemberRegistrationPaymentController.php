@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member\MemberRegistration;
 use App\Models\Member\MemberRegistrationPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MemberRegistrationPaymentController extends Controller
 {
@@ -17,14 +19,41 @@ class MemberRegistrationPaymentController extends Controller
             'note'  => 'required|string',
             'method_payment_id'  => 'required',
         ]);
+
         $data["user_id"] = Auth::user()->id;
-        $data["value"] = str_replace(".", "", $data["value"]);
-        if ($data["value"] + $request->value_sum > $request->price) {
-            return redirect()->back()->with('errorr', 'The value is more than price should paid!!');
+        $data["value"] = (int) str_replace(".", "", $data["value"]);
+
+        if ($data["value"] <= 0) {
+            return redirect()->back()->with('errorr', 'Payment value must be greater than zero.');
         }
 
-        MemberRegistrationPayment::create($data);
-        return redirect("member-active/". $data["member_registration_id"] ."/edit")->with('message', 'Payment  Added Successfully');
+        try {
+            DB::transaction(function () use (&$data) {
+                $memberRegistration = MemberRegistration::query()
+                    ->lockForUpdate()
+                    ->findOrFail($data["member_registration_id"]);
+
+                $price = (int) $memberRegistration->package_price + (int) $memberRegistration->admin_price;
+                $paidAmount = MemberRegistrationPayment::query()
+                    ->where('member_registration_id', $memberRegistration->id)
+                    ->lockForUpdate()
+                    ->sum('value');
+
+                if ($paidAmount >= $price) {
+                    throw new \RuntimeException('This membership has already been fully paid.');
+                }
+
+                if ($paidAmount + $data["value"] > $price) {
+                    throw new \RuntimeException('The value is more than price should paid!!');
+                }
+
+                MemberRegistrationPayment::create($data);
+            });
+        } catch (\RuntimeException $e) {
+            return redirect()->back()->with('errorr', $e->getMessage());
+        }
+
+        return redirect("member-active/". $data["member_registration_id"] ."/edit")->with('message', 'Payment Added Successfully');
     }
     public function destroy($id)
     {
