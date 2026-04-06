@@ -192,7 +192,7 @@ class TrainerSessionCheckInController extends Controller
             $message = 'PT Checked In Successfully';
         }
 
-        return view('admin.trainer-session.member_details')->with([
+        return view('admin.trainer-session-check-in.member_details')->with([
             'message'       => $message,
             'memberPhoto'   => $memberPhoto,
             'memberName'    => $memberName,

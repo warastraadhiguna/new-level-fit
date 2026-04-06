@@ -208,7 +208,7 @@ class MemberCheckInController extends Controller
             $message = 'Member Checked In Successfully';
         }
 
-        return view('admin.member-registration.member_details')->with([
+        return view('admin.member-check-in.member_details')->with([
             'message' => $message,
             'memberPhoto'   => $memberPhoto,
             'memberName'    => $memberName,
