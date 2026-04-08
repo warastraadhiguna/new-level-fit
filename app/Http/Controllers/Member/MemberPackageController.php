@@ -18,7 +18,7 @@ class MemberPackageController extends Controller
     {
         $data = [
             'title'                     => 'Member Package List',
-            'memberPackage'             => MemberPackage::with("branchStore")->get(),
+            'memberPackage'             => MemberPackage::with(['branchStore', 'users'])->get(),
             'memberPackageType'         => MemberPackageType::get(),
             'memberPackageCategories'   => MemberPackageCategory::get(),
             'users'                     => User::get(),
@@ -70,7 +70,7 @@ class MemberPackageController extends Controller
     {
         $data = [
             'title'             => 'Old Member Package',
-            'memberPackages'    => MemberPackage::onlyTrashed()->get(),
+            'memberPackages'    => MemberPackage::onlyTrashed()->with(['branchStore', 'users'])->get(),
             'content'           => 'admin/member-package/soft'
         ];
 
