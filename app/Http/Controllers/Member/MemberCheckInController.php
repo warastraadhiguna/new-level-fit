@@ -21,6 +21,7 @@ class MemberCheckInController extends Controller
         $results = DB::table('members')
             ->select(
                 'cim.id as cim_id',
+                'members.member_code',
                 'members.id as member_id',
                 'members.full_name as member_name',
                 'cim.check_in_time',

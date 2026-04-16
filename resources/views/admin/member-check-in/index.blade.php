@@ -99,6 +99,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
+                        <th>Member Code</th>
                         <th>Member Name</th>
                         <th>Branch</th>
                         <th>Check In Time</th>
@@ -109,6 +110,7 @@
                     @foreach ($results as $item)
                         <tr>
                             <td>{{  $loop->iteration }}</td>
+                            <td>{{ $item->member_code ?? '-' }}</td>
                             <td>{{ $item->member_name }}</td>
                             <td>{{ $item->branch_store_name }}</td>
                             <td>{{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}</td>
