@@ -439,69 +439,51 @@ class TrainerSessionController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $fc = Auth::user()->id;
-        $trainerSession = DB::table('trainer_sessions as a')
-            ->select(
-                'a.id',
-                'a.start_date',
-                'a.description',
-                'a.days'
-            )
-            ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-            )
-            ->join('members as b', 'a.member_id', '=', 'b.id')
-            ->where('a.id', $id)
-            ->first();
-
-        $item = TrainerSession::find($id);
+        $item = TrainerSession::findOrFail($id);
         $data = $request->validate([
             'start_date'            => 'nullable',
             'expired_date'          => 'nullable',
             'description'           => 'nullable',
-            'trainer_package_id'    => 'required',
-            'trainer_id'            => 'nullable',
-            'method_payment_id'     => 'nullable',
-            'fc_id'                 => 'nullable',             
+            'trainer_package_id'    => 'required|exists:trainer_packages,id',
+            'trainer_id'            => 'nullable|exists:personal_trainers,id',
+            'method_payment_id'     => 'nullable|exists:method_payments,id',
+            'fc_id'                 => 'nullable|exists:users,id',
         ]);
         $data['user_id'] = Auth::user()->id;
         $data['branch_store_id'] = Auth::user()->branch_store_id;       
 
-        $selectedPackage = TrainerPackage::find($data["trainer_package_id"]);
+        $selectedPackage = TrainerPackage::findOrFail($data["trainer_package_id"]);
         $currentPackage = TrainerPackage::find($item->trainer_package_id);
+        $data['trainer_id'] = $data['trainer_id'] ?: null;
+        $data['start_date'] = $data['start_date'] ?: null;
 
-        $startTime = date('H:i:s', strtotime('00:00:00'));
-        $data['start_date'] = $data['start_date'] . ' ' .  $startTime;
-        $dateTime = new \DateTime($data['start_date']);
-        $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
-
-        if ($selectedPackage->id !== $currentPackage->id) {
+        if (!$currentPackage || $selectedPackage->id !== $currentPackage->id) {
             $data['days'] = $selectedPackage->days;
             $data['package_price'] = $selectedPackage->package_price;
             $data['admin_price'] = $selectedPackage->admin_price;
             $data['number_of_session'] = $selectedPackage->number_of_session;
         }
 
-        $expiredTime = date('H:i:s', strtotime('00:00:00'));
-        $expiredDateString = $request->input('expired_date');
-        $data['expired_date'] = Carbon::parse($expiredDateString)->format('Y-m-d') . ' ' . $expiredTime;
-        // dd($data['expired_date']);
-        if ($data['expired_date'] !== $trainerSession->expired_date) {
+        if ($data['start_date']) {
+            $startTime = date('H:i:s', strtotime('00:00:00'));
+            $data['start_date'] = $data['start_date'] . ' ' .  $startTime;
+            $dateTime = new \DateTime($data['start_date']);
+            $data['start_date'] = $dateTime->format('Y-m-d H:i:s');
 
-            $expiredDate = new \DateTime($request->input('expired_date'));
-            $daysDifference = $expiredDate->diff($dateTime)->days;
-            $data['days'] =  $daysDifference;
-
-            // $expiredDate = $dateTime->modify('+' . $selectedPackage->days . ' days');
-            // $data['expired_date'] = $expiredDate->format('Y-m-d' . ' ' . $expiredTime);
-            // dd($data['expired_date']);
+            if ($request->filled('expired_date')) {
+                $expiredDate = new \DateTime($request->input('expired_date'));
+                $data['days'] = $expiredDate->diff($dateTime)->days;
+            }
         }
 
-        unset($expiredTime);
-        unset($startTime);
         unset($data['expired_date']);
 
         $item->update($data);
+
+        if (!$data['trainer_id'] || !$data['start_date']) {
+            return redirect()->route('trainer-session-waiting-list')->with('success', 'Trainer Session Updated Successfully');
+        }
+
         return redirect()->route('trainer-session.index')->with('success', 'Trainer Session Updated Successfully');
     }
 

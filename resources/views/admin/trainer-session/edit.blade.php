@@ -29,12 +29,19 @@
                     </div>
                     <div class="col-xl-6">
                         <div class="mb-3">
-                            <label for="exampleFormControlInput1" class="form-label">Trainer Name</label>
+                            <label for="exampleFormControlInput1" class="form-label">
+                                Trainer Name <small class="text-muted">(If left empty, this session will go to the Waiting List.)</small>
+                            </label>
                             <select id="single-select2" name="trainer_id" class="form-control">
-                                <option value="{{ $trainerSession->trainer_id }}" selected>
-                                    {{ old('trainer_id', $trainerSession->personalTrainers?$trainerSession->personalTrainers->full_name : "-") }} |
-                                    {{ old('trainer_id', $trainerSession->personalTrainers? $trainerSession->personalTrainers->phone_number: "-") }}
+                                <option value="" {{ old('trainer_id', $trainerSession->trainer_id) ? '' : 'selected' }}>
+                                    <- No trainer yet (Waiting List) ->
                                 </option>
+                                @if ($trainerSession->trainer_id)
+                                    <option value="{{ $trainerSession->trainer_id }}" {{ old('trainer_id', $trainerSession->trainer_id) == $trainerSession->trainer_id ? 'selected' : '' }}>
+                                        {{ $trainerSession->personalTrainers ? $trainerSession->personalTrainers->full_name : "-" }} |
+                                        {{ $trainerSession->personalTrainers ? $trainerSession->personalTrainers->phone_number : "-" }}
+                                    </option>
+                                @endif
                                 @foreach ($personalTrainers as $item)
                                     <option value="{{ $item->id }}">
                                         {{ $item->full_name }} | {{ $item->phone_number }}
@@ -68,18 +75,22 @@
                     </div>
                     <div class="col-xl-6" id="parentInput1">
                         <div class="mb-3">
-                            <label class="form-label">Start Date</label>
+                            <label class="form-label">
+                                Start Date <small class="text-muted">(If left empty, this session will go to the Waiting List.)</small>
+                            </label>
                             <input type="text" name="start_date" id="input1"
                                 value="{{ old('start_date', $trainerSession->start_date? DateFormat($trainerSession->start_date, 'DD MMMM YYYY') : "") }}"
-                                class="form-control mdate-custom" required>
+                                class="form-control mdate-custom" placeholder="Choose start date">
                         </div>
                     </div>
                     <div class="col-xl-6" id="parentInput2">
                         <div class="mb-3">
-                            <label class="form-label">Expired Date </label>
+                            <label class="form-label">
+                                Expired Date <small class="text-muted">(Required only when Start Date is filled.)</small>
+                            </label>
                             <input type="text" name="expired_date" id="input2"
-                                value="{{ old('expired_date', DateFormat(ConvertToDate($trainerSession->start_date)->addDays($trainerSession->days), 'DD MMMM YYYY')) }}"
-                                class="form-control mdate-custom" required autocomplete="off">
+                                value="{{ old('expired_date', $trainerSession->start_date ? DateFormat(ConvertToDate($trainerSession->start_date)->addDays($trainerSession->days), 'DD MMMM YYYY') : '') }}"
+                                class="form-control mdate-custom" autocomplete="off">
                         </div>
                     </div>
                     <div class="col-xl-6">

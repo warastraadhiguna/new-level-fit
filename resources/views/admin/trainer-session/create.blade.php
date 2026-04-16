@@ -32,7 +32,9 @@
                     </div>
                     <div class="col-xl-6">
                         <div class="mb-3">
-                            <label for="exampleFormControlInput1" class="form-label">Trainer Name</label>
+                            <label for="exampleFormControlInput1" class="form-label">
+                                Trainer Name <small class="text-muted">(If left empty, this session will go to the Waiting List.)</small>
+                            </label>
                             <select id="single-select6" name="trainer_id" class="form-control">
                                 <option disabled selected value>
                                     <- Choose ->
@@ -64,7 +66,9 @@
                     </div>
                     <div class="col-xl-6">
                         <div class="mb-3">
-                            <label class="form-label">Start Date</label>
+                            <label class="form-label">
+                                Start Date <small class="text-muted">(If left empty, this session will go to the Waiting List.)</small>
+                            </label>
                             <input type="text" name="start_date" value="{{ old('start_date') }}"
                                 class="form-control editDate mdate-custom3" placeholder="Choose start date">
                         </div>
