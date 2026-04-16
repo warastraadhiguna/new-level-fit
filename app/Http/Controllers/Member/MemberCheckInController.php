@@ -143,6 +143,8 @@ class MemberCheckInController extends Controller
                 'c.package_name',
                 'c.days',
                 'c.package_price',
+                'c.is_all_club',
+                'c.branch_store_id as member_package_branch_store_id',
                 'e.name as method_payment_name',
                 'f.full_name as staff_name',
                 'h.id as current_check_in_members_id',
@@ -162,6 +164,14 @@ class MemberCheckInController extends Controller
             ->where('a.id', $id)
             ->whereRaw('NOW() <= DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->first();
+
+        if (!$memberRegistration) {
+            return redirect()->back()->with('error', 'Member active not found or has ended');
+        }
+
+        if ($memberRegistration->is_all_club == '0' && $memberRegistration->member_package_branch_store_id != Auth::user()->branch_store_id) {
+            return redirect()->back()->with('errorr', $memberRegistration->member_name . ' hanya bisa one club saja!!');
+        }
 
         $memberPhoto    = $memberRegistration->photos;
         $memberName     = $memberRegistration->member_name;
@@ -184,10 +194,6 @@ class MemberCheckInController extends Controller
         // $member->update([
         //     "id_code_count" => $member->id_code_count++
         // ]);
-
-        if (!$memberRegistration) {
-            return redirect()->back()->with('error', 'Member active not found or has ended');
-        }
 
         $message = "";
         if ($memberRegistration->current_check_in_members_id && !$memberRegistration->check_out_time) {
