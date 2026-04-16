@@ -67,7 +67,7 @@ class MemberRegistration extends Model
         return $this->hasMany(LeaveDay::class);
     }
 
-    public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = "no")
+    public static function getActiveList($card_number = "", $member_id = "", $isUnpaidMember = "no", $branchStoreId = "")
     {
         $defaultSql = "NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY) AND mbr_reg.days > 1";
         //ini karena nando sudah ngaco. jadi aku juga mau pakai untuk yang belum bayar. tapi masalahnya ternyata ini untuk
@@ -129,7 +129,9 @@ class MemberRegistration extends Model
             . ($isUnpaidMember == "yes"? " IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
             ($isUnpaidMember == "no"? " $defaultSql AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)" :  $defaultSql))
 
-            . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($member_id ? " and mbr.id='$member_id' " : '') .  "
+            . ($card_number ? " and mbr.card_number='$card_number' " : '')
+            . ($member_id ? " and mbr.id='$member_id' " : '')
+            . ($branchStoreId ? " and mbr.branch_store_id=" . (int) $branchStoreId . " " : '') .  "
             order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);
 
