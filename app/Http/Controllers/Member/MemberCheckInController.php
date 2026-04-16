@@ -26,11 +26,12 @@ class MemberCheckInController extends Controller
                 'members.full_name as member_name',
                 'cim.check_in_time',
                 'cim.check_out_time',
-                'branch_stores.name as branch_store_name'
+                DB::raw('COALESCE(check_in_branch.name, member_branch.name) as branch_store_name')
             )
             ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
             ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-            ->join('branch_stores', 'members.branch_store_id', '=', 'branch_stores.id')
+            ->leftJoin('branch_stores as check_in_branch', 'cim.branch_store_id', '=', 'check_in_branch.id')
+            ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', NowDate())
             ->whereDate('cim.check_in_time', '<=', NowDate())
             ->orderBy('cim.check_in_time', 'desc') 
@@ -201,6 +202,7 @@ class MemberCheckInController extends Controller
 
             $data = [
                 'member_registration_id' => $memberRegistration->id,
+                'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => now()->tz('Asia/Jakarta'),
                 'user_id' => Auth::user()->id,
             ];
@@ -257,6 +259,7 @@ class MemberCheckInController extends Controller
             if (!$latestCheckIn) {
                 CheckInMember::create([
                     'member_registration_id' => $memberRegistrationId,
+                    'branch_store_id' => Auth::user()->branch_store_id,
                     'check_in_time' => $now,
                     'user_id' => Auth::user()->id,
                 ]);
@@ -282,6 +285,7 @@ class MemberCheckInController extends Controller
 
             CheckInMember::create([
                 'member_registration_id' => $memberRegistrationId,
+                'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => $now,
                 'user_id' => Auth::user()->id,
             ]);

@@ -30,15 +30,16 @@ class TrainerSessionCheckInController extends Controller
                 'tp.package_name',
                 'cits.check_in_time',
                 'cits.check_out_time',
-                'branch_stores.name as branch_store_name'
+                DB::raw('COALESCE(check_in_branch.name, session_branch.name) as branch_store_name')
             )
             ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
             ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
             ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
-            ->join('branch_stores', 'ts.branch_store_id', '=', 'branch_stores.id')
+            ->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
+            ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
             ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [NowDate(), NowDate()])
-            ->where('ts.branch_store_id', Auth::user()->branch_store_id)
+            ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [Auth::user()->branch_store_id])
             ->orderBy('cits.check_in_time', 'desc')             
             ->paginate(10);
                     
@@ -184,6 +185,7 @@ class TrainerSessionCheckInController extends Controller
         } else {
             $data = [
                 'trainer_session_id'    => $trainerSession[0]->id,
+                'branch_store_id'       => Auth::user()->branch_store_id,
                 'check_in_time'         => now()->tz('Asia/Jakarta'),
                 'user_id'               => Auth::user()->id,
             ];
@@ -277,6 +279,7 @@ class TrainerSessionCheckInController extends Controller
         } else {
             $data = [
                 'trainer_session_id' => $trainerSession[0]->id,
+                'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => now()->tz('Asia/Jakarta'),
                 'user_id' => Auth::user()->id,
             ];
@@ -362,6 +365,7 @@ class TrainerSessionCheckInController extends Controller
         } else {
             $data = [
                 'trainer_session_id'    => $trainerSession[0]->id,
+                'branch_store_id'       => Auth::user()->branch_store_id,
                 'check_in_time'         => now()->tz('Asia/Jakarta'),
                 'user_id'               => Auth::user()->id,
             ];
@@ -427,6 +431,7 @@ class TrainerSessionCheckInController extends Controller
             if (!$latestCheckIn) {
                 CheckInTrainerSession::create([
                     'trainer_session_id' => $trainerSessionId,
+                    'branch_store_id' => Auth::user()->branch_store_id,
                     'check_in_time' => $now,
                     'pt_id' => $ptId,
                     'user_id' => Auth::user()->id,
@@ -453,6 +458,7 @@ class TrainerSessionCheckInController extends Controller
 
             CheckInTrainerSession::create([
                 'trainer_session_id' => $trainerSessionId,
+                'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => $now,
                 'pt_id' => $ptId,
                 'user_id' => Auth::user()->id,

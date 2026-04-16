@@ -13,6 +13,7 @@ class CheckInTrainerSession extends Model
 
     protected $fillable = [
         'trainer_session_id',
+        'branch_store_id',
         'check_in_time',
         'check_out_time',
         'duration',
