@@ -43,6 +43,7 @@ class MemberRegistrationController extends Controller
 
         $memberRegistrations = MemberRegistration::getActiveListPaginated($search, $perPage, $sort, $direction)
             ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
+        $birthdayMemberRegistrations = MemberRegistration::getActiveList("", "", "no", Auth::user()->branch_store_id);
 
         $birthdayMessages = [
             0 => [],
@@ -50,7 +51,7 @@ class MemberRegistrationController extends Controller
             2 => [],
         ];
 
-        foreach ($memberRegistrations as $memberRegistration) {
+        foreach ($birthdayMemberRegistrations as $memberRegistration) {
             $diff = BirthdayDiff($memberRegistration->born);
             if ($diff >= 0 && $diff <= 2) {
                 $birthdayMessages[$diff][$memberRegistration->member_id] = $memberRegistration->member_name;
