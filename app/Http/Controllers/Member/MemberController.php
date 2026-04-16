@@ -26,10 +26,24 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MemberController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $fromDate   = Request()->input('fromDate');
         $toDate     = Request()->input('toDate');
+        $search     = trim((string) $request->input('search', ''));
+        $perPage    = (int) $request->input('per_page', 10);
+        $perPage    = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+        $sort       = (string) $request->input('sort', 'created_at');
+        $direction  = strtolower((string) $request->input('direction', 'desc')) == 'asc' ? 'asc' : 'desc';
+        $sortableColumns = [
+            'full_name' => 'a.full_name',
+            'member_code' => 'a.member_code',
+            'branch' => 'branch_stores.name',
+            'phone_number' => 'a.phone_number',
+            'born' => 'a.born',
+            'created_at' => 'a.created_at',
+        ];
+        $sortColumn = $sortableColumns[$sort] ?? 'a.created_at';
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
@@ -69,13 +83,28 @@ class MemberController extends Controller
             )
             ->join("branch_stores", "branch_store_id", "=", "branch_stores.id")
             ->where('a.status', '=', 'sell')
-            ->orderBy('a.created_at', 'desc')
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('a.full_name', 'like', "%{$search}%")
+                        ->orWhere('a.nickname', 'like', "%{$search}%")
+                        ->orWhere('a.member_code', 'like', "%{$search}%")
+                        ->orWhere('a.card_number', 'like', "%{$search}%")
+                        ->orWhere('a.phone_number', 'like', "%{$search}%")
+                        ->orWhere('branch_stores.name', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortColumn, $direction)
             ->orderBy('a.updated_at', 'desc')
-            ->get();
+            ->paginate($perPage)
+            ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
 
         $data = [
             'title'             => 'Member List',
             'members'           => $sell,
+            'search'            => $search,
+            'perPage'           => $perPage,
+            'sort'              => $sort,
+            'direction'         => $direction,
             // 'users'             => User::get(),
             'content'           => 'admin/members/index'
         ];
