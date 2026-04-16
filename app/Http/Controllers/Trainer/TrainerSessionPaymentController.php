@@ -22,6 +22,11 @@ class TrainerSessionPaymentController extends Controller
         ]);
         $data["user_id"] = Auth::user()->id;
         $data["value"] = (int) str_replace(".", "", $data["value"]);
+        $data["note"] = trim($data["note"]);
+
+        if ($data["note"] === '') {
+            return redirect()->back()->withInput()->withErrors(['note' => 'The note field is required.']);
+        }
 
         if ($data["value"] <= 0) {
             return redirect()->back()->with('errorr', 'Payment value must be greater than 0');

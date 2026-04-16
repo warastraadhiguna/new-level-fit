@@ -127,7 +127,7 @@ class MemberRegistration extends Model
             where mbr_reg.id > 0 AND "
             //--maaf ini akal2an untuk kasus nando di atas
             . ($isUnpaidMember == "yes"? " IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)" : 
-            ($isUnpaidMember == "no"? " $defaultSql AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)" :  $defaultSql))
+            ($isUnpaidMember == "no"? " $defaultSql AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price)" :  $defaultSql))
 
             . ($card_number ? " and mbr.card_number='$card_number' " : '')
             . ($member_id ? " and mbr.id='$member_id' " : '')
@@ -199,7 +199,7 @@ class MemberRegistration extends Model
             where mbr_reg.id > 0
             AND NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY)
             AND mbr_reg.days > 1
-            AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) = (mbr_reg.package_price + mbr_reg.admin_price)"
+            AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price)"
             . ($branchStoreId ? " and mbr.branch_store_id=" . (int) $branchStoreId . " " : '');
 
         $query = DB::query()->fromSub($baseSql, "active_members");

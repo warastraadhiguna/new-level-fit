@@ -58,21 +58,8 @@
                                         <span class="badge badge-danger badge-lg">Expired</span>
                                     </td>
                                     <td class="btn-group-vertical">
-                                        @if (Auth::user()->role == 'ADMIN')
-                                            <a href="{{ route('trainer-session.edit', $item->ts_id) }}"
-                                                class="btn light btn-warning btn-xs mb-1">Edit</a>
-                                        @endif
                                         <a href="{{ route('trainer-session.show', $item->ts_id) }}"
                                             class="btn light btn-info btn-xs mb-1">Detail</a>
-                                        @if (Auth::user()->role == 'ADMIN')
-                                            <form action="{{ route('trainer-session.destroy', $item->ts_id) }}"
-                                                onclick="return confirm('Delete Data ?')" method="POST">
-                                                @method('delete')
-                                                @csrf
-                                                <button type="submit"
-                                                    class="btn light btn-danger btn-xs mb-1 btn-block">Delete</button>
-                                            </form>
-                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

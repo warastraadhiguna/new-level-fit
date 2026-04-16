@@ -223,7 +223,7 @@
                                 <input type="hidden" name="value_sum" value="{{  $memberRegistrationPayments->sum('value')}}">
                                 <input type="hidden" name="price" value="{{  $memberRegistration->package_price+ $memberRegistration->admin_price}}">
                                 <input type="text" name="note" placeholder="Note..."    class="form-control"
-                                    autocomplete="off" >
+                                    autocomplete="off" required>
                             </div>
                         </div>                        
                     </div>

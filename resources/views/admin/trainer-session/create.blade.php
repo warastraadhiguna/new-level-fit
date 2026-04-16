@@ -1,7 +1,7 @@
 <div class="row mt-4" id="trainerSessionForm">
     <div class="card">
         <div class="card-body">
-            <form action="{{ route('trainer-session.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('trainer-session.store') }}" method="POST" enctype="multipart/form-data" id="trainerSessionCreateForm">
                 @csrf
                 <h3>Create Trainer Session</h3>
                 @if ($errors->any())
@@ -55,7 +55,10 @@
                                     <- Choose ->
                                 </option>
                                 @foreach ($trainerPackages as $item)
-                                    <option value="{{ $item->id }}" data-session="{{ $item->number_of_session }}">
+                                    <option value="{{ $item->id }}"
+                                        data-session="{{ $item->number_of_session }}"
+                                        data-package-price="{{ $item->package_price }}"
+                                        data-admin-price="{{ $item->admin_price }}">
                                         {{ $item->package_name }} |
                                         {{ formatRupiah($item->package_price) }} |
                                         {{ $item->number_of_session }} Sessions | {{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}
@@ -130,7 +133,12 @@
     </div>
 </div>
 <script>
-  const input = document.getElementById('first_payment');
+  (function() {
+  const input = document.querySelector('input[name="first_payment"]');
+
+  if (!input) {
+    return;
+  }
 
   input.addEventListener('input', function(e) {
     // Ambil nilai input
@@ -160,4 +168,28 @@
     // Set value input ke format yang sudah diubah
     e.target.value = formatted;
   });
+
+  const trainerSessionCreateForm = document.getElementById('trainerSessionCreateForm');
+
+  if (!trainerSessionCreateForm) {
+    return;
+  }
+
+  trainerSessionCreateForm.addEventListener('submit', function(e) {
+    const trainerPackage = trainerSessionCreateForm.querySelector('select[name="trainer_package_id"]');
+    const selectedPackage = trainerPackage ? trainerPackage.options[trainerPackage.selectedIndex] : null;
+    const firstPayment = parseInt((input.value || '').replace(/\D/g, ''), 10) || 0;
+    const packagePrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-package-price') || 0 : 0, 10);
+    const adminPrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-admin-price') || 0 : 0, 10);
+    const totalPrice = packagePrice + adminPrice;
+
+    if (totalPrice > 0 && firstPayment > totalPrice) {
+      const confirmed = confirm('The first payment is higher than the package price plus admin fee. Are you sure you want to continue?');
+
+      if (!confirmed) {
+        e.preventDefault();
+      }
+    }
+  });
+  })();
 </script>

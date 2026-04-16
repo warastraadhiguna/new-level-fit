@@ -2,9 +2,10 @@
     <div class="card">
         <div class="card-body">
             <form action="{{ route('renewMemberRegistration', $memberRegistration->id) }}" method="POST"
-                enctype="multipart/form-data">
+                enctype="multipart/form-data" id="memberRenewalForm">
                 {{-- @method('PUT') --}}
                 @csrf
+                <h3 class="mb-4">Renewal Member Expired</h3>
                 <div class="modal-body">
                     @if ($errors->any())
                         <div class="alert alert-danger">
@@ -135,7 +136,9 @@
                                         <- Choose ->
                                     </option>
                                     @foreach ($memberPackage as $item)
-                                        <option value="{{ $item->id }}">{{ $item->package_name }} |
+                                        <option value="{{ $item->id }}"
+                                            data-package-price="{{ $item->package_price }}"
+                                            data-admin-price="{{ $item->admin_price }}">{{ $item->package_name }} |
                                             {{ $item->days }} Days |
                                             {{ formatRupiah($item->package_price) }} |
                                             {{ formatRupiah($item->admin_price) }}</option>
@@ -208,3 +211,44 @@
         </div>
     </div>
 </div>
+<script>
+    (function() {
+    const memberRenewalForm = document.getElementById('memberRenewalForm');
+
+    if (!memberRenewalForm) {
+        return;
+    }
+
+    const firstPaymentInput = memberRenewalForm.querySelector('input[name="first_payment"]');
+
+    function formatThousands(value) {
+        const numbersOnly = (value || '').replace(/\D/g, '');
+        return numbersOnly.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    if (firstPaymentInput) {
+        firstPaymentInput.value = formatThousands(firstPaymentInput.value);
+
+        firstPaymentInput.addEventListener('input', function(e) {
+            e.target.value = formatThousands(e.target.value);
+        });
+    }
+
+    memberRenewalForm.addEventListener('submit', function(e) {
+        const memberPackage = memberRenewalForm.querySelector('select[name="member_package_id"]');
+        const selectedPackage = memberPackage ? memberPackage.options[memberPackage.selectedIndex] : null;
+        const firstPayment = parseInt(((firstPaymentInput ? firstPaymentInput.value : '') || '').replace(/\D/g, ''), 10) || 0;
+        const packagePrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-package-price') || 0 : 0, 10);
+        const adminPrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-admin-price') || 0 : 0, 10);
+        const totalPrice = packagePrice + adminPrice;
+
+        if (totalPrice > 0 && firstPayment > totalPrice) {
+            const confirmed = confirm('The first payment is higher than the package price plus admin fee. Are you sure you want to continue?');
+
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        }
+    });
+    })();
+</script>

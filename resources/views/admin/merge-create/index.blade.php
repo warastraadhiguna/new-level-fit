@@ -176,7 +176,10 @@
                                     <- Choose ->
                                 </option>
                                 @foreach ($memberPackage as $item)
-                                    <option value="{{ $item->id }}" {{ old('member_package_id') == $item->id ? 'selected' : '' }}>{{ $item->package_name }} |
+                                    <option value="{{ $item->id }}"
+                                        data-package-price="{{ $item->package_price }}"
+                                        data-admin-price="{{ $item->admin_price }}"
+                                        {{ old('member_package_id') == $item->id ? 'selected' : '' }}>{{ $item->package_name }} |
                                         {{ $item->days }} Days |
                                         {{ formatRupiah($item->package_price) }} |
                                         {{ formatRupiah($item->admin_price) }}</option>
@@ -250,7 +253,12 @@
     });
 </script> --}}
 <script>
-  const input = document.getElementById('first_payment');
+  (function() {
+  const input = document.querySelector('input[name="first_payment"]');
+
+  if (!input) {
+    return;
+  }
 
   input.addEventListener('input', function(e) {
     // Ambil nilai input
@@ -280,4 +288,35 @@
     // Set value input ke format yang sudah diubah
     e.target.value = formatted;
   });
+
+  const addMemberForm = document.getElementById('addMemberForm');
+
+  if (!addMemberForm) {
+    return;
+  }
+
+  addMemberForm.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  });
+
+  addMemberForm.addEventListener('submit', function(e) {
+    const status = addMemberForm.querySelector('input[name="status"]:checked');
+    const memberPackage = addMemberForm.querySelector('select[name="member_package_id"]');
+    const selectedPackage = memberPackage ? memberPackage.options[memberPackage.selectedIndex] : null;
+    const firstPayment = parseInt((input.value || '').replace(/\D/g, ''), 10) || 0;
+    const packagePrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-package-price') || 0 : 0, 10);
+    const adminPrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-admin-price') || 0 : 0, 10);
+    const totalPrice = packagePrice + adminPrice;
+
+    if (status && status.value === 'sell' && totalPrice > 0 && firstPayment > totalPrice) {
+      const confirmed = confirm('The first payment is higher than the package price plus admin fee. Are you sure you want to continue?');
+
+      if (!confirmed) {
+        e.preventDefault();
+      }
+    }
+  });
+  })();
 </script>

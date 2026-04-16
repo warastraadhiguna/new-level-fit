@@ -335,19 +335,13 @@ class MemberRegistrationController extends Controller
                 ])));
 
                 $firstPayment = str_replace(".", "", $request->first_payment);
-                if ($package->package_price + $package->admin_price < $firstPayment) {
-                    DB::rollback();
-
-                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
-                } else {
-                    MemberRegistrationPayment::create([
-                        "member_registration_id" =>  $newMemberRegistration->id,
-                        "user_id" =>  Auth::user()->id,
-                        "value" =>  $firstPayment,
-                        "note" =>  "First Payment",
-                        "method_payment_id" => $data["method_payment_id"]
-                    ]);
-                }
+                MemberRegistrationPayment::create([
+                    "member_registration_id" =>  $newMemberRegistration->id,
+                    "user_id" =>  Auth::user()->id,
+                    "value" =>  $firstPayment,
+                    "note" =>  "First Payment",
+                    "method_payment_id" => $data["method_payment_id"]
+                ]);
 
             } elseif ($request->status == 'one_day_visit') {
                 $data += $request->validate([
@@ -595,67 +589,26 @@ class MemberRegistrationController extends Controller
 
     public function edit(string $id)
     {
-        $mr = MemberRegistration::find($id);
-        $branchId = Auth::user()->branch_store_id;
-        $status = $mr->members->status;
+        $mr = MemberRegistration::with('members')->find($id);
+        if (!$mr) {
+            return redirect()->route('member-active.index')->with('errorr', 'Member Registration not found');
+        }
 
-        if ($status == "one_day_visit") {
-            $memberActive = DB::table('member_registrations as a')
-                ->select(
-                    'a.id',
-                    'a.start_date',
-                    'a.description',
-                    'a.days as member_registration_days',
-                    'a.old_days',
-                    'a.package_price as mr_package_price',
-                    'a.admin_price as mr_admin_price',
-                    'b.full_name as member_name',
-                    'b.address',
-                    'b.member_code',
-                    'b.phone_number',
-                    'b.photos',
-                    'b.gender',
-                    'b.nickname',
-                    'b.ig',
-                    'b.emergency_contact',
-                    'b.email',
-                    'b.born',
-                    'c.id as member_package_id',
-                    'c.package_name',
-                    'c.days',
-                    'c.package_price',
-                    'c.admin_price',
-                    'e.id as method_payment_id',
-                    'e.name as method_payment_name',
-                    'f.full_name as staff_name'
-                )
-                ->addSelect(
-                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                    DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as status')
-                )
-                ->join('members as b', 'a.member_id', '=', 'b.id')
-                ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
-                ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
-                ->join('users as f', 'a.user_id', '=', 'f.id')
-                ->where('a.id', $id)
-                ->get();
-        } else {
-            $memberActive = MemberRegistration::getActiveListById("", $id);
-            // dd("Member Active");
-            if (!$memberActive) {
-                $memberActive = MemberRegistration::getNewPendingListById("", $id);
-            }
-            // dd("Member Pending");
+        $branchId = Auth::user()->branch_store_id;
+        $memberActive = $this->getMemberRegistrationEditDetail($id);
+
+        if (!$memberActive) {
+            return redirect()->route('member-active.index')->with('errorr', 'Member Registration detail not found');
         }
 
         $memberRegistrationPayments = MemberRegistrationPayment::with("user", "methodPayment")->where("member_registration_id", $id)->get();
 
         $data = [
             'title'                 => 'Edit Member Active',
-            'memberRegistration'    => MemberRegistration::find($id),
+            'memberRegistration'    => $mr,
             // 'memberRegistrations'   => $memberActive->first(),
             'memberRegistrationPayments' => $memberRegistrationPayments,
-            'memberRegistrations'   => $memberActive[0],
+            'memberRegistrations'   => $memberActive,
             'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'         => MethodPayment::get(),
             'users'                 => User::where('role', 'FC')->get(),
@@ -663,6 +616,64 @@ class MemberRegistrationController extends Controller
         ];
 
         return view('admin.layouts.wrapper', $data);
+    }
+
+    private function getMemberRegistrationEditDetail(string $id)
+    {
+        return DB::table('member_registrations as a')
+            ->select(
+                'a.id',
+                'a.start_date',
+                'a.description',
+                'a.days as member_registration_days',
+                'a.old_days',
+                'a.package_price as mr_package_price',
+                'a.admin_price as mr_admin_price',
+                'a.fc_id',
+                'b.id as member_id',
+                'b.full_name as member_name',
+                'b.address',
+                'b.member_code',
+                'b.phone_number',
+                'b.photos',
+                'b.gender',
+                'b.nickname',
+                'b.ig',
+                'b.emergency_contact',
+                'b.email',
+                'b.born',
+                'b.card_number',
+                'c.id as member_package_id',
+                'c.package_name',
+                'c.days',
+                'c.package_price',
+                'c.admin_price',
+                'e.id as method_payment_id',
+                'e.name as method_payment_name',
+                DB::raw('COALESCE(fc.full_name, creator.full_name, "Deleted user") as staff_name'),
+                'h.check_in_time',
+                'h.check_out_time'
+            )
+            ->addSelect(
+                DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(leave_days_view.total_days, 0)) DAY) as expired_date'),
+                DB::raw('CASE
+                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(leave_days_view.total_days, 0)) DAY) THEN "Over"
+                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(leave_days_view.total_days, 0)) DAY) THEN "Running"
+                    ELSE "Not Started"
+                END as status')
+            )
+            ->join('members as b', 'a.member_id', '=', 'b.id')
+            ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
+            ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
+            ->leftJoin('users as creator', 'a.user_id', '=', 'creator.id')
+            ->leftJoin('users as fc', 'a.fc_id', '=', 'fc.id')
+            ->leftJoin(DB::raw('(select cim1.member_registration_id, cim1.check_in_time, cim1.check_out_time
+                from check_in_members cim1
+                inner join (select max(id) as max_id from check_in_members group by member_registration_id) cim2 on cim1.id = cim2.max_id
+            ) as h'), 'a.id', '=', 'h.member_registration_id')
+            ->leftJoin(DB::raw('(select member_registration_id, sum(days) as total_days from leave_days group by member_registration_id) as leave_days_view'), 'a.id', '=', 'leave_days_view.member_registration_id')
+            ->where('a.id', $id)
+            ->first();
     }
 
     public function update(Request $request, string $id)
@@ -732,7 +743,7 @@ class MemberRegistrationController extends Controller
         $branchId = Auth::user()->branch_store_id;
                 
         $data = [
-            'title'                 => 'Renewal Member Active',
+            'title'                 => 'Renewal Member Expired',
             'memberRegistration'    => MemberRegistration::find($id),
             'members'               => Member::get(),
             'memberLastCode'        => Member::latest('id')->first(),
@@ -851,19 +862,13 @@ class MemberRegistrationController extends Controller
                 $newMemberRegistration = MemberRegistration::create($data);
 
                 $firstPayment = str_replace(".", "", $request->first_payment);
-                if ($package->package_price + $package->admin_price < $firstPayment) {
-                    DB::rollback();
-
-                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
-                } else {
-                    MemberRegistrationPayment::create([
-                        "member_registration_id" =>  $newMemberRegistration->id,
-                        "user_id" =>  Auth::user()->id,
-                        "value" =>  $firstPayment,
-                        "note" =>  "First Payment",
-                        "method_payment_id" => $data["method_payment_id"]
-                    ]);
-                }
+                MemberRegistrationPayment::create([
+                    "member_registration_id" =>  $newMemberRegistration->id,
+                    "user_id" =>  Auth::user()->id,
+                    "value" =>  $firstPayment,
+                    "note" =>  "First Payment",
+                    "method_payment_id" => $data["method_payment_id"]
+                ]);
 
                 DB::commit();
 
@@ -926,19 +931,13 @@ class MemberRegistrationController extends Controller
                 $newMemberRegistration = MemberRegistration::create($data);
 
                 $firstPayment = str_replace(".", "", $request->first_payment);
-                if ($package->package_price + $package->admin_price < $firstPayment) {
-                    DB::rollback();
-
-                    return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
-                } else {
-                    MemberRegistrationPayment::create([
-                        "member_registration_id" =>  $newMemberRegistration->id,
-                        "user_id" =>  Auth::user()->id,
-                        "value" =>  $firstPayment,
-                        "note" =>  "First Payment",
-                        "method_payment_id" => $data["method_payment_id"]
-                    ]);
-                }
+                MemberRegistrationPayment::create([
+                    "member_registration_id" =>  $newMemberRegistration->id,
+                    "user_id" =>  Auth::user()->id,
+                    "value" =>  $firstPayment,
+                    "note" =>  "First Payment",
+                    "method_payment_id" => $data["method_payment_id"]
+                ]);
 
                 DB::commit();
 

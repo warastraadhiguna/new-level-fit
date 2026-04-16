@@ -249,7 +249,7 @@
                                 <input type="hidden" name="value_sum" value="{{  $trainerSessionPayments->sum('value')}}">
                                 <input type="hidden" name="price" value="{{  $trainerSession->package_price+ $trainerSession->admin_price}}">
                                 <input type="text" name="note" placeholder="Note..."    class="form-control"
-                                    autocomplete="off" >
+                                    autocomplete="off" required>
                             </div>
                         </div>                        
                     </div>

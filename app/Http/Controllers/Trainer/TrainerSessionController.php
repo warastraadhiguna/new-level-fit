@@ -296,19 +296,13 @@ class TrainerSessionController extends Controller
             $newTrainerSession = TrainerSession::create($data);
 
             $firstPayment = (int) str_replace(".", "", $request->first_payment);
-            if ($package->package_price + $package->admin_price < $firstPayment) {
-                DB::rollback();
-
-                return redirect()->back()->with('error', 'First Payment tidak boleh lebih bisa dari harga paket');
-            } else {
-                TrainerSessionPayment::create([
-                    "trainer_session_id" =>  $newTrainerSession->id,
-                    "user_id" =>  Auth::user()->id,
-                    "value" =>  $firstPayment,
-                    "note" =>  "First Payment",
-                    "method_payment_id" => $data['method_payment_id']
-                ]);
-            }
+            TrainerSessionPayment::create([
+                "trainer_session_id" =>  $newTrainerSession->id,
+                "user_id" =>  Auth::user()->id,
+                "value" =>  $firstPayment,
+                "note" =>  "First Payment",
+                "method_payment_id" => $data['method_payment_id']
+            ]);
 
             DB::commit();
             return redirect()->back()->with('success', 'Trainer Session Added Successfully');
