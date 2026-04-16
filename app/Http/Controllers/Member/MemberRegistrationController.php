@@ -13,6 +13,8 @@ use App\Models\Member\MemberRegistration;
 use App\Models\Member\MemberRegistrationPayment;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
+use App\Models\Trainer\PtLeaveDay;
+use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
@@ -995,6 +997,31 @@ class MemberRegistrationController extends Controller
                 'days' => (int) $request->input('expired_date'),
                 'leave_day_continue_id' => $continueId,
             ]);
+
+            $totalLeaveDays = (int) LeaveDay::where('member_registration_id', $item->id)->sum('days');
+
+            $trainerSessions = TrainerSession::where('member_id', $item->member_id)
+                ->whereRaw('NOW() BETWEEN start_date AND DATE_ADD(start_date, INTERVAL (days + ?) DAY)', [$totalLeaveDays])
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($trainerSessions as $trainerSession) {
+                $ptLeaveDayExists = PtLeaveDay::where('trainer_session_id', $trainerSession->id)
+                    ->where('submission_date', $submissionDate)
+                    ->where('days', (int) $request->input('expired_date'))
+                    ->exists();
+
+                if ($ptLeaveDayExists) {
+                    continue;
+                }
+
+                PtLeaveDay::create([
+                    'trainer_session_id' => $trainerSession->id,
+                    'submission_date' => $submissionDate,
+                    'price' => 0,
+                    'days' => (int) $request->input('expired_date'),
+                ]);
+            }
 
             return redirect()->route('member-active.index')->with('success', 'Cuti Membership Successfully Added');
         });
