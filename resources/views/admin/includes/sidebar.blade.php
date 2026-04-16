@@ -69,6 +69,7 @@
                         <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>                          
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
+                        <li><a href="{{ route('trainer-session-unpaid') }}">PT Unpaid</a></li>
                         <li><a href="{{ route('trainer-session-over.index') }}">PT Expired</a></li>
                         <li><a href="{{ route('trainer-session-waiting-list') }}">PT Waiting List</a></li>
                         <li><a href="{{ route('lgt') }}">LGT</a></li>

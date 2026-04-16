@@ -51,9 +51,11 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                        Download Excel
-                    </button>
+                    @if (empty($isUnpaidPage))
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Download Excel
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -160,12 +162,12 @@
                                     </td>
                                     <td>
                                         @php
-                                            $daysLeft = Carbon\Carbon::parse($item->expired_date)->diffInDays(
+                                            $daysLeft = $item->expired_date ? Carbon\Carbon::parse($item->expired_date)->diffInDays(
                                                 Carbon\Carbon::now(),
-                                            );
-                                            $sumDaysLeft = $daysLeft + 1;
+                                            ) : null;
+                                            $sumDaysLeft = $daysLeft !== null ? $daysLeft + 1 : null;
                                         @endphp
-                                        @if ($sumDaysLeft > 3 && $sumDaysLeft < 6)
+                                        @if ($sumDaysLeft !== null && $sumDaysLeft > 3 && $sumDaysLeft < 6)
                                             <span class="badge badge-warning badge-sm d-inline-block" tabindex="0"
                                                 data-bs-toggle="popover" data-bs-trigger="hover focus"
                                                 data-bs-content="{{ $sumDaysLeft }} hari lagi berakhir">
@@ -178,7 +180,7 @@
                                                     Running
                                                 @endif
                                             </span>
-                                        @elseif($daysLeft <= 3)
+                                        @elseif($daysLeft !== null && $daysLeft <= 3)
                                             <span class="badge badge-danger badge-sm d-inline-block" tabindex="0"
                                                 data-bs-toggle="popover" data-bs-trigger="hover focus"
                                                 data-bs-content="{{ $sumDaysLeft }} hari lagi berakhir">
@@ -205,8 +207,8 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <h6>{{ DateFormat($item->start_date, 'DD MMMM YYYY') }}- <br />
-                                            {{ DateFormat($item->expired_date, 'DD MMMM YYYY') }}
+                                        <h6>{{ $item->start_date ? DateFormat($item->start_date, 'DD MMMM YYYY') : '-' }}- <br />
+                                            {{ $item->expired_date ? DateFormat($item->expired_date, 'DD MMMM YYYY') : '-' }}
                                         </h6>
                                     </td>
                                     <td>
@@ -242,7 +244,9 @@
                                         @php
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
                                         @endphp
-                                        @if ($idCodeMaxCount - $item->id_code_count == 0)
+                                        @if (!empty($isUnpaidPage))
+                                            <a class="btn light btn-danger btn-xs mb-1 btn-block">Unpaid</a>
+                                        @elseif ($idCodeMaxCount - $item->id_code_count == 0)
                                             <a href="{{ route('resetCheckIn', $item->member_id) }}"
                                                 class="btn light btn-warning btn-xs mb-1 btn-block">Reset Check In ?</a>
                                         @else

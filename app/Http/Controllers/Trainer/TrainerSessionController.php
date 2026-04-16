@@ -69,7 +69,8 @@ class TrainerSessionController extends Controller
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
-            'paymentMessages'       =>  $paymentMessages
+            'paymentMessages'       =>  $paymentMessages,
+            'isUnpaidPage'      => false,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -121,7 +122,40 @@ class TrainerSessionController extends Controller
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
-            'paymentMessages'   =>  $paymentMessages
+            'paymentMessages'   =>  $paymentMessages,
+            'isUnpaidPage'      => false,
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }
+
+    public function unpaid()
+    {
+        $trainerSessions = TrainerSession::getUnpaidPTList(Auth::user()->branch_store_id);
+
+        $birthdayMessages = [
+            0 => [],
+            1 => [],
+            2 => [],
+        ];
+
+        foreach ($trainerSessions as $trainerSession) {
+            $diff = BirthdayDiff($trainerSession->born);
+            if ($diff >= 0 && $diff <= 2) {
+                $birthdayMessages[$diff][$trainerSession->member_id] = $trainerSession->member_name;
+            }
+        }
+
+        $idCodeMaxCount = env("ID_CODE_MAX_COUNT", 3);
+
+        $data = [
+            'title'             => 'PT Unpaid List',
+            'trainerSessions'   => $trainerSessions,
+            'content'           => 'admin/trainer-session/index',
+            'idCodeMaxCount'    => $idCodeMaxCount,
+            'birthdayMessages'  => $birthdayMessages,
+            'paymentMessages'   => [],
+            'isUnpaidPage'      => true,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -165,7 +199,8 @@ class TrainerSessionController extends Controller
             'content'           => 'admin/trainer-session/waiting-list',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
-            'paymentMessages'   =>  $paymentMessages
+            'paymentMessages'   =>  $paymentMessages,
+            'isUnpaidPage'      => false,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -201,6 +236,7 @@ class TrainerSessionController extends Controller
                 'days'                  => 'nullable',
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
+                'first_payment'         => 'required|string',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',
                 'branch_store_id'       => 'required',                        
@@ -214,6 +250,7 @@ class TrainerSessionController extends Controller
                 'days'                  => 'nullable',
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
+                'first_payment'         => 'required|string',
                 'fc_id'                 => 'required|exists:users,id',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',           
@@ -254,10 +291,11 @@ class TrainerSessionController extends Controller
             $data['admin_price'] = $package->admin_price;
             $data['days'] = $package->days;
             $data['number_of_session'] = $package->number_of_session;
+            unset($data['first_payment']);
 
             $newTrainerSession = TrainerSession::create($data);
 
-            $firstPayment = str_replace(".", "", $request->first_payment);
+            $firstPayment = (int) str_replace(".", "", $request->first_payment);
             if ($package->package_price + $package->admin_price < $firstPayment) {
                 DB::rollback();
 

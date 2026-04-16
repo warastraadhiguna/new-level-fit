@@ -138,6 +138,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('pt-agreement/{id}', [TrainerSessionController::class, 'agreement'])->name('pt-agreement');
     Route::get('session-pending', [TrainerSessionController::class, 'pending'])->name('trainer-session-pending');
     Route::get('session-waiting-list', [TrainerSessionController::class, 'waitingList'])->name('trainer-session-waiting-list');
+    Route::get('trainer-session-unpaid', [TrainerSessionController::class, 'unpaid'])->name('trainer-session-unpaid');
 
 
     Route::resource('buddy-referral', '\App\Http\Controllers\Admin\BuddyReferralController');

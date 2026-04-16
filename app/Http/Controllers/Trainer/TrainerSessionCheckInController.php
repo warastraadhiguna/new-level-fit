@@ -78,6 +78,10 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', 'Trainer session not found or has ended');
         }
 
+        if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
+            return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
+        }
+
         $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number);
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
@@ -134,6 +138,10 @@ class TrainerSessionCheckInController extends Controller
 
         if (!$trainerSession || sizeof($trainerSession) == 0) {
             return redirect()->back()->with('error', 'PT Session not found or has ended');
+        }
+
+        if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
+            return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
@@ -229,10 +237,18 @@ class TrainerSessionCheckInController extends Controller
 
         $trainerSession = TrainerSession::checkInLGT($request->card_number);
 
+        if (!$trainerSession) {
+            return redirect()->back()->with('errorr', 'LGT not found or has ended');
+        }
+
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
                 return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang cuti!!');
             }
+        }
+
+        if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
+            return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
 
@@ -248,10 +264,6 @@ class TrainerSessionCheckInController extends Controller
 
         if (MembershipHasOneClubBranchRestriction($expiredMemberRegistration[0], Auth::user()->branch_store_id)) {
             return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($expiredMemberRegistration[0]->member_name, 'check in LGT'));
-        }
-
-        if (!$trainerSession) {
-            return redirect()->back()->with('errorr', 'LGT not found or has ended');
         }
 
         $memberPhoto    = $trainerSession[0]->photos;
@@ -313,10 +325,14 @@ class TrainerSessionCheckInController extends Controller
 
     public function lgtSecondStore($id)
     {
-        $trainerSession = TrainerSession::lgtActive("", $id);
+        $trainerSession = TrainerSession::checkInLGT("", $id);
 
         if (!$trainerSession || sizeof($trainerSession) == 0) {
             return redirect()->back()->with('error', 'LGT Session not found or has ended');
+        }
+
+        if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
+            return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
@@ -476,5 +492,17 @@ class TrainerSessionCheckInController extends Controller
         }
 
         return Carbon::parse($timestamp)->diffInSeconds($referenceTime) <= self::DUPLICATE_SCAN_WINDOW_SECONDS;
+    }
+
+    private function trainerSessionHasUnpaidPayment($trainerSession): bool
+    {
+        return (int) $trainerSession->payment_summary < ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price);
+    }
+
+    private function trainerSessionUnpaidMessage($trainerSession): string
+    {
+        $remainingPayment = ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price) - (int) $trainerSession->payment_summary;
+
+        return 'Pembayaran PT ' . $trainerSession->member_name . ' belum lunas. Sisa pembayaran: ' . formatRupiah($remainingPayment);
     }
 }

@@ -85,6 +85,7 @@ class LGTExport implements FromView
             ->leftJoin('pt_leave_days as ptld', 'a.id', '=', 'ptld.trainer_session_id')
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
+            ->whereRaw('IFNULL((SELECT SUM(value) FROM trainer_session_payments tsp WHERE a.id=tsp.trainer_session_id),0) >= (a.package_price + a.admin_price)')
             // ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->where('a.created_at', '>=', $fromDate)
             ->where('a.created_at', '<=', $toDate)
