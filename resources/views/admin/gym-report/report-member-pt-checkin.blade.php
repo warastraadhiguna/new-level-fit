@@ -58,6 +58,7 @@
                                 <th>Member Name</th>
                                 <th>Package Name</th>
                                 <th>Trainer Name</th>
+                                <th>Branch</th>
                                 <th>Check In Time</th>
                                 <th>Check Out Time</th>
                             </tr>
@@ -70,12 +71,13 @@
                                     <td>{{ $item->member_name }}</td>
                                     <td><h6>{{ $item->package_name }}</h6></td>
                                     <td>{{ $item->trainer_name }}</td>
+                                    <td>{{ $item->branch_store_name ?? '-' }}</td>
                                     <td>{{ DateFormat($item->check_in_time, 'DD MMMM YYYY, HH:mm:ss') }}</td>
                                     <td>{{ $item->check_out_time? DateFormat($item->check_out_time, 'DD MMMM YYYY, HH:mm:ss') : "-" }}</td>                                    
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7">No data found</td>
+                                    <td colspan="8">No data found</td>
                                 </tr>
                             @endforelse
                         </tbody>
