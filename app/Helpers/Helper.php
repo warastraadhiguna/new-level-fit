@@ -77,3 +77,87 @@ function NowDate($format = 'Y-MM-DD')
 {
     return  $nowDate = \Carbon\Carbon::now()->tz('Asia/Jakarta')->isoFormat($format);
 }
+
+function MembershipHasOneClubBranchRestriction($membership, $branchStoreId)
+{
+    if (!$membership) {
+        return false;
+    }
+
+    return (string) ($membership->is_all_club ?? '1') === '0'
+        && (int) ($membership->member_package_branch_store_id ?? 0) !== (int) $branchStoreId;
+}
+
+function MembershipOneClubRestrictionMessage($memberName, $activity = 'akses')
+{
+    return $memberName . ' memiliki membership One Club, tidak bisa ' . $activity . ' di cabang ini';
+}
+
+function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '')
+{
+    $sql = "SELECT
+            m.id AS member_id,
+            m.full_name AS member_name,
+            m.member_code,
+            m.card_number,
+            mr.id AS member_registration_id,
+            mp.is_all_club,
+            mp.branch_store_id AS member_package_branch_store_id
+        FROM members m
+        JOIN (
+            SELECT r.*
+            FROM member_registrations r
+            JOIN (
+                SELECT member_id, MAX(start_date) AS max_start_date
+                FROM member_registrations
+                GROUP BY member_id
+            ) latest ON latest.member_id = r.member_id
+                AND latest.max_start_date = r.start_date
+        ) mr ON mr.member_id = m.id
+        JOIN member_packages mp ON mp.id = mr.member_package_id
+        WHERE DATE_ADD(mr.start_date, INTERVAL mr.days DAY) >= NOW()";
+
+    $bindings = [];
+
+    if ($memberId) {
+        $sql .= " AND m.id = ?";
+        $bindings[] = $memberId;
+    }
+
+    if ($cardNumber) {
+        $sql .= " AND m.card_number = ?";
+        $bindings[] = $cardNumber;
+    }
+
+    $sql .= " ORDER BY mr.start_date DESC";
+
+    $memberships = \Illuminate\Support\Facades\DB::select($sql, $bindings);
+
+    return $memberships[0] ?? null;
+}
+
+function GetAccessibleNonExpiredMembersForBranch($branchStoreId)
+{
+    $sql = "SELECT
+            m.id,
+            m.full_name,
+            m.member_code,
+            m.phone_number
+        FROM members m
+        JOIN (
+            SELECT r.*
+            FROM member_registrations r
+            JOIN (
+                SELECT member_id, MAX(start_date) AS max_start_date
+                FROM member_registrations
+                GROUP BY member_id
+            ) latest ON latest.member_id = r.member_id
+                AND latest.max_start_date = r.start_date
+        ) mr ON mr.member_id = m.id
+        JOIN member_packages mp ON mp.id = mr.member_package_id
+        WHERE DATE_ADD(mr.start_date, INTERVAL mr.days DAY) >= NOW()
+            AND (mp.is_all_club = 1 OR mp.branch_store_id = ?)
+        ORDER BY m.full_name";
+
+    return \Illuminate\Support\Facades\DB::select($sql, [$branchStoreId]);
+}

@@ -178,7 +178,7 @@ class TrainerSessionController extends Controller
         $data = [
             'title'             => 'New Trainer Session',
             'trainerSession'    => TrainerSession::all(),
-            'members'           => MemberRegistration::getNonExpiredList(),
+            'members'           => GetAccessibleNonExpiredMembersForBranch($branchId),
             'personalTrainers'  => PersonalTrainer::where("branch_store_id", $branchId)->get(),
             'trainerPackages'   => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'methodPayment'     => MethodPayment::get(),
@@ -222,6 +222,19 @@ class TrainerSessionController extends Controller
 
         DB::beginTransaction();
         try {
+
+            $membership = GetLatestNonExpiredMembershipAccess($data['member_id']);
+            if (!$membership) {
+                DB::rollback();
+
+                return redirect()->back()->with('errorr', 'Paket member telah expired atau belum dimulai!!');
+            }
+
+            if (MembershipHasOneClubBranchRestriction($membership, Auth::user()->branch_store_id)) {
+                DB::rollback();
+
+                return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($membership->member_name, 'create PT'));
+            }
 
             $package = TrainerPackage::findOrFail($data['trainer_package_id']);
 
@@ -376,7 +389,7 @@ class TrainerSessionController extends Controller
             'title'                 => 'Edit Trainer Session',
             'trainerSession'        => $trainerSession,
             'trainerSessionPayments' => TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get(),
-            'members'               => MemberRegistration::getNonExpiredList(),
+            'members'               => GetAccessibleNonExpiredMembersForBranch($branchId),
             'personalTrainers'      => PersonalTrainer::where("branch_store_id", $branchId)->get(),
             'trainerPackages'       => TrainerPackage::where("branch_store_id", $branchId)->get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),

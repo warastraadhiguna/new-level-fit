@@ -70,8 +70,8 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('error', 'Member pending');
         }
         
-        if($memberRegistration[0]->is_all_club== '0' && $memberRegistration[0]->member_package_branch_store_id != Auth::user()->branch_store_id){
-            return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' hanya bisa one club saja!!');
+        if (MembershipHasOneClubBranchRestriction($memberRegistration[0], Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($memberRegistration[0]->member_name, 'check in'));
         }
 
         if ($memberRegistration[0]->leave_day_status == "Freeze") {
@@ -169,8 +169,8 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('error', 'Member active not found or has ended');
         }
 
-        if ($memberRegistration->is_all_club == '0' && $memberRegistration->member_package_branch_store_id != Auth::user()->branch_store_id) {
-            return redirect()->back()->with('errorr', $memberRegistration->member_name . ' hanya bisa one club saja!!');
+        if (MembershipHasOneClubBranchRestriction($memberRegistration, Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($memberRegistration->member_name, 'check in'));
         }
 
         $memberPhoto    = $memberRegistration->photos;

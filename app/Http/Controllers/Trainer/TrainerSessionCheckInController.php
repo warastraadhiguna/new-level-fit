@@ -83,8 +83,8 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
 
-        if ($expiredMemberRegistration[0]->branch_store_id !== Auth::user()->branch_store_id) {
-            return redirect()->back()->with('errorr', 'Trainer Session hanya bisa dilakukan di cabang lain');
+        if (MembershipHasOneClubBranchRestriction($expiredMemberRegistration[0], Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($expiredMemberRegistration[0]->member_name, 'check in PT'));
         }
 
         $memberPhoto    = $trainerSession[0]->photos;
@@ -131,16 +131,18 @@ class TrainerSessionCheckInController extends Controller
     public function secondStore($id)
     {
         $trainerSession = TrainerSession::checkInPT("", $id);
-        // dd($trainerSession);
-        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
 
-        if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
-            return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
+        if (!$trainerSession || sizeof($trainerSession) == 0) {
+            return redirect()->back()->with('error', 'PT Session not found or has ended');
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
+        }
+
+        if (MembershipHasOneClubBranchRestriction($expiredMemberRegistration[0], Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($expiredMemberRegistration[0]->member_name, 'check in PT'));
         }
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
@@ -150,10 +152,6 @@ class TrainerSessionCheckInController extends Controller
         }
 
         $member = Member::find($trainerSession[0]->member_id);
-
-        if (!$trainerSession) {
-            return redirect()->back()->with('error', 'PT Session not found or has ended');
-        }
 
         $memberPhoto    = $trainerSession[0]->photos;
         $memberName     = $trainerSession[0]->member_name;
@@ -248,6 +246,10 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', 'Paket member telah expired atau belum dimulai!!');
         }
 
+        if (MembershipHasOneClubBranchRestriction($expiredMemberRegistration[0], Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($expiredMemberRegistration[0]->member_name, 'check in LGT'));
+        }
+
         if (!$trainerSession) {
             return redirect()->back()->with('errorr', 'LGT not found or has ended');
         }
@@ -312,15 +314,18 @@ class TrainerSessionCheckInController extends Controller
     public function lgtSecondStore($id)
     {
         $trainerSession = TrainerSession::lgtActive("", $id);
-        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
 
-        if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
-            return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
+        if (!$trainerSession || sizeof($trainerSession) == 0) {
+            return redirect()->back()->with('error', 'LGT Session not found or has ended');
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
+        }
+
+        if (MembershipHasOneClubBranchRestriction($expiredMemberRegistration[0], Auth::user()->branch_store_id)) {
+            return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($expiredMemberRegistration[0]->member_name, 'check in LGT'));
         }
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
@@ -330,10 +335,6 @@ class TrainerSessionCheckInController extends Controller
         }
 
         $member = Member::find($trainerSession[0]->member_id);
-
-        if (!$trainerSession) {
-            return redirect()->back()->with('error', 'PT Session not found or has ended');
-        }
 
         $memberPhoto    = $trainerSession[0]->photos;
         $memberName     = $trainerSession[0]->member_name;
