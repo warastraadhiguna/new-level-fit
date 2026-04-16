@@ -24,7 +24,7 @@
             <div class="col-xl-12">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
-                        <form action="{{ route('members.index') }}" method="GET">
+                        <form action="{{ route('members.index') }}" method="GET" id="memberSearchForm">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                     Download Excel
@@ -50,7 +50,7 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-muted">Search:</span>
-                                    <input type="text" name="search" class="form-control" style="width: 280px;"
+                                    <input type="text" name="search" id="memberSearchInput" class="form-control" style="width: 280px;"
                                         value="{{ $search }}" placeholder="Press Enter to search">
                                 </div>
                             </div>
@@ -227,4 +227,21 @@
 
         window.open(window.location.href + '?excel=1&fromDate=' + fromDate + '&toDate=' + toDate, '_self');
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.getElementById('memberSearchForm');
+        const searchInput = document.getElementById('memberSearchInput');
+        let searchTimer;
+
+        if (!searchForm || !searchInput) {
+            return;
+        }
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                searchForm.submit();
+            }, 1500);
+        });
+    });
 </script>
