@@ -47,14 +47,67 @@
 </style>
 
 <div class="row">
+    @php
+        $sortLink = function ($column) use ($sort, $direction, $search, $perPage) {
+            $nextDirection = $sort === $column && $direction === 'asc' ? 'desc' : 'asc';
+
+            return route('member-active.index', array_filter([
+                'search' => $search,
+                'per_page' => $perPage,
+                'sort' => $column,
+                'direction' => $nextDirection,
+            ], fn ($value) => $value !== null && $value !== ''));
+        };
+
+        $sortIcon = function ($column) use ($sort, $direction) {
+            if ($sort !== $column) {
+                return 'fa-sort';
+            }
+
+            return $direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+        };
+    @endphp
     <div class="col-xl-12">
         <div class="row">
             <div id="filteredDataContainer"></div>
             <div class="col-xl-12">
-                <div class="page-title flex-wrap justify-content-between">
-                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                        Download Excel
-                    </button>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <form action="{{ route('member-active.index') }}" method="GET" id="memberActiveSearchForm">
+                            <input type="hidden" name="sort" value="{{ $sort }}">
+                            <input type="hidden" name="direction" value="{{ $direction }}">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                    Download Excel
+                                </button>
+                                @if ($search)
+                                    <a href="{{ route('member-active.index') }}" class="btn btn-danger light">
+                                        Reset Search
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted">Show</span>
+                                    <select name="per_page" class="form-control" style="width: 80px;"
+                                        onchange="this.form.submit()">
+                                        @foreach ([10, 25, 50, 100] as $option)
+                                            <option value="{{ $option }}" {{ $perPage == $option ? 'selected' : '' }}>
+                                                {{ $option }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <span class="text-muted">entries</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted">Search:</span>
+                                    <input type="text" name="search" id="memberActiveSearchInput"
+                                        class="form-control" style="width: 280px;" value="{{ $search }}"
+                                        placeholder="Press Enter to search">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
             @foreach ($birthdayMessages as $key => $messages)
@@ -103,24 +156,48 @@
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
                     <table class="table-responsive-lg table display dataTablesCard student-tab dataTable no-footer"
-                        id="myTable">
+                        id="memberActiveTable">
                         <thead>
                             <tr>
                                 <th>No</th>
                                 {{-- <th>Image</th> --}}
-                                <th>Member Data</th>
-                                <th>Last Check In</th>
-                                <th>Date</th>
-                                <th>Payment</th>                                
-                                <th>Status</th>
-                                <th>Staff</th>
+                                <th>
+                                    <a href="{{ $sortLink('member_name') }}" class="text-primary">
+                                        Member Data <i class="fa {{ $sortIcon('member_name') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('check_in_time') }}" class="text-primary">
+                                        Last Check In <i class="fa {{ $sortIcon('check_in_time') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('start_date') }}" class="text-primary">
+                                        Date <i class="fa {{ $sortIcon('start_date') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('payment_summary') }}" class="text-primary">
+                                        Payment <i class="fa {{ $sortIcon('payment_summary') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('leave_day_status') }}" class="text-primary">
+                                        Status <i class="fa {{ $sortIcon('leave_day_status') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('staff_name') }}" class="text-primary">
+                                        Staff <i class="fa {{ $sortIcon('staff_name') }}"></i>
+                                    </a>
+                                </th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($memberRegistrations as $item)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $memberRegistrations->firstItem() + $loop->index }}</td>
                                     {{-- <td>
                                         <div class="trans-list">
                                             @if ($item->photos)
@@ -384,8 +461,21 @@
                                     </td>
                                 </tr>
                             @endforeach
+                            @if ($memberRegistrations->count() == 0)
+                                <tr>
+                                    <td colspan="8" class="text-center">No data found</td>
+                                </tr>
+                            @endif
                         </tbody>
                     </table>
+                </div>
+                <div class="mt-3 d-flex flex-wrap justify-content-between align-items-center">
+                    <div class="text-muted mb-2">
+                        Showing {{ $memberRegistrations->firstItem() ?? 0 }} to {{ $memberRegistrations->lastItem() ?? 0 }} of {{ $memberRegistrations->total() }} data
+                    </div>
+                    <div class="mb-2">
+                        {{ $memberRegistrations->links('pagination::bootstrap-4') }}
+                    </div>
                 </div>
             </div>
             <!--/column-->
@@ -438,7 +528,7 @@
     }
 
     function updateTableWithFilteredData(data) {
-        var tableBody = document.querySelector("#myTable tbody");
+        var tableBody = document.querySelector("#memberActiveTable tbody");
 
         tableBody.innerHTML = "";
 
@@ -456,4 +546,21 @@
             filterData();
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.getElementById('memberActiveSearchForm');
+        const searchInput = document.getElementById('memberActiveSearchInput');
+        let searchTimer;
+
+        if (!searchForm || !searchInput) {
+            return;
+        }
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                searchForm.submit();
+            }, 1500);
+        });
+    });
 </script>

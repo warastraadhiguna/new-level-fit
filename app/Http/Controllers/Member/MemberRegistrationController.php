@@ -26,17 +26,23 @@ use Carbon\Carbon;
 
 class MemberRegistrationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $fromDate   = Request()->input('fromDate');
         $toDate     = Request()->input('toDate');
+        $search     = trim((string) $request->input('search', ''));
+        $perPage    = (int) $request->input('per_page', 10);
+        $perPage    = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+        $sort       = (string) $request->input('sort', 'updated_at_check_in');
+        $direction  = strtolower((string) $request->input('direction', 'desc')) == 'asc' ? 'asc' : 'desc';
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
             return Excel::download(new MemberActiveExport(), 'member-active, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 
-        $memberRegistrations = MemberRegistration::getActiveList();
+        $memberRegistrations = MemberRegistration::getActiveListPaginated($search, $perPage, $sort, $direction)
+            ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
 
         $birthdayMessages = [
             0 => [],
@@ -56,7 +62,11 @@ class MemberRegistrationController extends Controller
             'memberRegistrations'   => $memberRegistrations,
             'content'               => 'admin/member-registration/index',
             'idCodeMaxCount'        => $idCodeMaxCount,
-            'birthdayMessages'      => $birthdayMessages
+            'birthdayMessages'      => $birthdayMessages,
+            'search'                => $search,
+            'perPage'               => $perPage,
+            'sort'                  => $sort,
+            'direction'             => $direction,
         ];
 
         return view('admin.layouts.wrapper', $data);
