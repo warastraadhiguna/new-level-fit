@@ -34,6 +34,7 @@ class MemberCheckInController extends Controller
             ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', NowDate())
             ->whereDate('cim.check_in_time', '<=', NowDate())
+            ->whereRaw('COALESCE(cim.branch_store_id, members.branch_store_id) = ?', [Auth::user()->branch_store_id])
             ->orderBy('cim.check_in_time', 'desc') 
             ->get();
 
