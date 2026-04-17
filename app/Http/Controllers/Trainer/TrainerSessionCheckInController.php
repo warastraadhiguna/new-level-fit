@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TrainerSessionCheckInController extends Controller
 {
@@ -19,6 +20,11 @@ class TrainerSessionCheckInController extends Controller
 
     public function index()
     {
+        $hasBranchStoreColumn = $this->trainerSessionCheckInHasBranchStoreColumn();
+        $branchStoreNameSql = $hasBranchStoreColumn
+            ? 'COALESCE(check_in_branch.name, session_branch.name) as branch_store_name'
+            : 'session_branch.name as branch_store_name';
+
         $results = DB::table('members')
             ->select(
                 'cits.id as cits_id',
@@ -30,16 +36,20 @@ class TrainerSessionCheckInController extends Controller
                 'tp.package_name',
                 'cits.check_in_time',
                 'cits.check_out_time',
-                DB::raw('COALESCE(check_in_branch.name, session_branch.name) as branch_store_name')
+                DB::raw($branchStoreNameSql)
             )
             ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
             ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
             ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
-            ->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
             ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [NowDate(), NowDate()])
-            ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [Auth::user()->branch_store_id])
+            ->when($hasBranchStoreColumn, function ($query) {
+                $query->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
+                    ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [Auth::user()->branch_store_id]);
+            }, function ($query) {
+                $query->where('ts.branch_store_id', Auth::user()->branch_store_id);
+            })
             ->orderBy('cits.check_in_time', 'desc')             
             ->paginate(10);
                     
@@ -82,7 +92,7 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
-        $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number);
+        $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number, "", $this->activeMembershipPaymentFilter());
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
@@ -144,7 +154,7 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
-        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
+        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id, $this->activeMembershipPaymentFilter());
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
@@ -196,7 +206,7 @@ class TrainerSessionCheckInController extends Controller
                 'user_id'               => Auth::user()->id,
             ];
 
-            CheckInTrainerSession::create($data);
+            CheckInTrainerSession::create($this->trainerSessionCheckInPayload($data));
             $message = 'PT Checked In Successfully';
         }
 
@@ -257,7 +267,7 @@ class TrainerSessionCheckInController extends Controller
         //     return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         // }
 
-        $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number);
+        $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number, "", $this->activeMembershipPaymentFilter());
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member telah expired atau belum dimulai!!');
         }
@@ -298,7 +308,7 @@ class TrainerSessionCheckInController extends Controller
                 'user_id' => Auth::user()->id,
             ];
 
-            CheckInTrainerSession::create($data);
+            CheckInTrainerSession::create($this->trainerSessionCheckInPayload($data));
             $message = 'LGT Checked In Successfully';
         }
 
@@ -335,7 +345,7 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
-        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id);
+        $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id, $this->activeMembershipPaymentFilter());
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
         }
@@ -387,7 +397,7 @@ class TrainerSessionCheckInController extends Controller
                 'user_id'               => Auth::user()->id,
             ];
 
-            CheckInTrainerSession::create($data);
+            CheckInTrainerSession::create($this->trainerSessionCheckInPayload($data));
             $message = 'PT Checked In Successfully';
         }
 
@@ -446,13 +456,13 @@ class TrainerSessionCheckInController extends Controller
                 ->first();
 
             if (!$latestCheckIn) {
-                CheckInTrainerSession::create([
+                CheckInTrainerSession::create($this->trainerSessionCheckInPayload([
                     'trainer_session_id' => $trainerSessionId,
                     'branch_store_id' => Auth::user()->branch_store_id,
                     'check_in_time' => $now,
                     'pt_id' => $ptId,
                     'user_id' => Auth::user()->id,
-                ]);
+                ]));
 
                 return 'Trainer Session Checked In Successfully';
             }
@@ -473,13 +483,13 @@ class TrainerSessionCheckInController extends Controller
                 return 'Duplicate scan ignored';
             }
 
-            CheckInTrainerSession::create([
+            CheckInTrainerSession::create($this->trainerSessionCheckInPayload([
                 'trainer_session_id' => $trainerSessionId,
                 'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => $now,
                 'pt_id' => $ptId,
                 'user_id' => Auth::user()->id,
-            ]);
+            ]));
 
             return 'Trainer Session Checked In Successfully';
         });
@@ -496,7 +506,36 @@ class TrainerSessionCheckInController extends Controller
 
     private function trainerSessionHasUnpaidPayment($trainerSession): bool
     {
+        if (!BranchStorePaymentIsStrict(Auth::user()->branch_store_id)) {
+            return false;
+        }
+
         return (int) $trainerSession->payment_summary < ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price);
+    }
+
+    private function activeMembershipPaymentFilter(): string
+    {
+        return BranchStorePaymentIsStrict(Auth::user()->branch_store_id) ? "no" : "";
+    }
+
+    private function trainerSessionCheckInPayload(array $data): array
+    {
+        if (!$this->trainerSessionCheckInHasBranchStoreColumn()) {
+            unset($data['branch_store_id']);
+        }
+
+        return $data;
+    }
+
+    private function trainerSessionCheckInHasBranchStoreColumn(): bool
+    {
+        static $hasColumn = null;
+
+        if ($hasColumn === null) {
+            $hasColumn = Schema::hasColumn('check_in_trainer_sessions', 'branch_store_id');
+        }
+
+        return $hasColumn;
     }
 
     private function trainerSessionUnpaidMessage($trainerSession): string

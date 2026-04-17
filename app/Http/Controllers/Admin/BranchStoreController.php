@@ -102,6 +102,7 @@ class BranchStoreController extends Controller
             'city' => ['required', 'string', 'max:50'],
             'phone' => ['required', 'string', 'max:50'],
             'email' => ['required', 'email', 'max:45'],
+            'is_payment_strict' => ['required', 'boolean'],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);
     }

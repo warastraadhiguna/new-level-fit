@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class MemberCheckInController extends Controller
@@ -18,6 +19,11 @@ class MemberCheckInController extends Controller
 
     public function index()
     {
+        $hasBranchStoreColumn = $this->memberCheckInHasBranchStoreColumn();
+        $branchStoreNameSql = $hasBranchStoreColumn
+            ? 'COALESCE(check_in_branch.name, member_branch.name) as branch_store_name'
+            : 'member_branch.name as branch_store_name';
+
         $results = DB::table('members')
             ->select(
                 'cim.id as cim_id',
@@ -26,15 +32,19 @@ class MemberCheckInController extends Controller
                 'members.full_name as member_name',
                 'cim.check_in_time',
                 'cim.check_out_time',
-                DB::raw('COALESCE(check_in_branch.name, member_branch.name) as branch_store_name')
+                DB::raw($branchStoreNameSql)
             )
             ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
             ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-            ->leftJoin('branch_stores as check_in_branch', 'cim.branch_store_id', '=', 'check_in_branch.id')
             ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', NowDate())
             ->whereDate('cim.check_in_time', '<=', NowDate())
-            ->whereRaw('COALESCE(cim.branch_store_id, members.branch_store_id) = ?', [Auth::user()->branch_store_id])
+            ->when($hasBranchStoreColumn, function ($query) {
+                $query->leftJoin('branch_stores as check_in_branch', 'cim.branch_store_id', '=', 'check_in_branch.id')
+                    ->whereRaw('COALESCE(cim.branch_store_id, members.branch_store_id) = ?', [Auth::user()->branch_store_id]);
+            }, function ($query) {
+                $query->where('members.branch_store_id', Auth::user()->branch_store_id);
+            })
             ->orderBy('cim.check_in_time', 'desc') 
             ->get();
 
@@ -78,7 +88,7 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang cuti!!');
         }
 
-        if($memberRegistration[0]->mr_package_price + $memberRegistration[0]->mr_admin_price - $memberRegistration[0]->payment_summary > 0){
+        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) && $this->memberRegistrationHasUnpaidPayment($memberRegistration[0])) {
             return redirect()->back()->with('error', 'Unpaid Member');
         }
 
@@ -129,6 +139,8 @@ class MemberCheckInController extends Controller
                 'a.description',
                 'a.days as number_of_days',
                 'a.member_id',
+                'a.package_price as mr_package_price',
+                'a.admin_price as mr_admin_price',
                 'b.full_name as member_name',
                 'b.nickname',
                 'b.member_code',
@@ -150,6 +162,7 @@ class MemberCheckInController extends Controller
                 'h.id as current_check_in_members_id',
                 'h.check_out_time',
                 'h.check_in_time',
+                DB::raw('IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE a.id = mrp.member_registration_id), 0) as payment_summary'),
             )
             ->addSelect(
                 DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
@@ -171,6 +184,10 @@ class MemberCheckInController extends Controller
 
         if (MembershipHasOneClubBranchRestriction($memberRegistration, Auth::user()->branch_store_id)) {
             return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($memberRegistration->member_name, 'check in'));
+        }
+
+        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) && $this->memberRegistrationHasUnpaidPayment($memberRegistration)) {
+            return redirect()->back()->with('error', 'Unpaid Member');
         }
 
         $memberPhoto    = $memberRegistration->photos;
@@ -214,7 +231,7 @@ class MemberCheckInController extends Controller
                 'user_id' => Auth::user()->id,
             ];
 
-            CheckInMember::create($data);
+            CheckInMember::create($this->memberCheckInPayload($data));
             $message = 'Member Checked In Successfully';
         }
 
@@ -264,12 +281,12 @@ class MemberCheckInController extends Controller
                 ->first();
 
             if (!$latestCheckIn) {
-                CheckInMember::create([
+                CheckInMember::create($this->memberCheckInPayload([
                     'member_registration_id' => $memberRegistrationId,
                     'branch_store_id' => Auth::user()->branch_store_id,
                     'check_in_time' => $now,
                     'user_id' => Auth::user()->id,
-                ]);
+                ]));
 
                 return 'Member Checked In Successfully';
             }
@@ -290,12 +307,12 @@ class MemberCheckInController extends Controller
                 return 'Duplicate scan ignored';
             }
 
-            CheckInMember::create([
+            CheckInMember::create($this->memberCheckInPayload([
                 'member_registration_id' => $memberRegistrationId,
                 'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => $now,
                 'user_id' => Auth::user()->id,
-            ]);
+            ]));
 
             return 'Member Checked In Successfully';
         });
@@ -308,5 +325,30 @@ class MemberCheckInController extends Controller
         }
 
         return Carbon::parse($timestamp)->diffInSeconds($referenceTime) <= self::DUPLICATE_SCAN_WINDOW_SECONDS;
+    }
+
+    private function memberRegistrationHasUnpaidPayment($memberRegistration): bool
+    {
+        return (int) $memberRegistration->payment_summary < ((int) $memberRegistration->mr_package_price + (int) $memberRegistration->mr_admin_price);
+    }
+
+    private function memberCheckInPayload(array $data): array
+    {
+        if (!$this->memberCheckInHasBranchStoreColumn()) {
+            unset($data['branch_store_id']);
+        }
+
+        return $data;
+    }
+
+    private function memberCheckInHasBranchStoreColumn(): bool
+    {
+        static $hasColumn = null;
+
+        if ($hasColumn === null) {
+            $hasColumn = Schema::hasColumn('check_in_members', 'branch_store_id');
+        }
+
+        return $hasColumn;
     }
 }

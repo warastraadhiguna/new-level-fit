@@ -72,6 +72,24 @@ function PaymentExpiredDateDiff($startDateString)
     return $dayDiff;
 }
 
+function BranchStorePaymentIsStrict(?int $branchStoreId = null): bool
+{
+    $branchStoreId = $branchStoreId ?: optional(auth()->user())->branch_store_id;
+
+    if (!$branchStoreId) {
+        return true;
+    }
+
+    static $strictByBranch = [];
+
+    if (!array_key_exists($branchStoreId, $strictByBranch)) {
+        $value = \App\Models\BranchStore::whereKey($branchStoreId)->value('is_payment_strict');
+        $strictByBranch[$branchStoreId] = $value === null ? true : (bool) $value;
+    }
+
+    return $strictByBranch[$branchStoreId];
+}
+
 
 function NowDate($format = 'Y-MM-DD')
 {

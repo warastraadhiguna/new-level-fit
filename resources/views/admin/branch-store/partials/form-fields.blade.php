@@ -36,6 +36,19 @@
             <input type="email" name="email" value="{{ old('email', $branchStore->email ?? '') }}" class="form-control" required>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Payment Strict</label>
+            <select name="is_payment_strict" class="form-control" required>
+                @php
+                    $paymentStrict = old('is_payment_strict', isset($branchStore) && $branchStore->is_payment_strict !== null ? (int) $branchStore->is_payment_strict : 1);
+                @endphp
+                <option value="1" {{ (string) $paymentStrict === '1' ? 'selected' : '' }}>Strict - unpaid cannot check in</option>
+                <option value="0" {{ (string) $paymentStrict === '0' ? 'selected' : '' }}>Flexible - unpaid can check in</option>
+            </select>
+            <small class="text-muted">Berlaku untuk check-in membership dan PT di cabang ini.</small>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>

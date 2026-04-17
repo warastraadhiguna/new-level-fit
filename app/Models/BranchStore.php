@@ -19,6 +19,11 @@ class BranchStore extends Model
         'phone',
         'email',
         'admin_logo',
+        'is_payment_strict',
+    ];
+
+    protected $casts = [
+        'is_payment_strict' => 'boolean',
     ];
 
     protected $appends = [

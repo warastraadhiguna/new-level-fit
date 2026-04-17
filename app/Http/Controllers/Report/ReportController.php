@@ -10,6 +10,7 @@ use App\Models\Staff\PersonalTrainer;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
 class ReportController extends Controller
 {
@@ -28,6 +29,11 @@ class ReportController extends Controller
             $toDate = NowDate();
         }
 
+        $hasMemberCheckInBranchStoreColumn = Schema::hasColumn('check_in_members', 'branch_store_id');
+        $branchStoreNameSql = $hasMemberCheckInBranchStoreColumn
+            ? 'COALESCE(check_in_branch.name, member_branch.name) as branch_store_name'
+            : 'member_branch.name as branch_store_name';
+
         $results = DB::table('members')
             ->select(
                 'cim.id as cim_id',
@@ -35,15 +41,19 @@ class ReportController extends Controller
                 'members.full_name as member_name',
                 'cim.check_in_time',
                 'cim.check_out_time',
-                DB::raw('COALESCE(check_in_branch.name, member_branch.name) as branch_store_name')
+                DB::raw($branchStoreNameSql)
             )
             ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
             ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
-            ->leftJoin('branch_stores as check_in_branch', 'cim.branch_store_id', '=', 'check_in_branch.id')
             ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', $fromDate)
             ->whereDate('cim.check_in_time', '<=', $toDate)
-            ->whereRaw('COALESCE(cim.branch_store_id, members.branch_store_id) = ?', [Auth::user()->branch_store_id])
+            ->when($hasMemberCheckInBranchStoreColumn, function ($query) {
+                $query->leftJoin('branch_stores as check_in_branch', 'cim.branch_store_id', '=', 'check_in_branch.id')
+                    ->whereRaw('COALESCE(cim.branch_store_id, members.branch_store_id) = ?', [Auth::user()->branch_store_id]);
+            }, function ($query) {
+                $query->where('members.branch_store_id', Auth::user()->branch_store_id);
+            })
             ->when($memberId, function ($q) use ($memberId) {
                 $q->where('members.id', $memberId);
             })
@@ -87,6 +97,11 @@ class ReportController extends Controller
             $toDate   = NowDate();
         }
 
+        $hasTrainerCheckInBranchStoreColumn = Schema::hasColumn('check_in_trainer_sessions', 'branch_store_id');
+        $branchStoreNameSql = $hasTrainerCheckInBranchStoreColumn
+            ? 'COALESCE(check_in_branch.name, session_branch.name) as branch_store_name'
+            : 'session_branch.name as branch_store_name';
+
         $results = DB::table('members')
             ->select(
                 'cits.id as cits_id',
@@ -98,16 +113,20 @@ class ReportController extends Controller
                 'tp.package_name',
                 'cits.check_in_time',
                 'cits.check_out_time',
-                DB::raw('COALESCE(check_in_branch.name, session_branch.name) as branch_store_name')
+                DB::raw($branchStoreNameSql)
             )
             ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
             ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
             ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
-            ->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
             ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [$fromDate, $toDate])
-            ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [$branchId])
+            ->when($hasTrainerCheckInBranchStoreColumn, function ($query) use ($branchId) {
+                $query->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
+                    ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [$branchId]);
+            }, function ($query) use ($branchId) {
+                $query->where('ts.branch_store_id', $branchId);
+            })
             ->when($memberId, fn ($q) => $q->where('members.id', $memberId))            
             ->when($ptId, fn ($q) => $q->where('pt.id', $ptId))
             ->orderBy('cits.check_in_time', 'desc')             

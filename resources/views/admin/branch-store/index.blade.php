@@ -75,6 +75,7 @@
                                 <th>Cabang</th>
                                 <th>Kota</th>
                                 <th>Kontak</th>
+                                <th>Payment Strict</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
                             </tr>
@@ -91,6 +92,13 @@
                                     <td>
                                         <div>{{ $branchStore->phone }}</div>
                                         <div>{{ $branchStore->email }}</div>
+                                    </td>
+                                    <td>
+                                        @if ($branchStore->is_payment_strict)
+                                            <span class="badge badge-success">Strict</span>
+                                        @else
+                                            <span class="badge badge-warning">Flexible</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($branchStore->admin_logo_url)
