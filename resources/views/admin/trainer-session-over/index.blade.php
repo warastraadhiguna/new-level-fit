@@ -58,6 +58,10 @@
                                         <span class="badge badge-danger badge-lg">Expired</span>
                                     </td>
                                     <td class="btn-group-vertical">
+                                        @if (Auth::user()->role == 'ADMIN')
+                                            <a href="{{ route('trainer-session.edit', $item->ts_id) }}"
+                                                class="btn light btn-warning btn-xs mb-1">Edit</a>
+                                        @endif
                                         <a href="{{ route('trainer-session.show', $item->ts_id) }}"
                                             class="btn light btn-info btn-xs mb-1">Detail</a>
                                     </td>
