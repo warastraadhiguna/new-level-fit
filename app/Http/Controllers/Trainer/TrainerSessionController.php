@@ -17,6 +17,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -66,11 +67,17 @@ class TrainerSessionController extends Controller
         $data = [
             'title'             => 'Trainer Session List',
             'trainerSessions'   => $trainerSessions,
+            'trainerPackagesForMove' => TrainerPackage::with('branchStore')
+                ->whereNull('status')
+                ->orderBy('branch_store_id')
+                ->orderBy('package_name')
+                ->get(),
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
             'paymentMessages'       =>  $paymentMessages,
             'isUnpaidPage'      => false,
+            'canMoveTrainerSessionBranch' => true,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -124,6 +131,7 @@ class TrainerSessionController extends Controller
             'birthdayMessages'  => $birthdayMessages,
             'paymentMessages'   =>  $paymentMessages,
             'isUnpaidPage'      => false,
+            'canMoveTrainerSessionBranch' => false,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -156,6 +164,7 @@ class TrainerSessionController extends Controller
             'birthdayMessages'  => $birthdayMessages,
             'paymentMessages'   => [],
             'isUnpaidPage'      => true,
+            'canMoveTrainerSessionBranch' => false,
         ];
 
         return view('admin.layouts.wrapper', $data);
@@ -479,6 +488,51 @@ class TrainerSessionController extends Controller
         }
 
         return redirect()->route('trainer-session.index')->with('success', 'Trainer Session Updated Successfully');
+    }
+
+    public function moveBranch(Request $request, string $id)
+    {
+        if (Auth::user()->role !== 'ADMIN') {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'trainer_package_id' => 'required|exists:trainer_packages,id',
+        ]);
+
+        try {
+            DB::transaction(function () use ($id, $data) {
+                $trainerSession = TrainerSession::query()
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+                $trainerPackage = TrainerPackage::findOrFail($data['trainer_package_id']);
+
+                if ($trainerPackage->status !== null) {
+                    throw new RuntimeException('Only regular PT packages can be used to move this PT registration.');
+                }
+
+                if ((int) $trainerPackage->branch_store_id === (int) $trainerSession->branch_store_id) {
+                    throw new RuntimeException('Please choose a PT package from another branch.');
+                }
+
+                $membership = GetLatestNonExpiredMembershipAccess($trainerSession->member_id);
+                if ($membership && MembershipHasOneClubBranchRestriction($membership, $trainerPackage->branch_store_id)) {
+                    throw new RuntimeException(MembershipOneClubRestrictionMessage($membership->member_name, 'move PT'));
+                }
+
+                $trainerSession->update([
+                    'trainer_package_id' => $trainerPackage->id,
+                    'branch_store_id' => $trainerPackage->branch_store_id,
+                    'user_id' => Auth::user()->id,
+                ]);
+            });
+
+            $message = 'PT registration branch moved successfully.';
+
+            return redirect()->route('trainer-session.index')->with('success', $message);
+        } catch (RuntimeException $exception) {
+            return redirect()->back()->with('errorr', $exception->getMessage());
+        }
     }
 
     public function freeze(Request $request, string $id)
