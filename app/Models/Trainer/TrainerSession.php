@@ -107,7 +107,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.branch_store_id, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.trainer_package_id, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
+        train_sess.id, train_sess.start_date, train_sess.trainer_package_id, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         train_pack.package_name,
         pers_train.full_name AS trainer_name, pers_train.id AS trainer_id,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -173,7 +173,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
+        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         train_pack.package_name,
         pers_train.full_name AS trainer_name,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -241,7 +241,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, branch_stores.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days,
+        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         trainer_packages.package_name,
         personal_trainers.full_name AS trainer_name,
 	

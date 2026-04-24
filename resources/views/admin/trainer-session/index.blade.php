@@ -212,7 +212,21 @@
                                         </h6>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->package_name }}</h6>
+                                        @php
+                                            $isMovedBranchPackage = \Illuminate\Support\Str::contains($item->description ?? '', '[MOVE_BRANCH]');
+                                            $moveBranchNote = trim(str_replace('[MOVE_BRANCH]', '', (string) ($item->description ?? '')));
+                                        @endphp
+                                        @if ($isMovedBranchPackage)
+                                            <span class="badge badge-warning text-dark d-inline-block" tabindex="0"
+                                                data-bs-toggle="popover" data-bs-trigger="hover focus"
+                                                data-bs-content="{{ $moveBranchNote }}">
+                                                {{ $item->package_name }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-primary d-inline-block">
+                                                {{ $item->package_name }}
+                                            </span>
+                                        @endif
                                         <h6>Session Total : {{ $item->ts_number_of_session }}</h6>
                                         <h6>Remaining Session : {{ $item->remaining_sessions }}</h6>
                                     </td>

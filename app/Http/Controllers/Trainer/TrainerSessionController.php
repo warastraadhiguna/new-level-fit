@@ -574,7 +574,7 @@ class TrainerSessionController extends Controller
                 $targetBranchName = data_get($trainerPackage, 'branchStore.name', 'Unknown branch');
                 $targetPackageName = $trainerPackage->package_name ?: 'Unknown PT package';
 
-                $moveDescription = 'Data dipindahkan dari ' . $currentBranchName . ' - ' . $currentPackageName
+                $moveDescription = '[MOVE_BRANCH] Data dipindahkan dari ' . $currentBranchName . ' - ' . $currentPackageName
                     . ' ke ' . $targetBranchName . ' - ' . $targetPackageName
                     . ' oleh ' . Auth::user()->full_name;
 
