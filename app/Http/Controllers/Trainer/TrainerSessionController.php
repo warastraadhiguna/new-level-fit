@@ -67,11 +67,6 @@ class TrainerSessionController extends Controller
         $data = [
             'title'             => 'Trainer Session List',
             'trainerSessions'   => $trainerSessions,
-            'trainerPackagesForMove' => TrainerPackage::with('branchStore')
-                ->whereNull('status')
-                ->orderBy('branch_store_id')
-                ->orderBy('package_name')
-                ->get(),
             'content'           => 'admin/trainer-session/index',
             'idCodeMaxCount'    =>  $idCodeMaxCount,
             'birthdayMessages'  => $birthdayMessages,
@@ -440,6 +435,58 @@ class TrainerSessionController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
+    public function moveBranchPage(string $id)
+    {
+        if (Auth::user()->role !== 'ADMIN') {
+            abort(403);
+        }
+
+        $trainerSession = TrainerSession::with([
+            'members',
+            'personalTrainers',
+            'trainerPackages.branchStore',
+            'branchStore',
+        ])->findOrFail($id);
+
+        $membership = GetLatestNonExpiredMembershipAccess($trainerSession->member_id);
+
+        $allTargetTrainerPackages = TrainerPackage::with('branchStore')
+            ->whereNull('status')
+            ->where('branch_store_id', '!=', $trainerSession->branch_store_id)
+            ->orderBy('branch_store_id')
+            ->orderBy('package_name')
+            ->get();
+
+        $targetTrainerPackages = $allTargetTrainerPackages
+            ->filter(function ($trainerPackage) use ($membership) {
+                return !$membership || !MembershipHasOneClubBranchRestriction($membership, $trainerPackage->branch_store_id);
+            })
+            ->values();
+
+        $moveBranchUnavailableReason = null;
+        if ($targetTrainerPackages->isEmpty()) {
+            if ($allTargetTrainerPackages->isEmpty()) {
+                $moveBranchUnavailableReason = 'No regular PT package is available in another branch.';
+            } elseif ($membership && (string) ($membership->is_all_club ?? '1') === '0') {
+                $membershipBranch = BranchStore::find($membership->member_package_branch_store_id);
+                $allowedBranchName = $membershipBranch ? $membershipBranch->name : 'the membership branch';
+                $moveBranchUnavailableReason = 'This member has a One Club membership, so PT can only be assigned to ' . $allowedBranchName . '.';
+            } else {
+                $moveBranchUnavailableReason = 'No eligible PT package is available in another branch for this member.';
+            }
+        }
+
+        $data = [
+            'title' => 'Move PT Registration Branch',
+            'trainerSession' => $trainerSession,
+            'targetTrainerPackages' => $targetTrainerPackages,
+            'moveBranchUnavailableReason' => $moveBranchUnavailableReason,
+            'content' => 'admin/trainer-session/move-branch',
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }
+
     public function update(Request $request, string $id)
     {
         $item = TrainerSession::findOrFail($id);
@@ -501,11 +548,13 @@ class TrainerSessionController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($id, $data) {
-                $trainerSession = TrainerSession::query()
+            $hasPriceDifference = false;
+
+            DB::transaction(function () use ($id, $data, &$hasPriceDifference) {
+                $trainerSession = TrainerSession::with(['branchStore', 'trainerPackages'])
                     ->lockForUpdate()
                     ->findOrFail($id);
-                $trainerPackage = TrainerPackage::findOrFail($data['trainer_package_id']);
+                $trainerPackage = TrainerPackage::with('branchStore')->findOrFail($data['trainer_package_id']);
 
                 if ($trainerPackage->status !== null) {
                     throw new RuntimeException('Only regular PT packages can be used to move this PT registration.');
@@ -520,14 +569,35 @@ class TrainerSessionController extends Controller
                     throw new RuntimeException(MembershipOneClubRestrictionMessage($membership->member_name, 'move PT'));
                 }
 
+                $currentBranchName = data_get($trainerSession, 'branchStore.name', 'Unknown branch');
+                $currentPackageName = data_get($trainerSession, 'trainerPackages.package_name', 'Unknown PT package');
+                $targetBranchName = data_get($trainerPackage, 'branchStore.name', 'Unknown branch');
+                $targetPackageName = $trainerPackage->package_name ?: 'Unknown PT package';
+
+                $moveDescription = 'Data dipindahkan dari ' . $currentBranchName . ' - ' . $currentPackageName
+                    . ' ke ' . $targetBranchName . ' - ' . $targetPackageName
+                    . ' oleh ' . Auth::user()->full_name;
+
+                $existingDescription = trim((string) $trainerSession->description);
+                $updatedDescription = $existingDescription
+                    ? $existingDescription . PHP_EOL . $moveDescription
+                    : $moveDescription;
+
+                $hasPriceDifference = (int) $trainerSession->package_price !== (int) $trainerPackage->package_price
+                    || (int) $trainerSession->admin_price !== (int) $trainerPackage->admin_price;
+
                 $trainerSession->update([
                     'trainer_package_id' => $trainerPackage->id,
                     'branch_store_id' => $trainerPackage->branch_store_id,
+                    'description' => $updatedDescription,
                     'user_id' => Auth::user()->id,
                 ]);
             });
 
             $message = 'PT registration branch moved successfully.';
+            if ($hasPriceDifference) {
+                $message .= ' Target package price is different, but current PT billing and payments were kept unchanged.';
+            }
 
             return redirect()->route('trainer-session.index')->with('success', $message);
         } catch (RuntimeException $exception) {

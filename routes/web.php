@@ -119,6 +119,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('pt-leader', '\App\Http\Controllers\Staff\PTLeaderController');
     Route::get('trainer-report-excel', [MemberRegistrationController::class, 'excel'])->name('trainer-report-excel');
 
+    Route::get('trainer-session/{id}/move-branch', [TrainerSessionController::class, 'moveBranchPage'])
+        ->middleware('admin.only')
+        ->name('trainer-session.move-branch-page');
     Route::put('trainer-session/{id}/move-branch', [TrainerSessionController::class, 'moveBranch'])
         ->middleware('admin.only')
         ->name('trainer-session.move-branch');
