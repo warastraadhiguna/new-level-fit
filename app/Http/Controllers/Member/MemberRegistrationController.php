@@ -757,6 +757,83 @@ class MemberRegistrationController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
+    public function createMembership(string $id)
+    {
+        $branchId = Auth::user()->branch_store_id;
+
+        $data = [
+            'title'             => 'Create Membership',
+            'member'            => Member::findOrFail($id),
+            'memberPackage'     => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'methodPayment'     => MethodPayment::get(),
+            'fitnessConsultant' => User::where('role', 'FC')->get(),
+            'content'           => 'admin/member-registration/create-membership',
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }
+
+    public function storeMembership(Request $request, string $id)
+    {
+        DB::beginTransaction();
+        try {
+            $member = Member::findOrFail($id);
+
+            if (Auth::user()->role == 'FC') {
+                $data = $request->validate([
+                    'member_package_id' => 'required|exists:member_packages,id',
+                    'start_date'        => 'required',
+                    'method_payment_id' => 'required|exists:method_payments,id',
+                    'first_payment'     => 'required',
+                    'description'       => 'nullable',
+                ]);
+
+                $data['fc_id'] = Auth::user()->id;
+            } else {
+                $data = $request->validate([
+                    'member_package_id' => 'required|exists:member_packages,id',
+                    'start_date'        => 'required',
+                    'method_payment_id' => 'required|exists:method_payments,id',
+                    'first_payment'     => 'required',
+                    'fc_id'             => 'required|exists:users,id',
+                    'description'       => 'nullable',
+                ]);
+            }
+
+            $package = MemberPackage::findOrFail($data['member_package_id']);
+            $firstPayment = (int) str_replace(".", "", $data['first_payment']);
+
+            unset($data['first_payment']);
+
+            $startTime = date('H:i:s', strtotime('00:00:00'));
+            $startDate = new \DateTime($data['start_date'] . ' ' . $startTime);
+
+            $data['member_id'] = $member->id;
+            $data['package_price'] = $package->package_price;
+            $data['admin_price'] = $package->admin_price;
+            $data['days'] = $package->days;
+            $data['user_id'] = Auth::user()->id;
+            $data['start_date'] = $startDate->format('Y-m-d H:i:s');
+
+            $newMemberRegistration = MemberRegistration::create($data);
+
+            MemberRegistrationPayment::create([
+                "member_registration_id" => $newMemberRegistration->id,
+                "user_id" => Auth::user()->id,
+                "value" => $firstPayment,
+                "note" => "First Payment",
+                "method_payment_id" => $data["method_payment_id"],
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('member-active.index')->with('success', 'Membership Added Successfully');
+        } catch (Exception $e) {
+            DB::rollback();
+            throw $e;
+        }
+    }
+
     public function renewMemberRegistration(Request $request, $id)
     {
         $statusMember = MemberRegistration::find($id);

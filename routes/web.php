@@ -176,6 +176,12 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('member-unpaid', [MemberRegistrationController::class, 'unpaid'])->name('member-unpaid');
 
     Route::resource('members', '\App\Http\Controllers\Member\MemberController');
+    Route::get('members/{id}/create-membership', [MemberRegistrationController::class, 'createMembership'])
+        ->middleware('admin.only')
+        ->name('members.create-membership');
+    Route::post('members/{id}/store-membership', [MemberRegistrationController::class, 'storeMembership'])
+        ->middleware('admin.only')
+        ->name('members.store-membership');
     Route::get('all-member', [MemberListController::class, 'allData'])->name('all-member');
     Route::get('member-filter', [MemberListController::class, 'filter'])->name('member-filter');
     Route::get('print-member-registration-over-pdf', [MemberRegistrationOverController::class, 'pdfReport'])->name('print-member-registration-over-pdf');

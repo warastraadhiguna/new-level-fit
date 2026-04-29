@@ -132,6 +132,10 @@
                                                 Member</a>
                                             <a href="{{ route('members.show', $item->id) }}"
                                                 class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
+                                            @if (Auth::user()->role == 'ADMIN')
+                                                <a href="{{ route('members.create-membership', $item->id) }}"
+                                                    class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
+                                            @endif
                                             {{-- @if ($item->lo_status == 'Running' && $item->lo_is_used == 0) --}}
                                             @if (   $item->lo_is_used == 0)
                                                 <a href="{{ route('useLayoutOrientation', $item->id) }}"
