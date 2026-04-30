@@ -212,6 +212,13 @@
                                     <td>
                                         <h6>{{ $item->member_name }},</h6>
                                         <h6>{{ $item->member_code }}</h6>
+                                        @php
+                                            $isAllClub = in_array(strtolower((string) $item->is_all_club), ['1', 'true', 'yes', 'all club', 'all_club']);
+                                        @endphp
+                                        <h6>{{ $item->package_name }}</h6>
+                                        <span class="badge {{ $isAllClub ? 'badge-primary' : 'badge-secondary' }} badge-sm">
+                                            {{ $isAllClub ? 'All Club' : 'One Club' }}
+                                        </span>
                                         <br/>
                                         <h6>{{ $item->branch_store_name }}</h6>                                        
                                     </td>

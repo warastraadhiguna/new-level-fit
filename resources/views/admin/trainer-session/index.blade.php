@@ -157,6 +157,7 @@
                                     <td>
                                         <h6>{{ $item->member_name }},</h6>
                                         <h6>{{ $item->member_code }}</h6>
+                                        <h6>{{ $item->package_name }}</h6>
                                         <br/>
                                         <h6>{{ $item->branch_store_name }}</h6>                                           
                                     </td>
