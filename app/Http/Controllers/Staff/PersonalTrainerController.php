@@ -69,14 +69,26 @@ class PersonalTrainerController extends Controller
 
     public function restore($id)
     {
-        PersonalTrainer::withTrashed()->find($id)->restore();
+        $personalTrainer = PersonalTrainer::withTrashed()->find($id);
+
+        if (!$personalTrainer) {
+            return redirect()->back()->with('errorr', 'Personal trainer tidak ditemukan');
+        }
+
+        $personalTrainer->restore();
         return redirect()->back()->with('success', 'Data berhasil di restore');
     }
 
     public function forceDelete($id)
     {
         try {
-            PersonalTrainer::onlyTrashed()->find($id)->forceDelete();;
+            $personalTrainer = PersonalTrainer::onlyTrashed()->find($id);
+
+            if (!$personalTrainer) {
+                return redirect()->back()->with('errorr', 'Personal trainer tidak ditemukan');
+            }
+
+            $personalTrainer->forceDelete();
             return redirect()->back()->with('success', 'Data Deleted Permanently and Successfully');
         } catch (\Throwable $th) {
             return redirect()->back()->with('errorr', 'Gagal menghapus data');

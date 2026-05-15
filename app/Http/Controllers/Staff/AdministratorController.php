@@ -69,4 +69,36 @@ class AdministratorController extends Controller
             return redirect('/staff?page=' . Request()->input('page'))->with('errorr', 'Gagal menghapus administrator ' . $administrator->full_name);
         }
     }
+
+    public function restore($id)
+    {
+        $administrator = User::withTrashed()
+            ->where('role', 'ADMIN')
+            ->find($id);
+
+        if (!$administrator) {
+            return redirect()->back()->with('errorr', 'Administrator tidak ditemukan');
+        }
+
+        $administrator->restore();
+        return redirect()->back()->with('success', 'Data berhasil di restore');
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            $administrator = User::onlyTrashed()
+                ->where('role', 'ADMIN')
+                ->find($id);
+
+            if (!$administrator) {
+                return redirect()->back()->with('errorr', 'Administrator tidak ditemukan');
+            }
+
+            $administrator->forceDelete();
+            return redirect()->back()->with('success', 'Data Deleted Permanently and Successfully');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('errorr', 'Gagal menghapus data');
+        }
+    }
 }

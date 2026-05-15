@@ -233,8 +233,8 @@
                                                             class="btn light btn-danger btn-xs btn-block">Delete</button>
                                                     </form>
                                                 @else
-                                                    <a href="{{ route('restore-personal-trainer', $item->id) }}" onclick="return confirm('Restore Data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
-                                                    <form action="{{ route('personal-trainer-force-delete', $item->id) }}"
+                                                    <a href="{{ route('restore-administrator', $item->id) }}" onclick="return confirm('Restore Data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
+                                                    <form action="{{ route('administrator-force-delete', $item->id) }}"
                                                         onclick="return confirm('Permanently delete? ')"
                                                         method="POST">
                                                         @method('delete')

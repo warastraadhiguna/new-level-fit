@@ -91,6 +91,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     
     Route::get('cetak-staff-pdf', [StaffController::class, 'cetak_pdf'])->name('cetak-staff-pdf');
     Route::resource('administrator', '\App\Http\Controllers\Staff\AdministratorController');
+    Route::get('restore-administrator/{id}', [AdministratorController::class, 'restore'])->name('restore-administrator');
+    Route::delete('administrator-force-delete/{id}', [AdministratorController::class, 'forceDelete'])->name('administrator-force-delete');
 
     Route::put('administrator-branch-update', [AdministratorController::class, 'branchUpdate'])->name('administrator-branch-update');
 
