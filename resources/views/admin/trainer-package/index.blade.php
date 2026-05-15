@@ -19,11 +19,9 @@
                             <tr>
                                 <th>Package Name</th>
                                 <th>Branch</th>                                  
-                                <th>Number Of Session</th>
-                                <th>Number Of Days</th>
-                                <th>Package Price</th>
+                                <th>Session / Days</th>
+                                <th>Price / Admin</th>
                                 <th>Package Type</th>
-                                <th>Admin Price</th>
                                 <th>Description</th>
                                 <th>Staff</th>
                                 @if (Auth::user()->role == 'ADMIN')
@@ -41,19 +39,15 @@
                                         <h6>{{ $item->branchStore->name }}</h6>
                                     </td>                                       
                                     <td>
-                                        <h6>{{ $item->number_of_session }}</h6>
+                                        <h6 class="mb-1">Session: {{ $item->number_of_session }}</h6>
+                                        <h6 class="mb-0">Days: {{ $item->days }}</h6>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->days }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ formatRupiah($item->package_price) }}</h6>
+                                        <h6 class="mb-1">Package: {{ formatRupiah($item->package_price) }}</h6>
+                                        <h6 class="mb-0">Admin: {{ formatRupiah($item->admin_price) }}</h6>
                                     </td>
                                     <td>
                                         <h6>{{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ formatRupiah($item->admin_price) }}</h6>
                                     </td>
                                     <td>
                                         <h6>{{ $item->description }}</h6>
