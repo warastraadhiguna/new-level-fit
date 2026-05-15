@@ -86,7 +86,7 @@ class GateMemberController extends Controller
 
     public function checkIn(Request $request)
     {
-        $validator = $this->gateActionValidator($request);
+        $validator = $this->gateActionValidator($request, 'check_in_time');
 
         if ($validator->fails()) {
             return $this->validationError($validator);
@@ -94,7 +94,8 @@ class GateMemberController extends Controller
 
         $memberId = (int) $validator->validated()['member_id'];
         $branchStoreId = (int) $validator->validated()['store_branch_id'];
-        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId);
+        $checkInTime = $this->parseEventTime($validator->validated()['check_in_time']);
+        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId, $checkInTime);
 
         if (!$membership) {
             return response()->json([
@@ -114,7 +115,7 @@ class GateMemberController extends Controller
             ], 409);
         }
 
-        $checkIn = DB::transaction(function () use ($membership, $branchStoreId, $request) {
+        $checkIn = DB::transaction(function () use ($membership, $branchStoreId, $request, $checkInTime) {
             DB::table('member_registrations')
                 ->where('id', $membership->member_registration_id)
                 ->lockForUpdate()
@@ -132,7 +133,7 @@ class GateMemberController extends Controller
             return CheckInMember::create($this->memberCheckInPayload([
                 'member_registration_id' => $membership->member_registration_id,
                 'branch_store_id' => $branchStoreId,
-                'check_in_time' => Carbon::now(self::TIMEZONE),
+                'check_in_time' => $checkInTime,
                 'user_id' => optional($request->user())->id,
             ]));
         });
@@ -154,7 +155,7 @@ class GateMemberController extends Controller
 
     public function checkOut(Request $request)
     {
-        $validator = $this->gateActionValidator($request);
+        $validator = $this->gateActionValidator($request, 'check_out_time');
 
         if ($validator->fails()) {
             return $this->validationError($validator);
@@ -162,7 +163,8 @@ class GateMemberController extends Controller
 
         $memberId = (int) $validator->validated()['member_id'];
         $branchStoreId = (int) $validator->validated()['store_branch_id'];
-        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId);
+        $checkOutTime = $this->parseEventTime($validator->validated()['check_out_time']);
+        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId, $checkOutTime);
 
         if (!$membership) {
             return response()->json([
@@ -170,7 +172,7 @@ class GateMemberController extends Controller
             ], 404);
         }
 
-        $checkIn = DB::transaction(function () use ($membership) {
+        $checkIn = DB::transaction(function () use ($membership, $checkOutTime) {
             DB::table('member_registrations')
                 ->where('id', $membership->member_registration_id)
                 ->lockForUpdate()
@@ -186,7 +188,7 @@ class GateMemberController extends Controller
             }
 
             $latestCheckIn->update([
-                'check_out_time' => Carbon::now(self::TIMEZONE),
+                'check_out_time' => $checkOutTime,
             ]);
 
             return $latestCheckIn->fresh();
@@ -207,11 +209,11 @@ class GateMemberController extends Controller
         ]);
     }
 
-    private function findAccessibleActiveMembership(int $memberId, int $branchStoreId)
+    private function findAccessibleActiveMembership(int $memberId, int $branchStoreId, Carbon $eventTime)
     {
-        $today = Carbon::now(self::TIMEZONE)->toDateString();
+        $eventDate = $eventTime->toDateString();
 
-        return DB::table('member_registrations as mr')
+        $query = DB::table('member_registrations as mr')
             ->select([
                 'mr.id as member_registration_id',
                 'mr.start_date',
@@ -239,11 +241,12 @@ class GateMemberController extends Controller
                     FROM leave_days
                     GROUP BY IFNULL(leave_day_continue_id, id)
                 ) ld_view ON ld.id = ld_view.leave_day_continue_id
-                WHERE NOW() BETWEEN ld.submission_date AND DATE_ADD(ld.submission_date, INTERVAL IFNULL(ld_view.total_days, 0) DAY)
+                WHERE ? BETWEEN ld.submission_date AND DATE_ADD(ld.submission_date, INTERVAL IFNULL(ld_view.total_days, 0) DAY)
             ) as active_leave'), 'active_leave.member_registration_id', '=', 'mr.id')
+            ->addBinding($eventTime->toDateTimeString(), 'join')
             ->where('m.id', $memberId)
-            ->whereDate('mr.start_date', '<=', $today)
-            ->whereRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) >= ?', [$today])
+            ->whereDate('mr.start_date', '<=', $eventDate)
+            ->whereRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) >= ?', [$eventDate])
             ->where(function ($query) use ($branchStoreId) {
                 $query
                     // All club dapat masuk ke semua cabang.
@@ -255,16 +258,23 @@ class GateMemberController extends Controller
                     });
             })
             ->orderBy('mr.start_date', 'desc')
-            ->orderBy('mr.id', 'desc')
-            ->first();
+            ->orderBy('mr.id', 'desc');
+
+        return $query->first();
     }
 
-    private function gateActionValidator(Request $request)
+    private function gateActionValidator(Request $request, string $timeField)
     {
         return Validator::make($request->all(), [
             'store_branch_id' => ['required', 'integer'],
             'member_id' => ['required', 'integer', 'exists:members,id'],
+            $timeField => ['required', 'date'],
         ]);
+    }
+
+    private function parseEventTime(string $time): Carbon
+    {
+        return Carbon::parse($time, self::TIMEZONE)->setTimezone(self::TIMEZONE);
     }
 
     private function validationError($validator)
