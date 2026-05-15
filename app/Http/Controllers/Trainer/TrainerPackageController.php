@@ -18,7 +18,7 @@ class TrainerPackageController extends Controller
         $data = [
             'title'                 => 'Trainer Package List',
             'memberPackage'         => MemberPackage::with("branchStore")->get(),            
-            'trainerPackage'        => TrainerPackage::get(),
+            'trainerPackage'        => TrainerPackage::with(['branchStore', 'users'])->get(),
             'users'                 => User::get(),
             'branch_stores'         => BranchStore::get(),            
             'content'               => 'admin/trainer-package/index'

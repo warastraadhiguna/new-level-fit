@@ -29,11 +29,18 @@ class TrainerPackage extends Model
 
     public function users()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id')
+            ->withTrashed()
+            ->withDefault([
+                'full_name' => '-',
+            ]);
     }
 
     public function branchStore()
     {
-        return $this->belongsTo(BranchStore::class);
+        return $this->belongsTo(BranchStore::class)
+            ->withDefault([
+                'name' => '-',
+            ]);
     }        
 }
