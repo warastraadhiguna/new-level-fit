@@ -7,11 +7,13 @@ use App\Models\User;
 use App\Traits\HasFormatRupiah;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TrainerPackage extends Model
 {
     use HasFormatRupiah;
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'branch_store_id',        

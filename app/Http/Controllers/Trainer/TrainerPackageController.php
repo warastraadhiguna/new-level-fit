@@ -75,4 +75,43 @@ class TrainerPackageController extends Controller
             return redirect()->back()->with('errorr', 'Failed, please check other session where using this trainer package');
         }
     }
+
+    public function dataSoft()
+    {
+        $data = [
+            'title'             => 'Old Trainer Package',
+            'trainerPackages'   => TrainerPackage::onlyTrashed()->with(['branchStore', 'users'])->get(),
+            'content'           => 'admin/trainer-package/soft'
+        ];
+
+        return view('admin.layouts.wrapper', $data);
+    }
+
+    public function restore($id)
+    {
+        $trainerPackage = TrainerPackage::withTrashed()->find($id);
+
+        if (!$trainerPackage) {
+            return redirect()->back()->with('errorr', 'Trainer Package tidak ditemukan');
+        }
+
+        $trainerPackage->restore();
+        return redirect()->back()->with('success', 'Data berhasil di restore');
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            $trainerPackage = TrainerPackage::onlyTrashed()->find($id);
+
+            if (!$trainerPackage) {
+                return redirect()->back()->with('errorr', 'Trainer Package tidak ditemukan');
+            }
+
+            $trainerPackage->forceDelete();
+            return redirect()->back()->with('success', 'Trainer Package Deleted Permanently Successfully');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('errorr', 'Gagal menghapus paket trainer');
+        }
+    }
 }

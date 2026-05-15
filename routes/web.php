@@ -18,6 +18,7 @@ use App\Http\Controllers\Staff\FitnessConsultantController;
 use App\Http\Controllers\Staff\PersonalTrainerController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
+use App\Http\Controllers\Trainer\TrainerPackageController;
 use App\Http\Controllers\Trainer\TrainerSessionCheckInController;
 use App\Http\Controllers\Trainer\TrainerSessionController;
 use App\Http\Controllers\Trainer\TrainerSessionOverController;
@@ -77,6 +78,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('pt-history/detail/{id}', [TrainerSessionController::class, 'historyDetail'])->name('detail-pt-history');
 
     Route::resource('trainer-package', '\App\Http\Controllers\Trainer\TrainerPackageController');
+    Route::get('trainer-packages/data-soft', [TrainerPackageController::class, 'dataSoft'])->name('trainer-package-data-soft');
+    Route::get('restore-trainer-package-data/{id}', [TrainerPackageController::class, 'restore'])->name('restore-trainer-package-data');
+    Route::delete('trainer-packages-force-delete/{id}', [TrainerPackageController::class, 'forceDelete'])->name('trainer-packages-force-delete');
     Route::resource('trainer-package-type', '\App\Http\Controllers\Trainer\TrainerPackageTypeController');
     Route::resource('trainer-transaction-type', '\App\Http\Controllers\Trainer\TrainerTransactionTypeController');
 

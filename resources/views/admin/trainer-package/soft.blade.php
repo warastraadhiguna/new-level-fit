@@ -2,13 +2,10 @@
     <div class="col-xl-12">
         <div class="row">
             <div class="col-xl-12">
-                <div class="page-title flex-wrap justify-content-between">
-                    <div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
-                            + New Trainer Package
-                        </button>
+                <div class="page-title flex-wrap">
+                    <div class="d-flex justify-content-around">
+                        <a href="{{ route('trainer-package.index') }}" class="btn btn-primary">Kembali</a>
                     </div>
-                    <a href="{{ route('trainer-package-data-soft') }}" class="btn btn-secondary">Old Trainer Package</a>
                 </div>
             </div>
             <!--column-->
@@ -19,26 +16,24 @@
                         <thead>
                             <tr>
                                 <th>Package Name</th>
-                                <th>Branch</th>                                  
+                                <th>Branch</th>
                                 <th>Session / Days</th>
                                 <th>Price / Admin</th>
                                 <th>Package Type</th>
                                 <th>Description</th>
                                 <th>Staff</th>
-                                @if (Auth::user()->role == 'ADMIN')
-                                    <th>Action</th>
-                                @endif
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($trainerPackage as $item)
+                            @foreach ($trainerPackages as $item)
                                 <tr>
                                     <td>
                                         <h6>{{ $item->package_name }}</h6>
                                     </td>
                                     <td>
                                         <h6>{{ $item->branchStore->name }}</h6>
-                                    </td>                                       
+                                    </td>
                                     <td>
                                         <h6 class="mb-1">Session: {{ $item->number_of_session }}</h6>
                                         <h6 class="mb-0">Days: {{ $item->days }}</h6>
@@ -56,26 +51,17 @@
                                     <td>
                                         <h6>{{ $item->users->full_name }}</h6>
                                     </td>
-                                    @if (Auth::user()->role == 'ADMIN')
-                                        <td>
-                                            <div>
-                                                <button type="button"
-                                                    class="btn light btn-warning btn-xs mb-1 btn-block"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalEdit{{ $item->id }}">
-                                                    Edit
-                                                </button>
-                                                <form action="{{ route('trainer-package.destroy', $item->id) }}"
-                                                    onclick="return confirm('Delete Trainer Package Data ? ')"
-                                                    method="POST">
-                                                    @method('delete')
-                                                    @csrf
-                                                    <button type="submit"
-                                                        class="btn light btn-danger btn-xs btn-block">Delete</button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    @endif
+                                    <td>
+                                        <a href="{{ route('restore-trainer-package-data', $item->id) }}" onclick="return confirm('Restore data?')" class="btn light btn-warning btn-xs btn-block">Restore</a>
+                                        <form action="{{ route('trainer-packages-force-delete', $item->id) }}"
+                                            onclick="return confirm('Permanently delete? ')"
+                                            method="POST">
+                                            @method('delete')
+                                            @csrf
+                                            <button type="submit"
+                                                class="btn light btn-danger btn-xs btn-block">Force Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -86,5 +72,3 @@
         </div>
     </div>
 </div>
-@include('admin.trainer-package.create')
-@include('admin.trainer-package.edit')
