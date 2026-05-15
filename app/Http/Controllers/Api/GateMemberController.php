@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member\CheckInMember;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class GateMemberController extends Controller
 {
+    private const TIMEZONE = 'Asia/Jakarta';
+
     public function index(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -24,7 +28,7 @@ class GateMemberController extends Controller
         }
 
         $branchStoreId = (int) $validator->validated()['store_branch_id'];
-        $today = Carbon::now('Asia/Jakarta')->toDateString();
+        $today = Carbon::now(self::TIMEZONE)->toDateString();
 
         $activeMemberships = DB::table('member_registrations as mr')
             ->selectRaw('MAX(mr.id) as member_registration_id')
@@ -78,6 +82,252 @@ class GateMemberController extends Controller
             ->values();
 
         return response()->json($members);
+    }
+
+    public function checkIn(Request $request)
+    {
+        $validator = $this->gateActionValidator($request);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator);
+        }
+
+        $memberId = (int) $validator->validated()['member_id'];
+        $branchStoreId = (int) $validator->validated()['store_branch_id'];
+        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId);
+
+        if (!$membership) {
+            return response()->json([
+                'message' => 'Member active not found or cannot access this branch.',
+            ], 404);
+        }
+
+        if ($membership->leave_day_status === 'Freeze') {
+            return response()->json([
+                'message' => $membership->full_name . ' sedang cuti.',
+            ], 409);
+        }
+
+        if ($this->membershipHasUnpaidPayment($membership, $branchStoreId)) {
+            return response()->json([
+                'message' => 'Unpaid Member.',
+            ], 409);
+        }
+
+        $checkIn = DB::transaction(function () use ($membership, $branchStoreId, $request) {
+            DB::table('member_registrations')
+                ->where('id', $membership->member_registration_id)
+                ->lockForUpdate()
+                ->first();
+
+            $latestCheckIn = CheckInMember::where('member_registration_id', $membership->member_registration_id)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($latestCheckIn && !$latestCheckIn->check_out_time) {
+                return null;
+            }
+
+            return CheckInMember::create($this->memberCheckInPayload([
+                'member_registration_id' => $membership->member_registration_id,
+                'branch_store_id' => $branchStoreId,
+                'check_in_time' => Carbon::now(self::TIMEZONE),
+                'user_id' => optional($request->user())->id,
+            ]));
+        });
+
+        if (!$checkIn) {
+            return response()->json([
+                'message' => 'Member already checked in.',
+                'member' => $this->memberResponse($membership),
+            ], 409);
+        }
+
+        return response()->json([
+            'message' => 'Member Checked In Successfully',
+            'status' => 'checked_in',
+            'member' => $this->memberResponse($membership),
+            'check_in' => $this->checkInResponse($checkIn),
+        ]);
+    }
+
+    public function checkOut(Request $request)
+    {
+        $validator = $this->gateActionValidator($request);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator);
+        }
+
+        $memberId = (int) $validator->validated()['member_id'];
+        $branchStoreId = (int) $validator->validated()['store_branch_id'];
+        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId);
+
+        if (!$membership) {
+            return response()->json([
+                'message' => 'Member active not found or cannot access this branch.',
+            ], 404);
+        }
+
+        $checkIn = DB::transaction(function () use ($membership) {
+            DB::table('member_registrations')
+                ->where('id', $membership->member_registration_id)
+                ->lockForUpdate()
+                ->first();
+
+            $latestCheckIn = CheckInMember::where('member_registration_id', $membership->member_registration_id)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$latestCheckIn || $latestCheckIn->check_out_time) {
+                return null;
+            }
+
+            $latestCheckIn->update([
+                'check_out_time' => Carbon::now(self::TIMEZONE),
+            ]);
+
+            return $latestCheckIn->fresh();
+        });
+
+        if (!$checkIn) {
+            return response()->json([
+                'message' => 'Member is not currently checked in.',
+                'member' => $this->memberResponse($membership),
+            ], 409);
+        }
+
+        return response()->json([
+            'message' => 'Member Checked Out Successfully',
+            'status' => 'checked_out',
+            'member' => $this->memberResponse($membership),
+            'check_in' => $this->checkInResponse($checkIn),
+        ]);
+    }
+
+    private function findAccessibleActiveMembership(int $memberId, int $branchStoreId)
+    {
+        $today = Carbon::now(self::TIMEZONE)->toDateString();
+
+        return DB::table('member_registrations as mr')
+            ->select([
+                'mr.id as member_registration_id',
+                'mr.start_date',
+                'mr.package_price as mr_package_price',
+                'mr.admin_price as mr_admin_price',
+                'm.id',
+                'm.full_name',
+                'm.card_number',
+                'm.member_code',
+                'm.photos',
+                'mp.package_name',
+                'mp.is_all_club',
+                'mp.branch_store_id as member_package_branch_store_id',
+            ])
+            ->selectRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) as end_date')
+            ->selectRaw('IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mrp.member_registration_id = mr.id), 0) as payment_summary')
+            ->selectRaw('CASE WHEN active_leave.id IS NULL THEN "No Leave Days" ELSE "Freeze" END as leave_day_status')
+            ->join('members as m', 'm.id', '=', 'mr.member_id')
+            ->join('member_packages as mp', 'mp.id', '=', 'mr.member_package_id')
+            ->leftJoin(DB::raw('(
+                SELECT ld.id, ld.member_registration_id, ld.submission_date, ld_view.total_days
+                FROM leave_days ld
+                INNER JOIN (
+                    SELECT IFNULL(leave_day_continue_id, id) AS leave_day_continue_id, SUM(days) AS total_days
+                    FROM leave_days
+                    GROUP BY IFNULL(leave_day_continue_id, id)
+                ) ld_view ON ld.id = ld_view.leave_day_continue_id
+                WHERE NOW() BETWEEN ld.submission_date AND DATE_ADD(ld.submission_date, INTERVAL IFNULL(ld_view.total_days, 0) DAY)
+            ) as active_leave'), 'active_leave.member_registration_id', '=', 'mr.id')
+            ->where('m.id', $memberId)
+            ->whereDate('mr.start_date', '<=', $today)
+            ->whereRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) >= ?', [$today])
+            ->where(function ($query) use ($branchStoreId) {
+                $query
+                    // All club dapat masuk ke semua cabang.
+                    ->where('mp.is_all_club', 1)
+                    // One club hanya dapat masuk ke cabang package yang sama dengan request.
+                    ->orWhere(function ($query) use ($branchStoreId) {
+                        $query->where('mp.is_all_club', 0)
+                            ->where('mp.branch_store_id', $branchStoreId);
+                    });
+            })
+            ->orderBy('mr.start_date', 'desc')
+            ->orderBy('mr.id', 'desc')
+            ->first();
+    }
+
+    private function gateActionValidator(Request $request)
+    {
+        return Validator::make($request->all(), [
+            'store_branch_id' => ['required', 'integer'],
+            'member_id' => ['required', 'integer', 'exists:members,id'],
+        ]);
+    }
+
+    private function validationError($validator)
+    {
+        return response()->json([
+            'message' => 'The given data was invalid.',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    private function membershipHasUnpaidPayment($membership, int $branchStoreId): bool
+    {
+        if (!BranchStorePaymentIsStrict($branchStoreId)) {
+            return false;
+        }
+
+        return (int) $membership->payment_summary < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+    }
+
+    private function memberResponse($member): array
+    {
+        return [
+            'id' => $member->id,
+            'full_name' => $member->full_name,
+            'card_number' => $member->card_number,
+            'member_code' => $member->member_code,
+            'active_date' => $member->start_date,
+            'end_date' => $member->end_date,
+            'package_name' => $member->package_name,
+            'package_type' => (int) $member->is_all_club === 1 ? 'all_club' : 'one_club',
+            'url_photo' => $this->photoUrl($member->photos),
+        ];
+    }
+
+    private function checkInResponse(CheckInMember $checkIn): array
+    {
+        return [
+            'id' => $checkIn->id,
+            'member_registration_id' => $checkIn->member_registration_id,
+            'branch_store_id' => $checkIn->branch_store_id ?? null,
+            'check_in_time' => $checkIn->check_in_time,
+            'check_out_time' => $checkIn->check_out_time,
+        ];
+    }
+
+    private function memberCheckInPayload(array $data): array
+    {
+        if (!$this->memberCheckInHasBranchStoreColumn()) {
+            unset($data['branch_store_id']);
+        }
+
+        return $data;
+    }
+
+    private function memberCheckInHasBranchStoreColumn(): bool
+    {
+        static $hasColumn = null;
+
+        if ($hasColumn === null) {
+            $hasColumn = Schema::hasColumn('check_in_members', 'branch_store_id');
+        }
+
+        return $hasColumn;
     }
 
     private function photoUrl(?string $path): ?string

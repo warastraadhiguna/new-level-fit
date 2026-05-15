@@ -19,4 +19,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('auth:sanctum')->get('/gate/members', [GateMemberController::class, 'index']);
+Route::middleware('auth:sanctum')->prefix('gate')->group(function () {
+    Route::get('/members', [GateMemberController::class, 'index']);
+    Route::post('/check-in', [GateMemberController::class, 'checkIn']);
+    Route::post('/check-out', [GateMemberController::class, 'checkOut']);
+});
