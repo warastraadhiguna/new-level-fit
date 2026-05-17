@@ -58,7 +58,7 @@ class GateMemberController extends Controller
                 'mp.package_name',
                 'mp.is_all_club',
             ])
-            ->selectRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) as end_date')
+            ->selectRaw('CONCAT(DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)), " 23:59:59") as end_date')
             ->joinSub($activeMemberships, 'active_memberships', function ($join) {
                 $join->on('active_memberships.member_registration_id', '=', 'mr.id');
             })
@@ -228,7 +228,7 @@ class GateMemberController extends Controller
                 'mp.is_all_club',
                 'mp.branch_store_id as member_package_branch_store_id',
             ])
-            ->selectRaw('DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)) as end_date')
+            ->selectRaw('CONCAT(DATE(DATE_ADD(mr.start_date, INTERVAL mr.days DAY)), " 23:59:59") as end_date')
             ->selectRaw('IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mrp.member_registration_id = mr.id), 0) as payment_summary')
             ->selectRaw('CASE WHEN active_leave.id IS NULL THEN "No Leave Days" ELSE "Freeze" END as leave_day_status')
             ->join('members as m', 'm.id', '=', 'mr.member_id')
