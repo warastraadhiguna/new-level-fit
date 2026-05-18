@@ -264,7 +264,7 @@ class TrainerSessionController extends Controller
         DB::beginTransaction();
         try {
 
-            $membership = GetLatestNonExpiredMembershipAccess($data['member_id']);
+            $membership = GetLatestNonExpiredMembershipAccess($data['member_id'], '', Auth::user()->branch_store_id);
             if (!$membership) {
                 DB::rollback();
 

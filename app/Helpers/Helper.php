@@ -111,7 +111,7 @@ function MembershipOneClubRestrictionMessage($memberName, $activity = 'akses')
     return $memberName . ' memiliki membership One Club, tidak bisa ' . $activity . ' di cabang ini';
 }
 
-function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '')
+function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '', $branchStoreId = null)
 {
     $sql = "SELECT
             m.id AS member_id,
@@ -122,20 +122,22 @@ function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '')
             mp.is_all_club,
             mp.branch_store_id AS member_package_branch_store_id
         FROM members m
-        JOIN (
-            SELECT r.*
-            FROM member_registrations r
-            JOIN (
-                SELECT member_id, MAX(start_date) AS max_start_date
-                FROM member_registrations
-                GROUP BY member_id
-            ) latest ON latest.member_id = r.member_id
-                AND latest.max_start_date = r.start_date
-        ) mr ON mr.member_id = m.id
+        JOIN member_registrations mr ON mr.member_id = m.id
         JOIN member_packages mp ON mp.id = mr.member_package_id
-        WHERE DATE_ADD(mr.start_date, INTERVAL mr.days DAY) >= NOW()";
+        LEFT JOIN (
+            SELECT member_registration_id, SUM(days) AS total_days
+            FROM leave_days
+            GROUP BY member_registration_id
+        ) ld ON ld.member_registration_id = mr.id
+        WHERE DATE(mr.start_date) <= CURDATE()
+            AND DATE(DATE_ADD(mr.start_date, INTERVAL (mr.days + IFNULL(ld.total_days, 0)) DAY)) >= CURDATE()";
 
     $bindings = [];
+
+    if ($branchStoreId) {
+        $sql .= " AND (mp.is_all_club = 1 OR mp.branch_store_id = ?)";
+        $bindings[] = $branchStoreId;
+    }
 
     if ($memberId) {
         $sql .= " AND m.id = ?";
@@ -147,7 +149,7 @@ function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '')
         $bindings[] = $cardNumber;
     }
 
-    $sql .= " ORDER BY mr.start_date DESC";
+    $sql .= " ORDER BY mp.is_all_club DESC, mr.start_date DESC, mr.id DESC";
 
     $memberships = \Illuminate\Support\Facades\DB::select($sql, $bindings);
 
