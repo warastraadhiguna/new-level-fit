@@ -162,19 +162,20 @@ function GetAccessibleNonExpiredMembersForBranch($branchStoreId)
             m.member_code,
             m.phone_number
         FROM members m
-        JOIN (
-            SELECT r.*
-            FROM member_registrations r
-            JOIN (
-                SELECT member_id, MAX(start_date) AS max_start_date
-                FROM member_registrations
-                GROUP BY member_id
-            ) latest ON latest.member_id = r.member_id
-                AND latest.max_start_date = r.start_date
-        ) mr ON mr.member_id = m.id
-        JOIN member_packages mp ON mp.id = mr.member_package_id
-        WHERE DATE_ADD(mr.start_date, INTERVAL mr.days DAY) >= NOW()
-            AND (mp.is_all_club = 1 OR mp.branch_store_id = ?)
+        WHERE EXISTS (
+            SELECT 1
+            FROM member_registrations mr
+            JOIN member_packages mp ON mp.id = mr.member_package_id
+            LEFT JOIN (
+                SELECT member_registration_id, SUM(days) AS total_days
+                FROM leave_days
+                GROUP BY member_registration_id
+            ) ld ON ld.member_registration_id = mr.id
+            WHERE mr.member_id = m.id
+                AND DATE(mr.start_date) <= CURDATE()
+                AND DATE(DATE_ADD(mr.start_date, INTERVAL (mr.days + IFNULL(ld.total_days, 0)) DAY)) >= CURDATE()
+                AND (mp.is_all_club = 1 OR mp.branch_store_id = ?)
+        )
         ORDER BY m.full_name";
 
     return \Illuminate\Support\Facades\DB::select($sql, [$branchStoreId]);
