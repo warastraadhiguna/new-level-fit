@@ -17,7 +17,7 @@ class GateMemberController extends Controller
     public function index(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'store_branch_id' => ['required', 'integer'],
+            'store_branch_id' => ['required', 'integer', 'exists:branch_stores,id'],
         ]);
 
         if ($validator->fails()) {
@@ -28,6 +28,7 @@ class GateMemberController extends Controller
         }
 
         $branchStoreId = (int) $validator->validated()['store_branch_id'];
+        $branchStoreType = DB::table('branch_stores')->where('id', $branchStoreId)->value('type') ?: 'both';
         $today = Carbon::now(self::TIMEZONE)->toDateString();
 
         $activeMemberships = DB::table('member_registrations as mr')
@@ -64,6 +65,12 @@ class GateMemberController extends Controller
             })
             ->join('members as m', 'm.id', '=', 'mr.member_id')
             ->join('member_packages as mp', 'mp.id', '=', 'mr.member_package_id')
+            ->when(in_array($branchStoreType, ['male', 'female'], true), function ($query) use ($branchStoreType) {
+                $query->where(function ($query) use ($branchStoreType) {
+                    $query->whereNull('m.gender')
+                        ->orWhereRaw('LOWER(m.gender) = ?', [$branchStoreType]);
+                });
+            })
             ->orderBy('m.full_name')
             ->get()
             ->map(function ($member) {
@@ -266,7 +273,7 @@ class GateMemberController extends Controller
     private function gateActionValidator(Request $request, string $timeField)
     {
         return Validator::make($request->all(), [
-            'store_branch_id' => ['required', 'integer'],
+            'store_branch_id' => ['required', 'integer', 'exists:branch_stores,id'],
             'member_id' => ['required', 'integer', 'exists:members,id'],
             $timeField => ['required', 'date'],
         ]);
