@@ -72,6 +72,7 @@ class MemberController extends Controller
                 'a.address',
                 'a.status',
                 'a.photos',
+                'a.small_photos',
                 'a.lo_is_used',
                 'a.lo_start_date',
                 'a.lo_days',
@@ -420,11 +421,51 @@ class MemberController extends Controller
             }
 
             Storage::delete($member->photos);
+            if ($member->small_photos) {
+                Storage::disk('public')->delete($member->small_photos);
+            }
             $member->delete();
             return redirect()->back()->with('success', 'Member Deleted Successfully');
         } catch (\Throwable $e) {
             return redirect()->back()->with('errorr', 'Member Deleted Failed, please check other session where using this member');
         }
+    }
+
+    public function updateSmallPhoto(Request $request, string $id)
+    {
+        $data = $request->validate([
+            'small_photo_data' => ['required', 'string'],
+        ]);
+
+        $member = Member::findOrFail($id);
+
+        if (!$member->photos) {
+            return redirect()->route('members.index')->with('errorr', 'Photo utama member belum tersedia');
+        }
+
+        if (!preg_match('/^data:image\/(jpeg|jpg|png);base64,/', $data['small_photo_data'])) {
+            return redirect()->route('members.index')->with('errorr', 'Format small photo tidak valid');
+        }
+
+        $imageData = preg_replace('/^data:image\/(jpeg|jpg|png);base64,/', '', $data['small_photo_data']);
+        $imageData = base64_decode($imageData, true);
+
+        if ($imageData === false) {
+            return redirect()->route('members.index')->with('errorr', 'Small photo gagal diproses');
+        }
+
+        if ($member->small_photos) {
+            Storage::disk('public')->delete($member->small_photos);
+        }
+
+        $path = 'assets/member/small/member-' . $member->id . '-' . time() . '.jpg';
+        Storage::disk('public')->put($path, $imageData);
+
+        $member->update([
+            'small_photos' => $path,
+        ]);
+
+        return redirect()->route('members.index')->with('success', 'Small photo berhasil diupdate');
     }
 
     public function cetak_pdf()

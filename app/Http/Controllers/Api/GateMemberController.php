@@ -55,6 +55,7 @@ class GateMemberController extends Controller
                 'm.card_number',
                 'm.member_code',
                 'm.photos',
+                'm.small_photos',
                 'mr.start_date',
                 'mp.package_name',
                 'mp.is_all_club',
@@ -83,7 +84,7 @@ class GateMemberController extends Controller
                     'end_date' => $member->end_date,
                     'package_name' => $member->package_name,
                     'package_type' => (int) $member->is_all_club === 1 ? 'all_club' : 'one_club',
-                    'url_photo' => $this->photoUrl($member->photos),
+                    'url_photo' => $this->photoUrl($member->small_photos ?: $member->photos),
                 ];
             })
             ->values();
@@ -231,6 +232,7 @@ class GateMemberController extends Controller
                 'm.card_number',
                 'm.member_code',
                 'm.photos',
+                'm.small_photos',
                 'mp.package_name',
                 'mp.is_all_club',
                 'mp.branch_store_id as member_package_branch_store_id',
@@ -312,7 +314,7 @@ class GateMemberController extends Controller
             'end_date' => $member->end_date,
             'package_name' => $member->package_name,
             'package_type' => (int) $member->is_all_club === 1 ? 'all_club' : 'one_club',
-            'url_photo' => $this->photoUrl($member->photos),
+            'url_photo' => $this->photoUrl($member->small_photos ?: $member->photos),
         ];
     }
 

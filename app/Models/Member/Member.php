@@ -32,6 +32,7 @@ class Member extends Model
         'status',
         'description',
         'photos',
+        'small_photos',
         'fc_candidate_id',
         'cancellation_note',
         'status',

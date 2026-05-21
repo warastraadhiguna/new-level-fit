@@ -182,6 +182,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('member-unpaid', [MemberRegistrationController::class, 'unpaid'])->name('member-unpaid');
 
     Route::resource('members', '\App\Http\Controllers\Member\MemberController');
+    Route::post('members/{id}/small-photo', [MemberController::class, 'updateSmallPhoto'])->name('members.small-photo.update');
     Route::get('members/{id}/create-membership', [MemberRegistrationController::class, 'createMembership'])
         ->middleware('admin.only')
         ->name('members.create-membership');
