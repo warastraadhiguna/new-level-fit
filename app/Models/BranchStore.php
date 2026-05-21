@@ -20,6 +20,7 @@ class BranchStore extends Model
         'email',
         'admin_logo',
         'is_payment_strict',
+        'type',
     ];
 
     protected $casts = [

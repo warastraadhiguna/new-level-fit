@@ -49,6 +49,20 @@
             <small class="text-muted">Berlaku untuk check-in membership dan PT di cabang ini.</small>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Branch Type</label>
+            <select name="type" class="form-control" required>
+                @php
+                    $branchType = old('type', $branchStore->type ?? 'both');
+                @endphp
+                <option value="both" {{ $branchType === 'both' ? 'selected' : '' }}>Both - male & female</option>
+                <option value="male" {{ $branchType === 'male' ? 'selected' : '' }}>Male only</option>
+                <option value="female" {{ $branchType === 'female' ? 'selected' : '' }}>Female only</option>
+            </select>
+            <small class="text-muted">Dipakai untuk aturan akses cabang berdasarkan gender.</small>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>

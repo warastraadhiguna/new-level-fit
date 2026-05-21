@@ -75,6 +75,7 @@
                                 <th>Cabang</th>
                                 <th>Kota</th>
                                 <th>Kontak</th>
+                                <th>Type</th>
                                 <th>Payment Strict</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
@@ -92,6 +93,15 @@
                                     <td>
                                         <div>{{ $branchStore->phone }}</div>
                                         <div>{{ $branchStore->email }}</div>
+                                    </td>
+                                    <td>
+                                        @if ($branchStore->type === 'male')
+                                            <span class="badge badge-info">Male Only</span>
+                                        @elseif ($branchStore->type === 'female')
+                                            <span class="badge badge-danger">Female Only</span>
+                                        @else
+                                            <span class="badge badge-primary">Both</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($branchStore->is_payment_strict)

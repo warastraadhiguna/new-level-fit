@@ -103,6 +103,7 @@ class BranchStoreController extends Controller
             'phone' => ['required', 'string', 'max:50'],
             'email' => ['required', 'email', 'max:45'],
             'is_payment_strict' => ['required', 'boolean'],
+            'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);
     }
