@@ -1,46 +1,25 @@
 <div class="row mb-5">
     <div class="col-xl-12">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
-                        id="checkInButton">
-                Input Member Code
-            </button>      
-    </div>
-</div>
-<div class="modal fade bd-example-modal-sm" id="checkIn2" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <form action="{{ route('trainer-session-check-in.store') }}" method="POST" enctype="multipart/form-data" id="trainer-session-check-in-form" autocomplete="off">
-                @csrf
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Check In Trainer Session</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <form action="{{ route('trainer-session-check-in.store') }}" method="POST" enctype="multipart/form-data" id="trainer-session-check-in-form" autocomplete="off">
+            @csrf
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-                <div class="modal-body">
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-                    <div class="row">
-                        <div class="col-xl-12">
-                            <div class="mb-0">
-                                <p>Card Number</p>
-                                <input type="text" name="card_number" id="trainerSessionCardNumberInput" class="form-control"
-                                    autofocus>
-                            </div>
-                        </div>
+            @endif
+            <div class="row">
+                <div class="col-xl-4 col-md-6">
+                    <div class="mb-0">
+                        <p>Card Number</p>
+                        <input type="text" name="card_number" id="trainerSessionCardNumberInput" class="form-control" autofocus autocomplete="off">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" id="trainerSessionCheckInSubmitButton">Submit</button>
-                    <button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
-                </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -48,13 +27,20 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('trainer-session-check-in-form');
         const cardInput = document.getElementById('trainerSessionCardNumberInput');
-        const submitButton = document.getElementById('trainerSessionCheckInSubmitButton');
 
         if (!form) {
             return;
         }
 
         let isSubmitting = false;
+
+        const focusCardInput = function() {
+            if (!cardInput || cardInput.readOnly) {
+                return;
+            }
+
+            cardInput.focus();
+        };
 
         const resetSubmitState = function() {
             isSubmitting = false;
@@ -63,10 +49,7 @@
                 cardInput.readOnly = false;
             }
 
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Submit';
-            }
+            focusCardInput();
         };
 
         form.addEventListener('submit', function(event) {
@@ -81,14 +64,23 @@
                 cardInput.value = cardInput.value.trim();
                 cardInput.readOnly = true;
             }
+        });
 
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Processing...';
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                focusCardInput();
             }
         });
 
+        window.addEventListener('focus', focusCardInput);
         window.addEventListener('pageshow', resetSubmitState);
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('a, button, input, select, textarea, label')) {
+                focusCardInput();
+            }
+        });
+
+        focusCardInput();
     });
 </script>
 
