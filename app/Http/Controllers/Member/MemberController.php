@@ -461,8 +461,13 @@ class MemberController extends Controller
         $path = 'assets/member/small/member-' . $member->id . '-' . time() . '.jpg';
         Storage::disk('public')->put($path, $imageData);
 
+        $fullName = str_ends_with($member->full_name, '~')
+            ? substr($member->full_name, 0, -1)
+            : $member->full_name . '~';
+
         $member->update([
             'small_photos' => $path,
+            'full_name'    => $fullName,
         ]);
 
         return redirect()->route('members.index')->with('success', 'Small photo berhasil diupdate');
