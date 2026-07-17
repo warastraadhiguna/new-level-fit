@@ -138,7 +138,8 @@
                                     @foreach ($memberPackage as $item)
                                         <option value="{{ $item->id }}"
                                             data-package-price="{{ $item->package_price }}"
-                                            data-admin-price="{{ $item->admin_price }}">{{ $item->package_name }} |
+                                            data-admin-price="{{ $item->admin_price }}"
+                                            {{ old('member_package_id') == $item->id ? 'selected' : '' }}>{{ $item->package_name }} |
                                             {{ $item->days }} Days |
                                             {{ formatRupiah($item->package_price) }} |
                                             {{ formatRupiah($item->admin_price) }}</option>
@@ -176,6 +177,7 @@
                                     class="form-control" placeholder="First Payment" required>
                             </div>
                         </div>                          
+                        @include('admin.partials.payment-deadline-field')
                         @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                             <div class="col-xl-6" id="fitness_consultant">
                                 <div class="mb-3">

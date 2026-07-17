@@ -217,6 +217,7 @@ class MemberRegistrationController extends Controller
                 'lo_days'               => 'nullable',
                 'lo_pt_by'              => 'nullable',
                 'start_date'            => 'required_if:status,sell',
+                'payment_deadline'      => 'nullable|integer|min:0',
                 'description'           => 'nullable',
                 'card_number' => [
                     'nullable',
@@ -301,6 +302,13 @@ class MemberRegistrationController extends Controller
                 $data['admin_price'] = $package->admin_price;
                 $data['days'] = $package->days;
                 $data['branch_store_id'] = Auth::user()->branch_store_id;
+                $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $data['payment_deadline'] = NormalizePaymentDeadline(
+                    $data['payment_deadline'] ?? 0,
+                    $firstPayment,
+                    (int) $data['package_price'] + (int) $data['admin_price'],
+                    Auth::user()->branch_store_id
+                );
 
                 $newMember = Member::create(array_intersect_key($data, array_flip([
                     'branch_store_id',
@@ -332,10 +340,10 @@ class MemberRegistrationController extends Controller
                     'description',
                     'package_price',
                     'admin_price',
+                    'payment_deadline',
                     'days'
                 ])));
 
-                $firstPayment = str_replace(".", "", $request->first_payment);
                 MemberRegistrationPayment::create([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
@@ -702,6 +710,7 @@ class MemberRegistrationController extends Controller
             'member_package_id'     => 'required',
             'method_payment_id'     => 'nullable',
             'fc_id'                 => 'nullable',
+            'payment_deadline'      => 'nullable|integer|min:0',
         ]);
 
         $data['user_id'] = Auth::user()->id;
@@ -720,6 +729,16 @@ class MemberRegistrationController extends Controller
             $data['package_price'] = $selectedPackage->package_price;
             $data['admin_price'] = $selectedPackage->admin_price;
         }
+
+        $paidAmount = MemberRegistrationPayment::where('member_registration_id', $item->id)->sum('value');
+        $totalPrice = (int) ($data['package_price'] ?? $item->package_price)
+            + (int) ($data['admin_price'] ?? $item->admin_price);
+        $data['payment_deadline'] = NormalizePaymentDeadline(
+            $data['payment_deadline'] ?? 0,
+            $paidAmount,
+            $totalPrice,
+            Auth::user()->branch_store_id
+        );
 
         $expiredTime = date('H:i:s', strtotime('00:00:00'));
         $expiredDateString = $request->input('expired_date');
@@ -785,6 +804,7 @@ class MemberRegistrationController extends Controller
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'first_payment'     => 'required',
+                    'payment_deadline'  => 'nullable|integer|min:0',
                     'description'       => 'nullable',
                 ]);
 
@@ -795,6 +815,7 @@ class MemberRegistrationController extends Controller
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'first_payment'     => 'required',
+                    'payment_deadline'  => 'nullable|integer|min:0',
                     'fc_id'             => 'required|exists:users,id',
                     'description'       => 'nullable',
                 ]);
@@ -814,6 +835,12 @@ class MemberRegistrationController extends Controller
             $data['days'] = $package->days;
             $data['user_id'] = Auth::user()->id;
             $data['start_date'] = $startDate->format('Y-m-d H:i:s');
+            $data['payment_deadline'] = NormalizePaymentDeadline(
+                $data['payment_deadline'] ?? 0,
+                $firstPayment,
+                (int) $data['package_price'] + (int) $data['admin_price'],
+                Auth::user()->branch_store_id
+            );
 
             $newMemberRegistration = MemberRegistration::create($data);
 
@@ -849,6 +876,7 @@ class MemberRegistrationController extends Controller
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'fc_id'             => 'required|exists:users,id',
+                    'payment_deadline'  => 'nullable|integer|min:0',
                     'description'       => 'nullable',
 
                     // Member
@@ -901,6 +929,13 @@ class MemberRegistrationController extends Controller
                 $data['admin_price'] = $package->admin_price;
                 $data['days'] = $package->days;
                 $data['member_id'] = $memberRegistration->member_id;
+                $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $data['payment_deadline'] = NormalizePaymentDeadline(
+                    $data['payment_deadline'] ?? 0,
+                    $firstPayment,
+                    (int) $data['package_price'] + (int) $data['admin_price'],
+                    Auth::user()->branch_store_id
+                );
 
                 // MEMBER DATA UPDATE
                 if ($request->hasFile('photos')) {
@@ -939,7 +974,6 @@ class MemberRegistrationController extends Controller
 
                 $newMemberRegistration = MemberRegistration::create($data);
 
-                $firstPayment = str_replace(".", "", $request->first_payment);
                 MemberRegistrationPayment::create([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
@@ -967,6 +1001,7 @@ class MemberRegistrationController extends Controller
                         'member_package_id' => 'required|exists:member_packages,id',
                         'start_date'        => 'required',
                         'method_payment_id' => 'required|exists:method_payments,id',
+                        'payment_deadline'  => 'nullable|integer|min:0',
                         'description'       => 'nullable',
                     ]);
                     $data['fc_id'] = $fc;
@@ -975,6 +1010,7 @@ class MemberRegistrationController extends Controller
                         'member_package_id' => 'required|exists:member_packages,id',
                         'start_date'        => 'required',
                         'method_payment_id' => 'required|exists:method_payments,id',
+                        'payment_deadline'  => 'nullable|integer|min:0',
                         'fc_id'             => 'required|exists:users,id',
                         'description'       => 'nullable',
                     ]);
@@ -1005,10 +1041,16 @@ class MemberRegistrationController extends Controller
 
 
                 $data['member_id'] = $memberRegistration->member_id;
+                $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $data['payment_deadline'] = NormalizePaymentDeadline(
+                    $data['payment_deadline'] ?? 0,
+                    $firstPayment,
+                    (int) $data['package_price'] + (int) $data['admin_price'],
+                    Auth::user()->branch_store_id
+                );
 
                 $newMemberRegistration = MemberRegistration::create($data);
 
-                $firstPayment = str_replace(".", "", $request->first_payment);
                 MemberRegistrationPayment::create([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,

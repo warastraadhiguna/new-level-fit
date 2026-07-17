@@ -104,6 +104,7 @@
                                     placeholder="Enter Description">{{ old('description', $memberRegistration->description) }}</textarea>
                             </div>
                         </div>
+                        @include('admin.partials.payment-deadline-field', ['paymentDeadline' => $memberRegistration->payment_deadline])
                     </div>
                 </div>
                 <div class="d-flex justify-content-between">

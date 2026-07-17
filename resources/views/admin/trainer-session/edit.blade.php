@@ -130,6 +130,7 @@
                                 placeholder="Enter Description">{{ old('description', $trainerSession->description) }}</textarea>
                         </div>
                     </div>
+                    @include('admin.partials.payment-deadline-field', ['paymentDeadline' => $trainerSession->payment_deadline])
                 </div>
                 
                 

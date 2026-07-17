@@ -123,6 +123,13 @@ class GateMemberController extends Controller
             ], 409);
         }
 
+        $deadlineStatus = $this->membershipPaymentDeadlineStatus($membership, $branchStoreId, $checkInTime);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return response()->json([
+                'message' => $deadlineStatus['message'],
+            ], 409);
+        }
+
         $checkIn = DB::transaction(function () use ($membership, $branchStoreId, $request, $checkInTime) {
             DB::table('member_registrations')
                 ->where('id', $membership->member_registration_id)
@@ -154,7 +161,7 @@ class GateMemberController extends Controller
         }
 
         return response()->json([
-            'message' => 'Member Checked In Successfully',
+            'message' => 'Member Checked In Successfully' . ($deadlineStatus ? ' ' . $deadlineStatus['message'] : ''),
             'status' => 'checked_in',
             'member' => $this->memberResponse($membership),
             'check_in' => $this->checkInResponse($checkIn),
@@ -225,6 +232,8 @@ class GateMemberController extends Controller
             ->select([
                 'mr.id as member_registration_id',
                 'mr.start_date',
+                'mr.created_at as registration_created_at',
+                'mr.payment_deadline',
                 'mr.package_price as mr_package_price',
                 'mr.admin_price as mr_admin_price',
                 'm.id',
@@ -296,11 +305,36 @@ class GateMemberController extends Controller
 
     private function membershipHasUnpaidPayment($membership, int $branchStoreId): bool
     {
-        if (!BranchStorePaymentIsStrict($branchStoreId)) {
-            return false;
+        $isUnpaid = (int) $membership->payment_summary
+            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+        $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
+
+        return $isUnpaid && (BranchStorePaymentIsStrict($branchStoreId) || !$isOneClubPackage);
+    }
+
+    private function membershipPaymentDeadlineStatus($membership, int $branchStoreId, Carbon $eventTime): ?array
+    {
+        $isUnpaid = (int) $membership->payment_summary
+            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+        $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
+        $deadlineDays = (int) ($membership->payment_deadline ?? 0);
+
+        if (BranchStorePaymentIsStrict($branchStoreId) || !$isOneClubPackage || !$isUnpaid || $deadlineDays <= 0) {
+            return null;
         }
 
-        return (int) $membership->payment_summary < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+        $deadlineDate = Carbon::parse($membership->registration_created_at, self::TIMEZONE)
+            ->addDays($deadlineDays)
+            ->startOfDay();
+        $formattedDeadline = $deadlineDate->isoFormat('DD MMMM YYYY');
+        $isPastDeadline = $eventTime->copy()->startOfDay()->gt($deadlineDate);
+
+        return [
+            'blocked' => $isPastDeadline,
+            'message' => $isPastDeadline
+                ? 'Payment deadline passed on ' . $formattedDeadline . '. Check-in denied.'
+                : 'Payment is not fully paid. Payment deadline: ' . $formattedDeadline . '.',
+        ];
     }
 
     private function memberResponse($member): array

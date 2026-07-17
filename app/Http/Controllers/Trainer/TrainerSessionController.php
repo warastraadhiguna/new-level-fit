@@ -241,6 +241,7 @@ class TrainerSessionController extends Controller
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
+                'payment_deadline'      => 'nullable|integer|min:0',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',
                 'branch_store_id'       => 'required',                        
@@ -255,6 +256,7 @@ class TrainerSessionController extends Controller
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
+                'payment_deadline'      => 'nullable|integer|min:0',
                 'fc_id'                 => 'required|exists:users,id',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',           
@@ -295,11 +297,17 @@ class TrainerSessionController extends Controller
             $data['admin_price'] = $package->admin_price;
             $data['days'] = $package->days;
             $data['number_of_session'] = $package->number_of_session;
+            $firstPayment = (int) str_replace(".", "", $data['first_payment']);
+            $data['payment_deadline'] = NormalizePaymentDeadline(
+                $data['payment_deadline'] ?? 0,
+                $firstPayment,
+                (int) $data['package_price'] + (int) $data['admin_price'],
+                Auth::user()->branch_store_id
+            );
             unset($data['first_payment']);
 
             $newTrainerSession = TrainerSession::create($data);
 
-            $firstPayment = (int) str_replace(".", "", $request->first_payment);
             TrainerSessionPayment::create([
                 "trainer_session_id" =>  $newTrainerSession->id,
                 "user_id" =>  Auth::user()->id,
@@ -498,6 +506,7 @@ class TrainerSessionController extends Controller
             'trainer_id'            => 'nullable|exists:personal_trainers,id',
             'method_payment_id'     => 'nullable|exists:method_payments,id',
             'fc_id'                 => 'nullable|exists:users,id',
+            'payment_deadline'      => 'nullable|integer|min:0',
         ]);
         $data['user_id'] = Auth::user()->id;
         $data['branch_store_id'] = Auth::user()->branch_store_id;       
@@ -513,6 +522,16 @@ class TrainerSessionController extends Controller
             $data['admin_price'] = $selectedPackage->admin_price;
             $data['number_of_session'] = $selectedPackage->number_of_session;
         }
+
+        $paidAmount = TrainerSessionPayment::where('trainer_session_id', $item->id)->sum('value');
+        $totalPrice = (int) ($data['package_price'] ?? $item->package_price)
+            + (int) ($data['admin_price'] ?? $item->admin_price);
+        $data['payment_deadline'] = NormalizePaymentDeadline(
+            $data['payment_deadline'] ?? 0,
+            $paidAmount,
+            $totalPrice,
+            Auth::user()->branch_store_id
+        );
 
         if ($data['start_date']) {
             $startTime = date('H:i:s', strtotime('00:00:00'));

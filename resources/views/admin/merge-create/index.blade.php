@@ -213,7 +213,8 @@
                             <input type="text" name="first_payment" value="{{ old('first_payment') }}"
                                 class="form-control" placeholder="First Payment">
                         </div>
-                    </div>                    
+                    </div>
+                    @include('admin.partials.payment-deadline-field')
                     @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">

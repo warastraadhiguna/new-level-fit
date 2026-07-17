@@ -90,6 +90,7 @@
                                     class="form-control" placeholder="First Payment" required>
                             </div>
                         </div>
+                        @include('admin.partials.payment-deadline-field')
                         @if (Auth::user()->role != 'FC')
                             <div class="col-xl-6">
                                 <div class="mb-3">

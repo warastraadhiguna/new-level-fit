@@ -90,6 +90,15 @@ function BranchStorePaymentIsStrict(?int $branchStoreId = null): bool
     return $strictByBranch[$branchStoreId];
 }
 
+function NormalizePaymentDeadline($paymentDeadline, $paidAmount, $totalPrice, ?int $branchStoreId = null): int
+{
+    if ((int) $paidAmount >= (int) $totalPrice || BranchStorePaymentIsStrict($branchStoreId)) {
+        return 0;
+    }
+
+    return max(0, (int) ($paymentDeadline ?? 0));
+}
+
 
 function NowDate($format = 'Y-MM-DD')
 {

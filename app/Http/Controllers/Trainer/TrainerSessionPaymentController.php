@@ -52,6 +52,10 @@ class TrainerSessionPaymentController extends Controller
                 }
 
                 TrainerSessionPayment::create($data);
+
+                if ($paidAmount + $data["value"] >= $price) {
+                    $trainerSession->update(['payment_deadline' => 0]);
+                }
             });
         } catch (RuntimeException $exception) {
             return redirect()->back()->with('errorr', $exception->getMessage());

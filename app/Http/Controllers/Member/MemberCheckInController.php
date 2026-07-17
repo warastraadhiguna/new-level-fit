@@ -92,6 +92,11 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('error', 'Unpaid Member');
         }
 
+        $deadlineStatus = $this->memberPaymentDeadlineStatus($memberRegistration[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('error', $deadlineStatus['message']);
+        }
+
         $memberPhoto    = $memberRegistration[0]->photos;
         $memberName     = $memberRegistration[0]->member_name;
         $nickName       = $memberRegistration[0]->nickname;
@@ -109,6 +114,7 @@ class MemberCheckInController extends Controller
         $expiredDate    = $memberRegistration[0]->expired_date;
 
         $message = $this->processCheckInRequest($memberRegistration[0]->id);
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
 
         return view('admin.member-check-in.member_details')->with([
             'message' => $message,
@@ -136,6 +142,8 @@ class MemberCheckInController extends Controller
             ->select(
                 'a.id',
                 'a.start_date',
+                'a.created_at as registration_created_at',
+                'a.payment_deadline',
                 'a.description',
                 'a.days as number_of_days',
                 'a.member_id',
@@ -166,6 +174,7 @@ class MemberCheckInController extends Controller
             )
             ->addSelect(
                 DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                DB::raw('CASE WHEN a.payment_deadline > 0 THEN DATE_ADD(a.created_at, INTERVAL a.payment_deadline DAY) ELSE NULL END as payment_deadline_date'),
                 DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as status'),
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
@@ -188,6 +197,11 @@ class MemberCheckInController extends Controller
 
         if ($this->shouldBlockUnpaidMemberCheckIn($memberRegistration)) {
             return redirect()->back()->with('error', 'Unpaid Member');
+        }
+
+        $deadlineStatus = $this->memberPaymentDeadlineStatus($memberRegistration);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('error', $deadlineStatus['message']);
         }
 
         $memberPhoto    = $memberRegistration->photos;
@@ -234,6 +248,8 @@ class MemberCheckInController extends Controller
             CheckInMember::create($this->memberCheckInPayload($data));
             $message = 'Member Checked In Successfully';
         }
+
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
 
         return view('admin.member-check-in.member_details')->with([
             'message' => $message,
@@ -338,6 +354,52 @@ class MemberCheckInController extends Controller
 
         return $this->memberRegistrationHasUnpaidPayment($memberRegistration)
             && (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) || !$isOneClubPackage);
+    }
+
+    private function memberPaymentDeadlineStatus($memberRegistration): ?array
+    {
+        $isOneClubPackage = (string) ($memberRegistration->is_all_club ?? '1') === '0';
+        $isNextActionCheckIn = !($memberRegistration->current_check_in_members_id && !$memberRegistration->check_out_time);
+        $deadlineDays = (int) ($memberRegistration->payment_deadline ?? 0);
+
+        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id)
+            || !$isOneClubPackage
+            || !$isNextActionCheckIn
+            || !$this->memberRegistrationHasUnpaidPayment($memberRegistration)
+            || $deadlineDays <= 0) {
+            return null;
+        }
+
+        $deadlineValue = $memberRegistration->payment_deadline_date ?? null;
+        $createdAt = $memberRegistration->registration_created_at ?? $memberRegistration->created_at ?? null;
+
+        if (!$deadlineValue && $createdAt) {
+            $deadlineValue = Carbon::parse($createdAt)->addDays($deadlineDays);
+        }
+
+        if (!$deadlineValue) {
+            return null;
+        }
+
+        $deadlineDate = Carbon::parse($deadlineValue)->startOfDay();
+        $formattedDeadline = $deadlineDate->isoFormat('DD MMMM YYYY');
+        $isPastDeadline = Carbon::now('Asia/Jakarta')->startOfDay()->gt($deadlineDate);
+
+        return [
+            'blocked' => $isPastDeadline,
+            'message' => $isPastDeadline
+                ? 'Payment deadline passed on ' . $formattedDeadline . '. Check-in denied.'
+                : 'Payment is not fully paid. Payment deadline: ' . $formattedDeadline . '.',
+        ];
+    }
+
+    private function appendPaymentDeadlineNotice(string $message, ?array $deadlineStatus): string
+    {
+        if (!$deadlineStatus || $deadlineStatus['blocked'] || strpos($message, 'Checked In Successfully') === false) {
+            return $message;
+        }
+
+        return $message . ' ' . $deadlineStatus['message'];
     }
 
     private function memberCheckInPayload(array $data): array

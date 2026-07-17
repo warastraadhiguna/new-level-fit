@@ -92,6 +92,11 @@ class TrainerSessionCheckInController extends Controller
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
         }
 
+        $deadlineStatus = $this->trainerSessionPaymentDeadlineStatus($trainerSession[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('errorr', $deadlineStatus['message']);
+        }
+
         $expiredMemberRegistration = MemberRegistration::getActiveList($request->card_number, "", $this->activeMembershipPaymentFilter());
         if (!$expiredMemberRegistration || sizeof($expiredMemberRegistration) == 0) {
             return redirect()->back()->with('errorr', 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!');
@@ -121,6 +126,7 @@ class TrainerSessionCheckInController extends Controller
             $trainerSession[0]->id,
             $trainerSession[0]->trainer_id
         );
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
 
         return view('admin.trainer-session-check-in.member_details')->with([
             'message'           => $message,
@@ -152,6 +158,11 @@ class TrainerSessionCheckInController extends Controller
 
         if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
+        }
+
+        $deadlineStatus = $this->trainerSessionPaymentDeadlineStatus($trainerSession[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('errorr', $deadlineStatus['message']);
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id, $this->activeMembershipPaymentFilter());
@@ -210,6 +221,8 @@ class TrainerSessionCheckInController extends Controller
             $message = 'PT Checked In Successfully';
         }
 
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
+
         return view('admin.trainer-session-check-in.member_details')->with([
             'message'       => $message,
             'memberPhoto'   => $memberPhoto,
@@ -259,6 +272,11 @@ class TrainerSessionCheckInController extends Controller
 
         if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
+        }
+
+        $deadlineStatus = $this->trainerSessionPaymentDeadlineStatus($trainerSession[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('errorr', $deadlineStatus['message']);
         }
 
 
@@ -312,6 +330,8 @@ class TrainerSessionCheckInController extends Controller
             $message = 'LGT Checked In Successfully';
         }
 
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
+
         // return redirect()->route('trainer-session.index')->with('message', $message);
         return view('admin.lgt.member_details')->with([
             'message' => $message,
@@ -343,6 +363,11 @@ class TrainerSessionCheckInController extends Controller
 
         if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
             return redirect()->back()->with('errorr', $this->trainerSessionUnpaidMessage($trainerSession[0]));
+        }
+
+        $deadlineStatus = $this->trainerSessionPaymentDeadlineStatus($trainerSession[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return redirect()->back()->with('errorr', $deadlineStatus['message']);
         }
 
         $expiredMemberRegistration = MemberRegistration::getActiveList("", $trainerSession[0]->member_id, $this->activeMembershipPaymentFilter());
@@ -400,6 +425,8 @@ class TrainerSessionCheckInController extends Controller
             CheckInTrainerSession::create($this->trainerSessionCheckInPayload($data));
             $message = 'PT Checked In Successfully';
         }
+
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
 
         return view('admin.lgt.member_details')->with([
             'message'       => $message,
@@ -510,7 +537,57 @@ class TrainerSessionCheckInController extends Controller
             return false;
         }
 
-        return (int) $trainerSession->payment_summary < ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price);
+        return $this->trainerSessionPaymentIsUnpaid($trainerSession);
+    }
+
+    private function trainerSessionPaymentIsUnpaid($trainerSession): bool
+    {
+        return (int) $trainerSession->payment_summary
+            < ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price);
+    }
+
+    private function trainerSessionPaymentDeadlineStatus($trainerSession): ?array
+    {
+        $isNextActionCheckIn = !($trainerSession->current_check_in_trainer_sessions_id && !$trainerSession->check_out_time);
+        $deadlineDays = (int) ($trainerSession->payment_deadline ?? 0);
+
+        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id)
+            || !$isNextActionCheckIn
+            || !$this->trainerSessionPaymentIsUnpaid($trainerSession)
+            || $deadlineDays <= 0) {
+            return null;
+        }
+
+        $deadlineValue = $trainerSession->payment_deadline_date ?? null;
+        $createdAt = $trainerSession->trainer_session_created_at ?? $trainerSession->created_at ?? null;
+
+        if (!$deadlineValue && $createdAt) {
+            $deadlineValue = Carbon::parse($createdAt)->addDays($deadlineDays);
+        }
+
+        if (!$deadlineValue) {
+            return null;
+        }
+
+        $deadlineDate = Carbon::parse($deadlineValue)->startOfDay();
+        $formattedDeadline = $deadlineDate->isoFormat('DD MMMM YYYY');
+        $isPastDeadline = Carbon::now('Asia/Jakarta')->startOfDay()->gt($deadlineDate);
+
+        return [
+            'blocked' => $isPastDeadline,
+            'message' => $isPastDeadline
+                ? 'PT payment deadline passed on ' . $formattedDeadline . '. Check-in denied.'
+                : 'PT payment is not fully paid. Payment deadline: ' . $formattedDeadline . '.',
+        ];
+    }
+
+    private function appendPaymentDeadlineNotice(string $message, ?array $deadlineStatus): string
+    {
+        if (!$deadlineStatus || $deadlineStatus['blocked'] || strpos($message, 'Checked In Successfully') === false) {
+            return $message;
+        }
+
+        return $message . ' ' . $deadlineStatus['message'];
     }
 
     private function activeMembershipPaymentFilter(): string

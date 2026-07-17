@@ -133,7 +133,7 @@
                                 <th>Last Check In</th>
                                 <th>Date</th>
                                 <th>Session</th>
-                                <th>Payment</th>                                     
+                                <th>{{ !empty($isUnpaidPage) ? 'Payment Info' : 'Payment' }}</th>
                                 <th>Status</th>
                                 <th>Trainer</th>
                                 <th>Action</th>
@@ -232,12 +232,21 @@
                                         <h6>Remaining Session : {{ $item->remaining_sessions }}</h6>
                                     </td>
                                     <td>
-                                            @if ($item->payment_summary >= ($item->ts_package_price+$item->ts_admin_price))
-                                                <span class="badge badge-primary badge-lg">Paid</span>
+                                        @if ($item->payment_summary >= ($item->ts_package_price+$item->ts_admin_price))
+                                            <span class="badge badge-primary badge-lg">Paid</span>
+                                        @else
+                                            <span class="badge badge-danger badge-lg">{{ formatRupiah($item->ts_package_price+$item->ts_admin_price - $item->payment_summary) }}</span>
+                                        @endif
+                                        @if (!empty($isUnpaidPage))
+                                            <div class="mt-2">
+                                            @if ((int) $item->payment_deadline === 0 || !$item->payment_deadline_date)
+                                                    <span class="badge badge-secondary">No deadline</span>
                                             @else
-                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->ts_package_price+$item->ts_admin_price - $item->payment_summary) }}</span>                                            
+                                                    <small class="text-nowrap">Deadline: {{ DateFormat($item->payment_deadline_date, 'DD MMM YYYY') }}</small>
                                             @endif
-                                    </td>                                    
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if ($item->leave_day_status == 'Freeze')
                                             <span class="badge badge-secondary d-inline-block" tabindex="0"
@@ -266,29 +275,29 @@
                                                 Aksi
                                             </button>
                                             <ul class="dropdown-menu">
-                                                @if (!empty($isUnpaidPage))
-                                                    <li><a class="btn light btn-danger btn-xs mb-1 btn-block">Unpaid</a></li>
-                                                @elseif ($idCodeMaxCount - $item->id_code_count == 0)
-                                                    <li>
-                                                        <a href="{{ route('resetCheckIn', $item->member_id) }}"
-                                                            class="btn light btn-warning btn-xs mb-1 btn-block">Reset Check In ?</a>
-                                                    </li>
-                                                @else
-                                                    @if ($item->leave_day_status == 'Freeze')
-                                                        <li><a class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a></li>
+                                                @if (empty($isUnpaidPage))
+                                                    @if ($idCodeMaxCount - $item->id_code_count == 0)
+                                                        <li>
+                                                            <a href="{{ route('resetCheckIn', $item->member_id) }}"
+                                                                class="btn light btn-warning btn-xs mb-1 btn-block">Reset Check In ?</a>
+                                                        </li>
                                                     @else
-                                                        @if ($now > $item->expired_leave_days)
-                                                            @if ($item->start_date < $now)
-                                                                @if ((!$item->check_in_time && !$item->check_out_time) || ($item->check_in_time && $item->check_out_time))
-                                                                    <li>
-                                                                        <a href="{{ route('PTSecondCheckIn', $item->id) }}"
-                                                                            class="btn light btn-info btn-xs mb-1 btn-block">Check In ({{ $idCodeMaxCount - $item->id_code_count }})</a>
-                                                                    </li>
-                                                                @elseif ($item->check_in_time && !$item->check_out_time)
-                                                                    <li>
-                                                                        <a href="{{ route('PTSecondCheckIn', $item->id) }}"
-                                                                            class="btn light btn-info btn-xs mb-1 btn-block">Check Out ({{ $idCodeMaxCount - $item->id_code_count }})</a>
-                                                                    </li>
+                                                        @if ($item->leave_day_status == 'Freeze')
+                                                            <li><a class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a></li>
+                                                        @else
+                                                            @if ($now > $item->expired_leave_days)
+                                                                @if ($item->start_date < $now)
+                                                                    @if ((!$item->check_in_time && !$item->check_out_time) || ($item->check_in_time && $item->check_out_time))
+                                                                        <li>
+                                                                            <a href="{{ route('PTSecondCheckIn', $item->id) }}"
+                                                                                class="btn light btn-info btn-xs mb-1 btn-block">Check In ({{ $idCodeMaxCount - $item->id_code_count }})</a>
+                                                                        </li>
+                                                                    @elseif ($item->check_in_time && !$item->check_out_time)
+                                                                        <li>
+                                                                            <a href="{{ route('PTSecondCheckIn', $item->id) }}"
+                                                                                class="btn light btn-info btn-xs mb-1 btn-block">Check Out ({{ $idCodeMaxCount - $item->id_code_count }})</a>
+                                                                        </li>
+                                                                    @endif
                                                                 @endif
                                                             @endif
                                                         @endif

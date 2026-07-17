@@ -20,6 +20,7 @@ class MemberRegistration extends Model
         'member_package_id',
         'package_price',
         'admin_price',
+        'payment_deadline',
         'start_date',
         'days',
         'old_days',
@@ -27,6 +28,10 @@ class MemberRegistration extends Model
         'description',
         'fc_id',
         'user_id',
+    ];
+
+    protected $casts = [
+        'payment_deadline' => 'integer',
     ];
 
     protected $hidden = [];
@@ -73,7 +78,13 @@ class MemberRegistration extends Model
         //ini karena nando sudah ngaco. jadi aku juga mau pakai untuk yang belum bayar. tapi masalahnya ternyata ini untuk
         //yang aktif, padahal yang belum bayar juga mungkin pending. sehingga aku akali di tanggalnya
 
-        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
+        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.created_at as registration_created_at,
+            mbr_reg.payment_deadline,
+            CASE WHEN mbr_reg.payment_deadline > 0
+                THEN DATE_ADD(mbr_reg.created_at, INTERVAL mbr_reg.payment_deadline DAY)
+                ELSE NULL
+            END as payment_deadline_date,
+            mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,

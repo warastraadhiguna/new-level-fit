@@ -53,6 +53,10 @@ class MemberRegistrationPaymentController extends Controller
                 }
 
                 MemberRegistrationPayment::create($data);
+
+                if ($paidAmount + $data["value"] >= $price) {
+                    $memberRegistration->update(['payment_deadline' => 0]);
+                }
             });
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('errorr', $e->getMessage());

@@ -61,7 +61,7 @@
                                 <th>Member Data</th>
                                 <th>Last Check In</th>
                                 <th>Date</th>
-                                <th>Payment</th>                                
+                                <th>Payment Info</th>
                                 <th>Status</th>
                                 <th>Staff</th>
                                 <th>Action</th>
@@ -141,11 +141,18 @@
                                         </h6>
                                     </td>
                                     <td>
-                                            @if ($item->payment_summary >= ($item->mr_package_price+$item->mr_admin_price))
-                                                <span class="badge badge-primary badge-lg">Paid</span>
-                                            @else
-                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->mr_package_price+$item->mr_admin_price - $item->payment_summary) }}</span>                                            
-                                            @endif
+                                        @if ($item->payment_summary >= ($item->mr_package_price+$item->mr_admin_price))
+                                            <span class="badge badge-primary badge-lg">Paid</span>
+                                        @else
+                                            <span class="badge badge-danger badge-lg">{{ formatRupiah($item->mr_package_price+$item->mr_admin_price - $item->payment_summary) }}</span>
+                                        @endif
+                                        <div class="mt-2">
+                                        @if ((int) $item->payment_deadline === 0 || !$item->payment_deadline_date)
+                                                <span class="badge badge-secondary">No deadline</span>
+                                        @else
+                                                <small class="text-nowrap">Deadline: {{ DateFormat($item->payment_deadline_date, 'DD MMM YYYY') }}</small>
+                                        @endif
+                                        </div>
                                     </td>
                                     <td>
                                         @if ($item->leave_day_status == 'Freeze')
