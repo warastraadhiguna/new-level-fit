@@ -88,7 +88,7 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang cuti!!');
         }
 
-        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) && $this->memberRegistrationHasUnpaidPayment($memberRegistration[0])) {
+        if ($this->shouldBlockUnpaidMemberCheckIn($memberRegistration[0])) {
             return redirect()->back()->with('error', 'Unpaid Member');
         }
 
@@ -186,7 +186,7 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($memberRegistration->member_name, 'check in'));
         }
 
-        if (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) && $this->memberRegistrationHasUnpaidPayment($memberRegistration)) {
+        if ($this->shouldBlockUnpaidMemberCheckIn($memberRegistration)) {
             return redirect()->back()->with('error', 'Unpaid Member');
         }
 
@@ -330,6 +330,14 @@ class MemberCheckInController extends Controller
     private function memberRegistrationHasUnpaidPayment($memberRegistration): bool
     {
         return (int) $memberRegistration->payment_summary < ((int) $memberRegistration->mr_package_price + (int) $memberRegistration->mr_admin_price);
+    }
+
+    private function shouldBlockUnpaidMemberCheckIn($memberRegistration): bool
+    {
+        $isOneClubPackage = (string) ($memberRegistration->is_all_club ?? '1') === '0';
+
+        return $this->memberRegistrationHasUnpaidPayment($memberRegistration)
+            && (BranchStorePaymentIsStrict(Auth::user()->branch_store_id) || !$isOneClubPackage);
     }
 
     private function memberCheckInPayload(array $data): array
