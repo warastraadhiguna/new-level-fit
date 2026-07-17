@@ -56,7 +56,7 @@ class MemberCheckInController extends Controller
 
         return view('admin.layouts.wrapper', $data);        
     }
-    public function store(Request $request)
+    public function toggleByCardNumber(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'card_number' => 'required|exists:members,card_number',
@@ -130,7 +130,7 @@ class MemberCheckInController extends Controller
         ]);
     }
 
-    public function secondStore($id)
+    public function toggleByRegistrationId($memberRegistrationId)
     {
         $memberRegistration = DB::table('member_registrations as a')
             ->select(
@@ -174,7 +174,7 @@ class MemberCheckInController extends Controller
             ->join('users as f', 'a.user_id', '=', 'f.id')
             ->whereRaw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL c.days DAY) THEN "Over" ELSE "Running" END = ?', ['Running'])
             ->leftJoin(DB::raw("(select a.* from check_in_members a inner join (SELECT max(id) as id FROM check_in_members group by member_registration_id) as b on a.id=b.id) as h"), 'h.member_registration_id', '=', 'a.id')
-            ->where('a.id', $id)
+            ->where('a.id', $memberRegistrationId)
             ->whereRaw('NOW() <= DATE_ADD(a.start_date, INTERVAL a.days DAY)')
             ->first();
 

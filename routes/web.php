@@ -65,9 +65,10 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::post('member-second-store', [MemberRegistrationController::class, 'memberSecondStore'])->name('member-second-store');
     // Route::get('print-member-card', [MemberController::class, 'print_member_card'])->name('print-member-card');
     Route::resource('print-member-card', '\App\Http\Controllers\Member\MemberPrintCardController');
-    Route::resource('member-check-in', '\App\Http\Controllers\Member\MemberCheckInController');
+    Route::resource('member-check-in', '\App\Http\Controllers\Member\MemberCheckInController')->except(['store']);
+    Route::post('member-check-in', [MemberCheckInController::class, 'toggleByCardNumber'])->name('member-check-in.toggle-by-card-number');
     Route::resource('trainer-session-check-in', '\App\Http\Controllers\Trainer\TrainerSessionCheckInController'); 
-    Route::get('check-in/{id}', [MemberCheckInController::class, 'secondStore'])->name('secondCheckIn');
+    Route::get('member-check-in/by-registration/{memberRegistrationId}', [MemberCheckInController::class, 'toggleByRegistrationId'])->name('member-check-in.toggle-by-registration-id');
     Route::get('pt-check-in/{id}', [TrainerSessionCheckInController::class, 'secondStore'])->name('PTSecondCheckIn');
     Route::post('lgt-check-in', [TrainerSessionCheckInController::class, 'lgtStore'])->name('LGTCheckIn');
     Route::get('lgt-second-check-in/{id}', [TrainerSessionCheckInController::class, 'lgtSecondStore'])->name('LGTSecondCheckIn');

@@ -129,11 +129,11 @@
                                             @if ($now > $item->expired_leave_days)
                                                 @if ($item->start_date < $now)
                                                     @if ((!$item->check_in_time && !$item->check_out_time) || ($item->check_in_time && $item->check_out_time))
-                                                        <a href="{{ route('secondCheckIn', $item->id) }}"
+                                                        <a href="{{ route('member-check-in.toggle-by-registration-id', $item->id) }}"
                                                             class="btn light btn-info btn-xs mb-1 btn-block">Check
                                                             In</a>
                                                     @elseif ($item->check_in_time && !$item->check_out_time)
-                                                        <a href="{{ route('secondCheckIn', $item->id) }}"
+                                                        <a href="{{ route('member-check-in.toggle-by-registration-id', $item->id) }}"
                                                             class="btn light btn-info btn-xs mb-1 btn-block">Check
                                                             Out</a>
                                                     @endif

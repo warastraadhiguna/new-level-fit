@@ -1,6 +1,6 @@
 <div class="row mb-5">
     <div class="col-xl-12">
-        <form action="{{ route('member-check-in.store') }}" method="POST" enctype="multipart/form-data" autocomplete="off" id="member-check-in-form">
+        <form action="{{ route('member-check-in.toggle-by-card-number') }}" method="POST" enctype="multipart/form-data" autocomplete="off" id="member-check-in-form">
             @csrf
             @if ($errors->any())
                 <div class="alert alert-danger">
