@@ -7,6 +7,8 @@ use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use App\Models\Trainer\CheckInTrainerSession;
 use App\Models\Trainer\TrainerSession;
+use App\Models\User;
+use App\Support\QrCheckInToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -61,6 +63,119 @@ class TrainerSessionCheckInController extends Controller
 
         return view('admin.layouts.wrapper', $data);   
     }
+
+    public function qrToken()
+    {
+        return response()->json(QrCheckInToken::issue(
+            (int) Auth::user()->branch_store_id,
+            (int) Auth::user()->id,
+            'trainer_session'
+        ));
+    }
+
+    public function toggleQr(Request $request)
+    {
+        $configuredSecret = (string) config('services.qr_check_in.secret');
+        $providedSecret = (string) $request->header('X-QR-Check-In-Secret');
+
+        if ($configuredSecret === '' || $providedSecret === '' || !hash_equals($configuredSecret, $providedSecret)) {
+            return response()->json(['message' => 'Unauthorized QR check-in request.'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'member_id' => ['required', 'integer', 'exists:members,id'],
+            'qr_token' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'The given data was invalid.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $qr = QrCheckInToken::parse($validator->validated()['qr_token'], 'trainer_session');
+        } catch (\RuntimeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        $branchStoreId = (int) $qr['branch_store_id'];
+        $issuingUser = User::where('id', (int) $qr['user_id'])
+            ->where('branch_store_id', $branchStoreId)
+            ->first();
+
+        if (!$issuingUser) {
+            return response()->json(['message' => 'QR code tidak lagi berlaku. Silakan gunakan QR terbaru.'], 422);
+        }
+
+        Auth::setUser($issuingUser);
+
+        $member = Member::find((int) $validator->validated()['member_id']);
+        if (!$member || !$member->card_number) {
+            return response()->json(['message' => 'Card number member belum tersedia. Silakan hubungi resepsionis.'], 409);
+        }
+
+        $trainerSession = TrainerSession::checkInPT($member->card_number);
+
+        if (!empty($trainerSession) && isset($trainerSession[0]) && $trainerSession[0]->leave_day_status === 'Freeze') {
+            return response()->json(['message' => $trainerSession[0]->member_name . ' sedang cuti!!'], 409);
+        }
+
+        if (!$trainerSession) {
+            return response()->json(['message' => 'Trainer session not found or has ended'], 404);
+        }
+
+        if ($this->trainerSessionHasUnpaidPayment($trainerSession[0])) {
+            return response()->json(['message' => $this->trainerSessionUnpaidMessage($trainerSession[0])], 409);
+        }
+
+        $deadlineStatus = $this->trainerSessionPaymentDeadlineStatus($trainerSession[0]);
+        if ($deadlineStatus && $deadlineStatus['blocked']) {
+            return response()->json(['message' => $deadlineStatus['message']], 409);
+        }
+
+        $activeMembership = MemberRegistration::getActiveList(
+            $member->card_number,
+            '',
+            $this->activeMembershipPaymentFilter()
+        );
+
+        if (!$activeMembership || count($activeMembership) === 0) {
+            return response()->json([
+                'message' => 'Paket member ' . $trainerSession[0]->member_name . ' telah expired atau belum dimulai!!',
+            ], 409);
+        }
+
+        if (MembershipHasOneClubBranchRestriction($activeMembership[0], $branchStoreId)) {
+            return response()->json([
+                'message' => MembershipOneClubRestrictionMessage($activeMembership[0]->member_name, 'check in PT'),
+            ], 409);
+        }
+
+        $message = $this->processTrainerSessionCheckInRequest(
+            (int) $trainerSession[0]->id,
+            isset($trainerSession[0]->trainer_id) ? (int) $trainerSession[0]->trainer_id : null
+        );
+        $message = $this->appendPaymentDeadlineNotice($message, $deadlineStatus);
+
+        $status = strpos($message, 'Duplicate') !== false
+            ? 'duplicate'
+            : (strpos($message, 'Checked Out') !== false ? 'checked_out' : 'checked_in');
+
+        return response()->json([
+            'message' => $message,
+            'status' => $status,
+            'branch_store_id' => $branchStoreId,
+            'trainer_session' => [
+                'id' => (int) $trainerSession[0]->id,
+                'member_name' => $trainerSession[0]->member_name,
+                'package_name' => $trainerSession[0]->package_name,
+                'trainer_name' => $trainerSession[0]->trainer_name,
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member\CheckInMember;
+use App\Support\QrCheckInToken;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,132 @@ use Illuminate\Support\Facades\Validator;
 class GateMemberController extends Controller
 {
     private const TIMEZONE = 'Asia/Jakarta';
+    private const DUPLICATE_SCAN_WINDOW_SECONDS = 5;
+
+    public function toggleQr(Request $request)
+    {
+        $configuredSecret = (string) config('services.qr_check_in.secret');
+        $providedSecret = (string) $request->header('X-QR-Check-In-Secret');
+
+        if ($configuredSecret === '' || $providedSecret === '' || !hash_equals($configuredSecret, $providedSecret)) {
+            return response()->json(['message' => 'Unauthorized QR check-in request.'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'member_id' => ['required', 'integer', 'exists:members,id'],
+            'qr_token' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator);
+        }
+
+        try {
+            $qr = QrCheckInToken::parse($validator->validated()['qr_token'], 'member');
+        } catch (\RuntimeException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        }
+
+        $memberId = (int) $validator->validated()['member_id'];
+        $branchStoreId = (int) $qr['branch_store_id'];
+        $userId = (int) $qr['user_id'];
+        $eventTime = Carbon::now(self::TIMEZONE);
+
+        $issuingUserExists = DB::table('users')
+            ->where('id', $userId)
+            ->where('branch_store_id', $branchStoreId)
+            ->whereNull('deleted_at')
+            ->exists();
+        if (!$issuingUserExists) {
+            return response()->json(['message' => 'QR code tidak lagi berlaku. Silakan gunakan QR terbaru.'], 422);
+        }
+
+        $membership = $this->findAccessibleActiveMembership($memberId, $branchStoreId, $eventTime);
+
+        if (!$membership) {
+            return response()->json(['message' => 'Member aktif tidak ditemukan atau tidak dapat mengakses cabang ini.'], 404);
+        }
+
+        $result = DB::transaction(function () use ($membership, $branchStoreId, $userId, $eventTime) {
+            DB::table('member_registrations')
+                ->where('id', $membership->member_registration_id)
+                ->lockForUpdate()
+                ->first();
+
+            $latestCheckIn = CheckInMember::where('member_registration_id', $membership->member_registration_id)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($latestCheckIn && !$latestCheckIn->check_out_time) {
+                if ($this->isDuplicateQrScan($latestCheckIn->check_in_time, $eventTime)) {
+                    return ['status' => 'duplicate', 'check_in' => $latestCheckIn];
+                }
+
+                $latestCheckIn->update(['check_out_time' => $eventTime]);
+
+                return ['status' => 'checked_out', 'check_in' => $latestCheckIn->fresh()];
+            }
+
+            if ($latestCheckIn && $this->isDuplicateQrScan($latestCheckIn->check_out_time, $eventTime)) {
+                return ['status' => 'duplicate', 'check_in' => $latestCheckIn];
+            }
+
+            if ($membership->leave_day_status === 'Freeze') {
+                return ['error' => $membership->full_name . ' sedang cuti.'];
+            }
+
+            if ($this->membershipHasUnpaidPayment($membership, $branchStoreId)) {
+                return ['error' => 'Unpaid Member.'];
+            }
+
+            $deadlineStatus = $this->membershipPaymentDeadlineStatus($membership, $branchStoreId, $eventTime);
+            if ($deadlineStatus && $deadlineStatus['blocked']) {
+                return ['error' => $deadlineStatus['message']];
+            }
+
+            $checkIn = CheckInMember::create($this->memberCheckInPayload([
+                'member_registration_id' => $membership->member_registration_id,
+                'branch_store_id' => $branchStoreId,
+                'check_in_time' => $eventTime,
+                'user_id' => $userId,
+            ]));
+
+            return [
+                'status' => 'checked_in',
+                'check_in' => $checkIn,
+                'notice' => $deadlineStatus ? $deadlineStatus['message'] : null,
+            ];
+        });
+
+        if (isset($result['error'])) {
+            return response()->json(['message' => $result['error']], 409);
+        }
+
+        $messages = [
+            'checked_in' => 'Member Checked In Successfully',
+            'checked_out' => 'Member Checked Out Successfully',
+            'duplicate' => 'Duplicate scan ignored',
+        ];
+        $message = $messages[$result['status']];
+        if (!empty($result['notice'])) {
+            $message .= ' ' . $result['notice'];
+        }
+
+        return response()->json([
+            'message' => $message,
+            'status' => $result['status'],
+            'branch_store_id' => $branchStoreId,
+            'member' => $this->memberResponse($membership),
+            'check_in' => $this->checkInResponse($result['check_in']),
+        ]);
+    }
+
+    private function isDuplicateQrScan($timestamp, Carbon $referenceTime): bool
+    {
+        return $timestamp
+            && Carbon::parse($timestamp, self::TIMEZONE)->diffInSeconds($referenceTime) <= self::DUPLICATE_SCAN_WINDOW_SECONDS;
+    }
 
     public function index(Request $request)
     {

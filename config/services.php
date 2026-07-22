@@ -2,6 +2,11 @@
 
 return [
 
+    'qr_check_in' => [
+        'secret' => env('QR_CHECK_IN_SHARED_SECRET'),
+        'ttl' => env('QR_CHECK_IN_TTL', 120),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

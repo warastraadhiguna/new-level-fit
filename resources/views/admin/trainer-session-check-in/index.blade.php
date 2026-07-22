@@ -12,14 +12,41 @@
                 </div>
             @endif
             <div class="row">
-                <div class="col-xl-4 col-md-6">
+                <div class="col-xl-5 col-md-7">
                     <div class="mb-0">
                         <p>Card Number</p>
-                        <input type="text" name="card_number" id="trainerSessionCardNumberInput" class="form-control" autofocus autocomplete="off">
+                        <div class="input-group">
+                            <input type="text" name="card_number" id="trainerSessionCardNumberInput" class="form-control" autofocus autocomplete="off">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#trainerSessionQrModal">
+                                <i class="fa fa-qrcode me-1"></i> Tampilkan QR
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="modal fade" id="trainerSessionQrModal" tabindex="-1" aria-labelledby="trainerSessionQrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="trainerSessionQrModalLabel">QR Trainer Session Check In / Check Out</h5>
+                    <small class="text-muted">Scan melalui landing page Level FIT</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div id="trainerSessionQr" class="d-flex justify-content-center" aria-live="polite"></div>
+                <div id="trainerSessionQrStatus" class="text-muted mt-3">Menyiapkan QR code...</div>
+                <button type="button" id="refreshTrainerSessionQr" class="btn btn-outline-primary mt-3 px-4">
+                    <i class="fa fa-refresh me-1"></i> Refresh QR
+                </button>
+                <p class="text-muted small mt-3 mb-0">QR diperbarui otomatis selama pop-up ini terbuka.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -35,7 +62,7 @@
         let isSubmitting = false;
 
         const focusCardInput = function() {
-            if (!cardInput || cardInput.readOnly) {
+            if (!cardInput || cardInput.readOnly || document.querySelector('.modal.show')) {
                 return;
             }
 
@@ -81,6 +108,62 @@
         });
 
         focusCardInput();
+    });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrContainer = document.getElementById('trainerSessionQr');
+        const qrStatus = document.getElementById('trainerSessionQrStatus');
+        const refreshButton = document.getElementById('refreshTrainerSessionQr');
+        const qrModal = document.getElementById('trainerSessionQrModal');
+        let refreshTimer;
+        let modalIsOpen = false;
+
+        async function refreshQr() {
+            qrStatus.textContent = 'Memperbarui QR code...';
+            refreshButton.disabled = true;
+
+            try {
+                const response = await fetch(@json(route('trainer-session-check-in.qr-token')), {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) throw new Error('Gagal mengambil QR code.');
+
+                const data = await response.json();
+                if (!modalIsOpen) return;
+
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: data.value,
+                    width: 240,
+                    height: 240,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+                qrStatus.textContent = 'Aktif sampai ' + new Date(data.expires_at).toLocaleTimeString('id-ID');
+                clearTimeout(refreshTimer);
+                refreshTimer = setTimeout(refreshQr, 45000);
+            } catch (error) {
+                qrStatus.textContent = error.message;
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        refreshButton.addEventListener('click', refreshQr);
+        qrModal.addEventListener('shown.bs.modal', function() {
+            modalIsOpen = true;
+            refreshQr();
+        });
+        qrModal.addEventListener('hidden.bs.modal', function() {
+            modalIsOpen = false;
+            clearTimeout(refreshTimer);
+            qrContainer.innerHTML = '';
+            qrStatus.textContent = 'Menyiapkan QR code...';
+            window.location.reload();
+        });
     });
 </script>
 
