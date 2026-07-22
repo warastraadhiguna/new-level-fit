@@ -16,22 +16,12 @@ class BranchStoreSeeder extends Seeder
     {
         $branches = [
             [
-                'name' => 'Level Fit',
-                'slug' => 'level-fit',
-                'address' => 'Jl. Level Fit No. 1',
+                'name' => 'WAn GYM',
+                'slug' => 'wan-gy',
+                'address' => 'Jl. Wan Gym No. 1',
                 'city' => 'Jakarta',
                 'phone' => '081200000000',
-                'email' => 'level-fit@example.test',
-                'is_payment_strict' => true,
-                'type' => 'both',
-            ],
-            [
-                'name' => 'Level Fit 2',
-                'slug' => 'level-fit-2',
-                'address' => 'Jl. Level Fit No. 2',
-                'city' => 'Jakarta',
-                'phone' => '081200000002',
-                'email' => 'level-fit-2@example.test',
+                'email' => 'wangym@example.test',
                 'is_payment_strict' => true,
                 'type' => 'both',
             ],
