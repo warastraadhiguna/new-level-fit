@@ -68,7 +68,6 @@
             </form>
         </div>
     </div>
-</div>
 
 <!-- Modal Edit -->
 @foreach ($classInstructors as $item)

@@ -84,7 +84,6 @@
                         </div>
                     </div>
                 </div>
-                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" onclick="reloadPage()" class="btn btn-primary">Download</button>
