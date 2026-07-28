@@ -76,6 +76,15 @@
     <link rel="stylesheet" href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <style>
+        .nav-header .brand-logo .admin-brand-logo {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 200px;
+            max-height: 60px;
+            object-fit: contain;
+        }
+
         @keyframes highlight {
             0% {
                 background-color: #fff;
@@ -149,7 +158,7 @@
                     </svg>
                 </div> --}}
                 @if ($adminLogoUrl)
-                    <img src="{{ $adminLogoUrl }}" class="img-fluid" alt="{{ $adminBranchName }}">
+                    <img src="{{ $adminLogoUrl }}" class="img-fluid admin-brand-logo" alt="{{ $adminBranchName }}">
                 @else
                     <span class="brand-title" style="font-size: 20px; font-weight: 700; color: #fff;">{{ $adminBranchName }}</span>
                 @endif

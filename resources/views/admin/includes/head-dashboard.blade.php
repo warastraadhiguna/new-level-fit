@@ -72,6 +72,17 @@
         integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <style>
+        .nav-header .brand-logo .admin-brand-logo {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 200px;
+            max-height: 60px;
+            object-fit: contain;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -119,7 +130,7 @@
                     </svg>
                 </div> --}}
                 @if ($adminLogoUrl)
-                    <img src="{{ $adminLogoUrl }}" class="img-fluid" alt="{{ $adminBranchName }}">
+                    <img src="{{ $adminLogoUrl }}" class="img-fluid admin-brand-logo" alt="{{ $adminBranchName }}">
                 @else
                     <span class="brand-title" style="font-size: 20px; font-weight: 700; color: #fff;">{{ $adminBranchName }}</span>
                 @endif
