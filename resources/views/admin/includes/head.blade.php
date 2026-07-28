@@ -76,12 +76,20 @@
     <link rel="stylesheet" href="//cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     <style>
+        .nav-header .brand-logo.admin-brand-link {
+            justify-content: center;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
         .nav-header .brand-logo .admin-brand-logo {
             display: block;
             width: auto;
             height: auto;
             max-width: 200px;
             max-height: 60px;
+            margin-left: auto;
+            margin-right: auto;
             object-fit: contain;
         }
 
@@ -141,7 +149,7 @@
             Nav header start
         ***********************************-->
         <div class="nav-header">
-            <a href="{{ route('dashboard') }}" class="brand-logo">
+            <a href="{{ route('dashboard') }}" class="brand-logo admin-brand-link">
                 {{-- <svg class="logo-abbr" width="40" height="40" viewBox="0 0 48 54" fill="none"
                     xmlns="http://www.w3.org/2000/svg">
                     <rect y="3" width="48" height="48" rx="16" fill="#FB7D5B" />
