@@ -18,7 +18,7 @@
                         <div class="input-group">
                             <input type="text" name="card_number" id="trainerSessionCardNumberInput" class="form-control" autofocus autocomplete="off">
                             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#trainerSessionQrModal">
-                                <i class="fa fa-qrcode me-1"></i> Tampilkan QR
+                                <i class="fa fa-camera me-1"></i> Scan QR
                             </button>
                         </div>
                     </div>
@@ -33,18 +33,24 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title" id="trainerSessionQrModalLabel">QR Trainer Session Check In / Check Out</h5>
-                    <small class="text-muted">Scan melalui landing page Level FIT</small>
+                    <h5 class="modal-title" id="trainerSessionQrModalLabel">Scan QR Card Member untuk Trainer Session</h5>
+                    <small class="text-muted">Arahkan kamera ke QR card number milik member</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body text-center p-4">
-                <div id="trainerSessionQr" class="d-flex justify-content-center" aria-live="polite"></div>
-                <div id="trainerSessionQrStatus" class="text-muted mt-3">Menyiapkan QR code...</div>
-                <button type="button" id="refreshTrainerSessionQr" class="btn btn-outline-primary mt-3 px-4">
-                    <i class="fa fa-refresh me-1"></i> Refresh QR
-                </button>
-                <p class="text-muted small mt-3 mb-0">QR diperbarui otomatis selama pop-up ini terbuka.</p>
+                <div id="trainerSessionQrReader" style="max-width: 420px; margin: 0 auto;"></div>
+                <div id="trainerSessionQrScannerStatus" class="text-muted mt-3">Tekan tombol untuk mengaktifkan kamera.</div>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <button type="button" id="startTrainerSessionQrScanner" class="btn btn-primary px-4">
+                        <i class="fa fa-camera me-1"></i> Mulai Scan
+                    </button>
+                    <button type="button" id="stopTrainerSessionQrScanner" class="btn btn-outline-secondary d-none">Hentikan Kamera</button>
+                </div>
+                <div class="mt-3">
+                    <label for="trainerSessionQrImage" class="form-label text-muted small">Atau pilih gambar QR</label>
+                    <input type="file" id="trainerSessionQrImage" class="form-control" accept="image/*">
+                </div>
             </div>
         </div>
     </div>
@@ -111,57 +117,81 @@
     });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const qrContainer = document.getElementById('trainerSessionQr');
-        const qrStatus = document.getElementById('trainerSessionQrStatus');
-        const refreshButton = document.getElementById('refreshTrainerSessionQr');
         const qrModal = document.getElementById('trainerSessionQrModal');
-        let refreshTimer;
-        let modalIsOpen = false;
+        const form = document.getElementById('trainer-session-check-in-form');
+        const cardInput = document.getElementById('trainerSessionCardNumberInput');
+        const status = document.getElementById('trainerSessionQrScannerStatus');
+        const startButton = document.getElementById('startTrainerSessionQrScanner');
+        const stopButton = document.getElementById('stopTrainerSessionQrScanner');
+        const imageInput = document.getElementById('trainerSessionQrImage');
+        const scanner = new Html5Qrcode('trainerSessionQrReader');
+        let isRunning = false;
+        let isSubmitting = false;
 
-        async function refreshQr() {
-            qrStatus.textContent = 'Memperbarui QR code...';
-            refreshButton.disabled = true;
+        function submitCardNumber(decodedText) {
+            const cardNumber = decodedText.trim();
+            if (!cardNumber || isSubmitting) return;
 
-            try {
-                const response = await fetch(@json(route('trainer-session-check-in.qr-token')), {
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                });
-                if (!response.ok) throw new Error('Gagal mengambil QR code.');
+            isSubmitting = true;
+            cardInput.value = cardNumber;
+            status.textContent = 'QR ditemukan. Memproses card number...';
+            status.className = 'text-success mt-3';
 
-                const data = await response.json();
-                if (!modalIsOpen) return;
-
-                qrContainer.innerHTML = '';
-                new QRCode(qrContainer, {
-                    text: data.value,
-                    width: 240,
-                    height: 240,
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-                qrStatus.textContent = 'Aktif sampai ' + new Date(data.expires_at).toLocaleTimeString('id-ID');
-                clearTimeout(refreshTimer);
-                refreshTimer = setTimeout(refreshQr, 45000);
-            } catch (error) {
-                qrStatus.textContent = error.message;
-            } finally {
-                refreshButton.disabled = false;
-            }
+            const submit = function() { form.requestSubmit(); };
+            if (isRunning) scanner.stop().then(submit).catch(submit);
+            else submit();
         }
 
-        refreshButton.addEventListener('click', refreshQr);
-        qrModal.addEventListener('shown.bs.modal', function() {
-            modalIsOpen = true;
-            refreshQr();
+        startButton.addEventListener('click', async function() {
+            startButton.disabled = true;
+            status.textContent = 'Meminta izin kamera...';
+            try {
+                await scanner.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    submitCardNumber,
+                    function() {}
+                );
+                isRunning = true;
+                startButton.classList.add('d-none');
+                stopButton.classList.remove('d-none');
+                status.textContent = 'Kamera aktif. Arahkan ke QR member.';
+            } catch (error) {
+                startButton.disabled = false;
+                status.textContent = 'Kamera tidak dapat dibuka. Periksa izin kamera atau pilih gambar QR.';
+                status.className = 'text-danger mt-3';
+            }
         });
-        qrModal.addEventListener('hidden.bs.modal', function() {
-            modalIsOpen = false;
-            clearTimeout(refreshTimer);
-            qrContainer.innerHTML = '';
-            qrStatus.textContent = 'Menyiapkan QR code...';
+
+        stopButton.addEventListener('click', async function() {
+            if (isRunning) await scanner.stop();
+            isRunning = false;
+            startButton.disabled = false;
+            startButton.classList.remove('d-none');
+            stopButton.classList.add('d-none');
+            status.textContent = 'Kamera dihentikan.';
+        });
+
+        imageInput.addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                if (isRunning) {
+                    await scanner.stop();
+                    isRunning = false;
+                }
+                submitCardNumber(await scanner.scanFile(file, true));
+            } catch (error) {
+                status.textContent = 'QR tidak ditemukan pada gambar.';
+                status.className = 'text-danger mt-3';
+            }
+        });
+
+        qrModal.addEventListener('hidden.bs.modal', async function() {
+            if (isRunning) await scanner.stop().catch(function() {});
             window.location.reload();
         });
     });

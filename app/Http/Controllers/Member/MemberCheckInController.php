@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Member\CheckInMember;
 use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
-use App\Support\QrCheckInToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -56,14 +55,6 @@ class MemberCheckInController extends Controller
         ];
 
         return view('admin.layouts.wrapper', $data);        
-    }
-
-    public function qrToken()
-    {
-        return response()->json(QrCheckInToken::issue(
-            (int) Auth::user()->branch_store_id,
-            (int) Auth::user()->id
-        ));
     }
 
     public function toggleByCardNumber(Request $request)

@@ -60,10 +60,5 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
 
-        RateLimiter::for('qr-check-in', function (Request $request) {
-            // Semua scan datang dari server landing page, sehingga limit API umum
-            // terlalu kecil bila banyak member melakukan scan pada waktu bersamaan.
-            return Limit::perMinute(300)->by($request->ip());
-        });
     }
 }
