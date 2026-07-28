@@ -2,19 +2,38 @@
 <html lang="en" class="h-100">
 
 <head>
+    @php
+        $socialBranch = \App\Models\BranchStore::query()
+            ->whereNotNull('admin_logo')
+            ->orderBy('id')
+            ->first();
+        $socialTitle = config('app.name') . ' Management System';
+        $socialDescription = 'Sistem manajemen gym untuk member, membership, personal trainer, dan operasional ' . config('app.name') . '.';
+        $socialImageUrl = $socialBranch?->admin_logo_url
+            ?? secure_asset('admingym/images/gym/fav-icon.png');
+        $socialImageUrl = preg_replace('/^http:\/\//i', 'https://', $socialImageUrl);
+        $socialPageUrl = preg_replace('/^http:\/\//i', 'https://', url()->current());
+    @endphp
+
     <!-- All Meta -->
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="author" content="DexignLab">
-    <meta name="robots" content="">
-    <meta name="keywords"
-        content="school, school admin, education, academy, admin dashboard, college, college management, education management, institute, school management, school management system, student management, teacher management, university, university management">
-    <meta name="description"
-        content="Discover Akademi - the ultimate admin dashboard and Bootstrap 5 template. Specially designed for professionals, and for business. Akademi provides advanced features and an easy-to-use interface for creating a top-quality website with School and Education Dashboard">
-    <meta property="og:title" content="Akademi : School and Education Management Admin Dashboard Template">
-    <meta property="og:description"
-        content="Akademi - the ultimate admin dashboard and Bootstrap 5 template. Specially designed for professionals, and for business. Akademi provides advanced features and an easy-to-use interface for creating a top-quality website with School and Education Dashboard">
-    <meta property="og:image" content="https://akademi.dexignlab.com/xhtml/social-image.png">
+    <meta name="author" content="{{ config('app.name') }}">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="keywords" content="gym, fitness, membership, personal trainer, gym management">
+    <meta name="description" content="{{ $socialDescription }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name') }}">
+    <meta property="og:title" content="{{ $socialTitle }}">
+    <meta property="og:description" content="{{ $socialDescription }}">
+    <meta property="og:url" content="{{ $socialPageUrl }}">
+    <meta property="og:image" content="{{ $socialImageUrl }}">
+    <meta property="og:image:secure_url" content="{{ $socialImageUrl }}">
+    <meta property="og:image:alt" content="Logo {{ $socialBranch?->name ?? config('app.name') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $socialTitle }}">
+    <meta name="twitter:description" content="{{ $socialDescription }}">
+    <meta name="twitter:image" content="{{ $socialImageUrl }}">
     <meta name="format-detection" content="telephone=no">
 
     <!-- Mobile Specific -->
