@@ -20,11 +20,15 @@ class BranchStore extends Model
         'email',
         'admin_logo',
         'is_payment_strict',
+        'member_installment_enabled',
+        'member_installment_grace_days',
+        'member_installment_cancel_days',
         'type',
     ];
 
     protected $casts = [
         'is_payment_strict' => 'boolean',
+        'member_installment_enabled' => 'boolean',
     ];
 
     protected $appends = [

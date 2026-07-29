@@ -63,6 +63,32 @@
             <small class="text-muted">Dipakai untuk aturan akses cabang berdasarkan gender.</small>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Cicilan Membership Tahunan</label>
+            @php $installmentEnabled = old('member_installment_enabled', isset($branchStore) ? (int) $branchStore->member_installment_enabled : 0); @endphp
+            <select name="member_installment_enabled" class="form-control" required>
+                <option value="0" {{ (string) $installmentEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $installmentEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Hanya paket dari cabang ini yang dapat memakai skema bulan 1 + 12.</small>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Masa Tenggang Cicilan (hari)</label>
+            <input type="number" min="0" max="30" name="member_installment_grace_days"
+                value="{{ old('member_installment_grace_days', $branchStore->member_installment_grace_days ?? 7) }}" class="form-control" required>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Pembatalan Setelah (hari)</label>
+            <input type="number" min="1" max="365" name="member_installment_cancel_days"
+                value="{{ old('member_installment_cancel_days', $branchStore->member_installment_cancel_days ?? 30) }}" class="form-control" required>
+            <small class="text-muted">Deposit bulan ke-12 hangus setelah kontrak dibatalkan.</small>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>

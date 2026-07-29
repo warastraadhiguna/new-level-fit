@@ -122,7 +122,36 @@
         </div>
     </div>
             <hr/>    
-</div> <span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status : {{ $memberRegistrationPayments->sum('value') < ($memberRegistration->package_price+ $memberRegistration->admin_price)? "UNPAID" : "PAID" }}</span>
+</div>
+@if ($memberRegistration->is_installment_plan)
+    <div class="card border-primary">
+        <div class="card-body">
+            <h5>Cicilan Membership Tahunan</h5>
+            <p class="mb-2">Status kontrak: <strong>{{ strtoupper($memberRegistration->installment_status) }}</strong>
+                | Deposit bulan 12: <strong>{{ strtoupper($memberRegistration->installment_deposit_status) }}</strong></p>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Bulan</th><th>Jenis</th><th>Jatuh Tempo</th><th>Tagihan</th><th>Terbayar</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach ($memberRegistration->installments->sortBy('month_number') as $installment)
+                        <tr>
+                            <td>{{ $installment->month_number }}</td>
+                            <td>{{ $installment->type === 'deposit' ? 'Deposit bulan 12' : 'Bulanan' }}</td>
+                            <td>{{ $installment->due_date->format('d-m-Y') }}</td>
+                            <td>{{ formatRupiah($installment->amount) }}</td>
+                            <td>{{ formatRupiah($installment->paid_amount) }}</td>
+                            <td>{{ strtoupper($installment->status) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+@endif
+<span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status :
+    {{ $memberRegistration->is_installment_plan ? strtoupper($memberRegistration->installment_status) : ($memberRegistrationPayments->sum('value') < ($memberRegistration->package_price + $memberRegistration->admin_price) ? "UNPAID" : "PAID") }}
+</span>
 
 <div class="row">
     @if ($memberRegistrationPayments->sum('value') < ($memberRegistration->package_price+ $memberRegistration->admin_price))     

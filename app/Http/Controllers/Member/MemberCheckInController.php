@@ -145,6 +145,8 @@ class MemberCheckInController extends Controller
                 'a.start_date',
                 'a.created_at as registration_created_at',
                 'a.payment_deadline',
+                'a.is_installment_plan',
+                'a.installment_status',
                 'a.description',
                 'a.days as number_of_days',
                 'a.member_id',
@@ -346,11 +348,21 @@ class MemberCheckInController extends Controller
 
     private function memberRegistrationHasUnpaidPayment($memberRegistration): bool
     {
+        if (!empty($memberRegistration->is_installment_plan)) {
+            $registration = \App\Models\Member\MemberRegistration::find($memberRegistration->id);
+            return !$registration || !app(\App\Services\MemberInstallmentService::class)->canCheckIn($registration);
+        }
         return (int) $memberRegistration->payment_summary < ((int) $memberRegistration->mr_package_price + (int) $memberRegistration->mr_admin_price);
     }
 
     private function shouldBlockUnpaidMemberCheckIn($memberRegistration): bool
     {
+        if (!empty($memberRegistration->current_check_in_members_id) && empty($memberRegistration->check_out_time)) {
+            return false;
+        }
+        if (!empty($memberRegistration->is_installment_plan)) {
+            return $this->memberRegistrationHasUnpaidPayment($memberRegistration);
+        }
         $isOneClubPackage = (string) ($memberRegistration->is_all_club ?? '1') === '0';
 
         return $this->memberRegistrationHasUnpaidPayment($memberRegistration)

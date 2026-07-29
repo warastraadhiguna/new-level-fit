@@ -23,6 +23,7 @@
                                 <th>Admin Price</th>
                                 <th>Description</th>
                                 <th>Status</th>
+                                <th>Payment Plan</th>
                                 <th>Staff</th>
                                 @if (Auth::user()->role == 'ADMIN')
                                     <th>Action</th>
@@ -52,7 +53,15 @@
                                     </td>
                                     <td>
                                         <h6>{{ $item->is_all_club == "1" ? "All Club" : "One Club"  }}</h6>
-                                    </td>                                    
+                                    </td>
+                                    <td>
+                                        @if ($item->is_installment_plan)
+                                            <span class="badge badge-success">Cicilan 12 Bulan</span>
+                                            <small class="d-block">{{ formatRupiah($item->installment_monthly_amount) }}/bulan</small>
+                                        @else
+                                            <span class="badge badge-secondary">Biasa</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <h6>{{ $item->users->full_name }}</h6>
                                     </td>
@@ -88,3 +97,52 @@
 </div>
 @include('admin.member-package.create')
 @include('admin.member-package.edit')
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.member-package-form').forEach(function (form) {
+            var branchSelect = form.querySelector('[name="branch_store_id"]');
+            var installmentSelect = form.querySelector('[name="is_installment_plan"]');
+            var monthlyAmount = form.querySelector('[name="installment_monthly_amount"]');
+            var installmentSettings = form.querySelectorAll('.installment-setting');
+
+            if (!branchSelect || !installmentSelect || !monthlyAmount) {
+                return;
+            }
+
+            function updateInstallmentVisibility() {
+                var selectedBranch = branchSelect.options[branchSelect.selectedIndex];
+                var isEnabled = selectedBranch
+                    && selectedBranch.getAttribute('data-installment-enabled') === '1';
+
+                installmentSettings.forEach(function (element) {
+                    element.style.display = isEnabled ? '' : 'none';
+                });
+
+                monthlyAmount.disabled = !isEnabled;
+
+                if (!isEnabled) {
+                    installmentSelect.value = '0';
+                    monthlyAmount.value = '';
+                }
+            }
+
+            branchSelect.addEventListener('change', updateInstallmentVisibility);
+            updateInstallmentVisibility();
+        });
+
+        @if ($errors->any())
+            var failedForm = @json(old('form_context', 'create'));
+            var failedModalId = failedForm.indexOf('edit-') === 0
+                ? '#modalEdit' + failedForm.replace('edit-', '')
+                : '#modalAdd';
+            var failedModalElement = document.querySelector(failedModalId);
+
+            if (failedModalElement && window.bootstrap && window.bootstrap.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(failedModalElement).show();
+            } else if (failedModalElement && window.jQuery) {
+                window.jQuery(failedModalElement).modal('show');
+            }
+        @endif
+    });
+</script>

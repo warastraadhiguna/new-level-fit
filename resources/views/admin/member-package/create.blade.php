@@ -2,8 +2,10 @@
 <div class="modal fade bd-example-modal-lg" id="modalAdd" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="{{ route('member-package.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('member-package.store') }}" method="POST" enctype="multipart/form-data"
+                class="member-package-form">
                 @csrf
+                <input type="hidden" name="form_context" value="create">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">Create Member Package</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -32,7 +34,11 @@
                                 <select name="branch_store_id" class="form-control" aria-label="Default select example"
                                     required>
                                     @foreach($branch_stores as $branch_store)                                        
-                                        <option value="{{ $branch_store->id }}">{{ $branch_store->name }}</option>
+                                        <option value="{{ $branch_store->id }}"
+                                            data-installment-enabled="{{ $branch_store->member_installment_enabled ? '1' : '0' }}"
+                                            {{ (string) old('branch_store_id') === (string) $branch_store->id ? 'selected' : '' }}>
+                                            {{ $branch_store->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -69,7 +75,25 @@
                                     <option value="1">All Club</option>
                                 </select>
                             </div>
-                        </div>                            
+                        </div>
+                        <div class="col-xl-6 installment-setting">
+                            <div class="mb-3">
+                                <label class="form-label">Metode Pembayaran</label>
+                                <select name="is_installment_plan" class="form-control" required>
+                                    <option value="0" {{ old('is_installment_plan', '0') === '0' ? 'selected' : '' }}>Pembayaran biasa</option>
+                                    <option value="1" {{ old('is_installment_plan') === '1' ? 'selected' : '' }}>Cicilan tahunan (bulan 1 + 12 di awal)</option>
+                                </select>
+                                <small class="text-muted">Hanya dapat disimpan jika fitur cicilan aktif di Secret Branch Store.</small>
+                            </div>
+                        </div>
+                        <div class="col-xl-6 installment-setting">
+                            <div class="mb-3">
+                                <label class="form-label">Nominal Cicilan per Bulan</label>
+                                <input type="text" name="installment_monthly_amount" value="{{ old('installment_monthly_amount') }}"
+                                    class="form-control rupiah" autocomplete="off">
+                                <small class="text-muted">Package Price wajib sama dengan nominal ini × 12.</small>
+                            </div>
+                        </div>
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="exampleFormControlTextarea1" class="form-label text-primary">

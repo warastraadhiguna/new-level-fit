@@ -602,6 +602,10 @@ class MemberRegistrationController extends Controller
         if (!$mr) {
             return redirect()->route('member-active.index')->with('errorr', 'Member Registration not found');
         }
+        if ($mr->is_installment_plan) {
+            app(\App\Services\MemberInstallmentService::class)->refresh($mr);
+            $mr->load('installments');
+        }
 
         $branchId = Auth::user()->branch_store_id;
         $memberActive = $this->getMemberRegistrationEditDetail($id);

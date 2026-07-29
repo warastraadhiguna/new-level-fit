@@ -4,9 +4,10 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form action="{{ route('member-package.update', $value->id) }}" method="POST"
-                    enctype="multipart/form-data">
+                    enctype="multipart/form-data" class="member-package-form">
                     @method('PUT')
                     @csrf
+                    <input type="hidden" name="form_context" value="edit-{{ $value->id }}">
                     <div class="modal-header">
                         <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Member Package</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -36,7 +37,11 @@
                                 <select name="branch_store_id" class="form-control" aria-label="Default select example"
                                     required>
                                     @foreach($branch_stores as $branch_store)                                        
-                                        <option value="{{ $branch_store->id }}" {{ $value->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
+                                        <option value="{{ $branch_store->id }}"
+                                            data-installment-enabled="{{ $branch_store->member_installment_enabled ? '1' : '0' }}"
+                                            {{ (string) old('branch_store_id', $value->branch_store_id) === (string) $branch_store->id ? 'selected' : '' }}>
+                                            {{ $branch_store->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -64,9 +69,9 @@
                                         class="form-control rupiah" id="exampleFormControlInput1" autocomplete="off">
                                 </div>
                             </div>
-                            <div class="col-xl-6">
-                                <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Status</label>
+                        <div class="col-xl-6">
+                            <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Status</label>
                                     <select name="is_all_club" class="form-control" aria-label="Default select example"
                                         required>
                                         <option value="0" {{ $value->is_all_club == '0'? 'selected' : '' }}>One Club</option>                                    
@@ -82,6 +87,24 @@
                                     <textarea class="form-control" name="description" id="exampleFormControlTextarea1" rows="6"
                                         placeholder="Enter Description">{{ old('description', $value->description) }}</textarea>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-6 installment-setting">
+                            <div class="mb-3">
+                                <label class="form-label">Metode Pembayaran</label>
+                                <select name="is_installment_plan" class="form-control" required>
+                                    <option value="0" {{ (string) old('is_installment_plan', (int) $value->is_installment_plan) === '0' ? 'selected' : '' }}>Pembayaran biasa</option>
+                                    <option value="1" {{ (string) old('is_installment_plan', (int) $value->is_installment_plan) === '1' ? 'selected' : '' }}>Cicilan tahunan (bulan 1 + 12 di awal)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xl-6 installment-setting">
+                            <div class="mb-3">
+                                <label class="form-label">Nominal Cicilan per Bulan</label>
+                                <input type="text" name="installment_monthly_amount"
+                                    value="{{ old('installment_monthly_amount', $value->installment_monthly_amount) }}"
+                                    class="form-control rupiah" autocomplete="off">
+                                <small class="text-muted">Package Price wajib sama dengan nominal ini × 12.</small>
                             </div>
                         </div>
                     </div>

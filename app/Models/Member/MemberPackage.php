@@ -25,10 +25,13 @@ class MemberPackage extends Model
         'admin_price',
         'description',
         'user_id',
-        'is_all_club'
+        'is_all_club',
+        'is_installment_plan',
+        'installment_monthly_amount',
     ];
 
     protected $hidden = [];
+    protected $casts = ['is_installment_plan' => 'boolean'];
     // public $timestamps = true;
 
     public function memberPackageType()

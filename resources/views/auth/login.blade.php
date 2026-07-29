@@ -9,7 +9,7 @@
             ->first();
         $socialTitle = config('app.name') . ' Management System';
         $socialDescription = 'Sistem manajemen gym untuk member, membership, personal trainer, dan operasional ' . config('app.name') . '.';
-        $socialImageUrl = $socialBranch?->admin_logo_url
+        $socialImageUrl = optional($socialBranch)->admin_logo_url
             ?? secure_asset('admingym/images/gym/fav-icon.png');
         $socialImageUrl = preg_replace('/^http:\/\//i', 'https://', $socialImageUrl);
         $socialPageUrl = preg_replace('/^http:\/\//i', 'https://', url()->current());
@@ -29,7 +29,7 @@
     <meta property="og:url" content="{{ $socialPageUrl }}">
     <meta property="og:image" content="{{ $socialImageUrl }}">
     <meta property="og:image:secure_url" content="{{ $socialImageUrl }}">
-    <meta property="og:image:alt" content="Logo {{ $socialBranch?->name ?? config('app.name') }}">
+    <meta property="og:image:alt" content="Logo {{ optional($socialBranch)->name ?? config('app.name') }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $socialTitle }}">
     <meta name="twitter:description" content="{{ $socialDescription }}">

@@ -233,6 +233,8 @@ class GateMemberController extends Controller
                 'mr.start_date',
                 'mr.created_at as registration_created_at',
                 'mr.payment_deadline',
+                'mr.is_installment_plan',
+                'mr.installment_status',
                 'mr.package_price as mr_package_price',
                 'mr.admin_price as mr_admin_price',
                 'm.id',
@@ -304,6 +306,10 @@ class GateMemberController extends Controller
 
     private function membershipHasUnpaidPayment($membership, int $branchStoreId): bool
     {
+        if (!empty($membership->is_installment_plan)) {
+            $registration = \App\Models\Member\MemberRegistration::find($membership->member_registration_id);
+            return !$registration || !app(\App\Services\MemberInstallmentService::class)->canCheckIn($registration);
+        }
         $isUnpaid = (int) $membership->payment_summary
             < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
         $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
@@ -313,6 +319,9 @@ class GateMemberController extends Controller
 
     private function membershipPaymentDeadlineStatus($membership, int $branchStoreId, Carbon $eventTime): ?array
     {
+        if (!empty($membership->is_installment_plan)) {
+            return null;
+        }
         $isUnpaid = (int) $membership->payment_summary
             < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
         $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
