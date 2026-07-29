@@ -257,7 +257,7 @@ class TrainerSessionController extends Controller
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
                 'payment_deadline'      => 'nullable|integer|min:0',
-                'fc_id'                 => 'required|exists:users,id',
+                'fc_id'                 => 'nullable|exists:users,id',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',           
             ]);
@@ -377,7 +377,7 @@ class TrainerSessionController extends Controller
                 ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
                 ->leftJoin(DB::raw('(SELECT trainer_session_id, COUNT(id) as check_in_count FROM check_in_trainer_sessions where check_out_time is not null GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
                 ->join('users as g', 'a.user_id', '=', 'g.id')
-                ->join('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
+                ->leftJoin('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
                 ->join('method_payments as i', 'a.method_payment_id', '=', 'i.id')
                 // ->whereRaw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) = 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
                 ->whereIn('a.member_id', function ($query) use ($id) {
@@ -680,7 +680,7 @@ class TrainerSessionController extends Controller
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
             ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
             ->join('users as g', 'a.user_id', '=', 'g.id')
-            ->join('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
+            ->leftJoin('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
             ->join('method_payments as i', 'a.method_payment_id', '=', 'i.id')
             ->leftJoin(DB::raw('(SELECT trainer_session_id, COUNT(id) as check_in_count FROM check_in_trainer_sessions GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
             ->addSelect(DB::raw('IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) as remaining_sessions'))

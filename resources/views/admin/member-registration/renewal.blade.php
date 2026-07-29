@@ -183,8 +183,8 @@
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Fitness
                                         Consultant</label>
-                                    <select id="single-select3" name="fc_id" class="form-control" required>
-                                        <option>
+                                    <select id="single-select3" name="fc_id" class="form-control">
+                                        <option value="">
                                             <- Choose ->
                                         </option>
                                         @foreach ($fitnessConsultant as $item)

@@ -80,21 +80,20 @@
                                 </select>
                             </div>
                         </div>
-                        @if ($memberRegistration->fc_id)
-                            <div class="col-xl-6">
-                                <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
-                                    <select id="single-select3" name="fc_id" class="form-control">
-                                        <option value="{{ $memberRegistrations->fc_id }}" selected>
-                                            {{ old('fc_id', $memberRegistrations->staff_name) }}
+                        <div class="col-xl-6">
+                            <div class="mb-3">
+                                <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
+                                <select id="single-select3" name="fc_id" class="form-control">
+                                    <option value="">Tidak ada Fitness Consultant</option>
+                                    @foreach ($users as $item)
+                                        <option value="{{ $item->id }}"
+                                            {{ (string) old('fc_id', $memberRegistration->fc_id) === (string) $item->id ? 'selected' : '' }}>
+                                            {{ $item->full_name }}
                                         </option>
-                                        @foreach ($users as $item)
-                                            <option value="{{ $item->id }}">{{ $item->full_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                    @endforeach
+                                </select>
                             </div>
-                        @endif
+                        </div>
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="exampleFormControlTextarea1" class="form-label text-primary">

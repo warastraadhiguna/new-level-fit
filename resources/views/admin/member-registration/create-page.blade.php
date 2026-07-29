@@ -65,7 +65,7 @@
                     {{-- <div class="col-xl-6">
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Sold By</label>
-                            <select id="single-select2" name="fc_id" class="form-control" required>
+                            <select id="single-select2" name="fc_id" class="form-control">
                                 <option>
                                     <- Choose ->
                                 </option>

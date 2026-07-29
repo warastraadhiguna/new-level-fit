@@ -259,7 +259,7 @@ class MemberRegistrationController extends Controller
                         'member_package_id'     => 'required|exists:member_packages,id',
                         'start_date'            => 'required',
                         'method_payment_id'     => 'required|exists:method_payments,id',
-                        'fc_id'                 => 'required|exists:users,id',
+                        'fc_id'                 => 'nullable|exists:users,id',
                     ]);
                 }
 
@@ -820,7 +820,7 @@ class MemberRegistrationController extends Controller
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'first_payment'     => 'required',
                     'payment_deadline'  => 'nullable|integer|min:0',
-                    'fc_id'             => 'required|exists:users,id',
+                    'fc_id'             => 'nullable|exists:users,id',
                     'description'       => 'nullable',
                 ]);
             }
@@ -879,7 +879,7 @@ class MemberRegistrationController extends Controller
                     'member_package_id' => 'required|exists:member_packages,id',
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
-                    'fc_id'             => 'required|exists:users,id',
+                    'fc_id'             => 'nullable|exists:users,id',
                     'payment_deadline'  => 'nullable|integer|min:0',
                     'description'       => 'nullable',
 
@@ -1015,7 +1015,7 @@ class MemberRegistrationController extends Controller
                         'start_date'        => 'required',
                         'method_payment_id' => 'required|exists:method_payments,id',
                         'payment_deadline'  => 'nullable|integer|min:0',
-                        'fc_id'             => 'required|exists:users,id',
+                        'fc_id'             => 'nullable|exists:users,id',
                         'description'       => 'nullable',
                     ]);
                 }
@@ -1214,7 +1214,7 @@ class MemberRegistrationController extends Controller
             ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
             ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
             ->join('users as f', 'a.user_id', '=', 'f.id')
-            ->join('users as fc', 'a.fc_id', '=', 'fc.id')
+            ->leftJoin('users as fc', 'a.fc_id', '=', 'fc.id')
             ->leftJoin('leave_days as ld', 'a.id', '=', 'ld.member_registration_id')
             ->where('a.id', $id)
             ->first();

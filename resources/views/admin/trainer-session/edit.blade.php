@@ -110,12 +110,13 @@
                         <div class="col-xl-6">
                             <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
-                            <select id="single-select8" name="fc_id" class="form-control" required>
-                                <option value="{{ $trainerSession->fc_id }}" selected>
-                                        {{ data_get($trainerSession, 'fitnessConsultants.full_name', 'Deleted fitness consultant') }}
-                                </option>
+                            <select id="single-select8" name="fc_id" class="form-control">
+                                <option value="">Tidak ada Fitness Consultant</option>
                                 @foreach ($fitnessConsultant as $item)
-                                    <option value="{{ $item->id }}">{{ $item->full_name }}</option>
+                                    <option value="{{ $item->id }}"
+                                        {{ (string) old('fc_id', $trainerSession->fc_id) === (string) $item->id ? 'selected' : '' }}>
+                                        {{ $item->full_name }}
+                                    </option>
                                 @endforeach
                                 </select>
                             </div>

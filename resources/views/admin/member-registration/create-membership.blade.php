@@ -95,7 +95,7 @@
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Fitness Consultant</label>
-                                    <select id="single-select3" name="fc_id" class="form-control" required>
+                                    <select id="single-select3" name="fc_id" class="form-control">
                                         <option value="">
                                             <- Choose ->
                                         </option>

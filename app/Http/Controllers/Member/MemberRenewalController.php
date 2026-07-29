@@ -22,7 +22,7 @@ class MemberRenewalController extends Controller
                 'member_package_id' => 'required|exists:member_packages,id',
                 'start_date' => 'required',
                 'method_payment_id' => 'required|exists:method_payments,id',
-                'fc_id' => 'required|exists:fitness_consultants,id',
+                'fc_id' => 'nullable|exists:fitness_consultants,id',
                 'description' => 'nullable',
             ]);
 
