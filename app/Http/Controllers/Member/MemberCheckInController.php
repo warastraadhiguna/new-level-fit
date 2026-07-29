@@ -152,6 +152,7 @@ class MemberCheckInController extends Controller
                 'a.member_id',
                 'a.package_price as mr_package_price',
                 'a.admin_price as mr_admin_price',
+                'a.discount_amount as mr_discount_amount',
                 'b.full_name as member_name',
                 'b.nickname',
                 'b.member_code',
@@ -352,7 +353,11 @@ class MemberCheckInController extends Controller
             $registration = \App\Models\Member\MemberRegistration::find($memberRegistration->id);
             return !$registration || !app(\App\Services\MemberInstallmentService::class)->canCheckIn($registration);
         }
-        return (int) $memberRegistration->payment_summary < ((int) $memberRegistration->mr_package_price + (int) $memberRegistration->mr_admin_price);
+        return (int) $memberRegistration->payment_summary < (
+            (int) $memberRegistration->mr_package_price
+            + (int) $memberRegistration->mr_admin_price
+            - (int) ($memberRegistration->mr_discount_amount ?? 0)
+        );
     }
 
     private function shouldBlockUnpaidMemberCheckIn($memberRegistration): bool

@@ -78,6 +78,7 @@
                                 <th>Type</th>
                                 <th>Payment Strict</th>
                                 <th>Cicilan Membership</th>
+                                <th>Diskon</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
                             </tr>
@@ -118,6 +119,20 @@
                                         @else
                                             <span class="badge badge-secondary">Nonaktif</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        <div>
+                                            Membership:
+                                            <span class="badge {{ $branchStore->member_discount_enabled ? 'badge-success' : 'badge-secondary' }}">
+                                                {{ $branchStore->member_discount_enabled ? 'Aktif' : 'Nonaktif' }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-1">
+                                            PT:
+                                            <span class="badge {{ $branchStore->trainer_discount_enabled ? 'badge-success' : 'badge-secondary' }}">
+                                                {{ $branchStore->trainer_discount_enabled ? 'Aktif' : 'Nonaktif' }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         @if ($branchStore->admin_logo_url)

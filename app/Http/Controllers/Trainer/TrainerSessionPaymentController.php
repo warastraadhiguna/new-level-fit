@@ -38,7 +38,7 @@ class TrainerSessionPaymentController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($data["trainer_session_id"]);
 
-                $price = (int) $trainerSession->package_price + (int) $trainerSession->admin_price;
+                $price = $trainerSession->total_payable;
                 $paidAmount = TrainerSessionPayment::query()
                     ->where('trainer_session_id', $trainerSession->id)
                     ->sum('value');

@@ -89,6 +89,26 @@
             <small class="text-muted">Deposit bulan ke-12 hangus setelah kontrak dibatalkan.</small>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Diskon Membership</label>
+            @php $memberDiscountEnabled = old('member_discount_enabled', isset($branchStore) ? (int) $branchStore->member_discount_enabled : 0); @endphp
+            <select name="member_discount_enabled" class="form-control" required>
+                <option value="0" {{ (string) $memberDiscountEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $memberDiscountEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Diskon PT</label>
+            @php $trainerDiscountEnabled = old('trainer_discount_enabled', isset($branchStore) ? (int) $branchStore->trainer_discount_enabled : 0); @endphp
+            <select name="trainer_discount_enabled" class="form-control" required>
+                <option value="0" {{ (string) $trainerDiscountEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $trainerDiscountEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>

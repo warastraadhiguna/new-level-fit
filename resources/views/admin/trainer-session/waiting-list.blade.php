@@ -151,10 +151,10 @@
                                         <h6>Session Total : {{ $item->ts_number_of_session }}</h6>
                                     </td>
                                     <td>
-                                            @if ($item->payment_summary >= ($item->ts_package_price+$item->ts_admin_price))
+                                            @if ($item->payment_summary >= ($item->ts_package_price + $item->ts_admin_price - ($item->ts_discount_amount ?? 0)))
                                                 <span class="badge badge-primary badge-lg">Paid</span>
                                             @else
-                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->ts_package_price+$item->ts_admin_price - $item->payment_summary) }}</span>                                            
+                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->ts_package_price + $item->ts_admin_price - ($item->ts_discount_amount ?? 0) - $item->payment_summary) }}</span>
                                             @endif
                                     </td>                 
                                     <td>

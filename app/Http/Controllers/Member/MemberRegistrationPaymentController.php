@@ -38,7 +38,7 @@ class MemberRegistrationPaymentController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($data["member_registration_id"]);
 
-                $price = (int) $memberRegistration->package_price + (int) $memberRegistration->admin_price;
+                $price = $memberRegistration->total_payable;
                 $paidAmount = MemberRegistrationPayment::query()
                     ->where('member_registration_id', $memberRegistration->id)
                     ->lockForUpdate()

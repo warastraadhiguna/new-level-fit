@@ -99,6 +99,27 @@ function NormalizePaymentDeadline($paymentDeadline, $paidAmount, $totalPrice, ?i
     return max(0, (int) ($paymentDeadline ?? 0));
 }
 
+function BranchStoreDiscountIsEnabled(string $type, ?int $branchStoreId = null): bool
+{
+    $branchStoreId = $branchStoreId ?: optional(auth()->user())->branch_store_id;
+    if (!$branchStoreId) {
+        return false;
+    }
+
+    $column = $type === 'trainer' ? 'trainer_discount_enabled' : 'member_discount_enabled';
+
+    return (bool) \App\Models\BranchStore::whereKey($branchStoreId)->value($column);
+}
+
+function NormalizeSalesDiscount($value, string $type, ?int $branchStoreId = null): int
+{
+    if (!BranchStoreDiscountIsEnabled($type, $branchStoreId)) {
+        return 0;
+    }
+
+    return max(0, (int) str_replace(['.', ','], '', (string) $value));
+}
+
 
 function NowDate($format = 'Y-MM-DD')
 {

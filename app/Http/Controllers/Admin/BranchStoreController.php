@@ -106,6 +106,8 @@ class BranchStoreController extends Controller
             'member_installment_enabled' => ['required', 'boolean'],
             'member_installment_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
             'member_installment_cancel_days' => ['required', 'integer', 'min:1', 'max:365', 'gte:member_installment_grace_days'],
+            'member_discount_enabled' => ['required', 'boolean'],
+            'trainer_discount_enabled' => ['required', 'boolean'],
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);

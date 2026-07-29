@@ -66,7 +66,12 @@ class MemberInstallmentService
             return;
         }
 
-        $available = max(0, (int) $registration->payments()->sum('value') - (int) $registration->admin_price);
+        $available = max(
+            0,
+            (int) $registration->payments()->sum('value')
+                - (int) $registration->admin_price
+                + (int) $registration->discount_amount
+        );
         $now = Carbon::now()->startOfDay();
         $earliestUnpaid = null;
 

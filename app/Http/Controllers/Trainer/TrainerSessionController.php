@@ -53,10 +53,10 @@ class TrainerSessionController extends Controller
 
             $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
             $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
-            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0))) {
                 $paymentMessages[$paymentDay][] =
                 [
-                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0)) - $trainerSession->payment_summary) . ")",
                     "id" => $trainerSession->id
                 ];
             }
@@ -107,10 +107,10 @@ class TrainerSessionController extends Controller
 
             $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
             $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
-            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0))) {
                 $paymentMessages[$paymentDay][] =
                 [
-                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0)) - $trainerSession->payment_summary) . ")",
                     "id" => $trainerSession->id
                 ];
             }
@@ -186,10 +186,10 @@ class TrainerSessionController extends Controller
 
             $paymentDayDiff = PaymentExpiredDateDiff($trainerSession->start_date);
             $paymentDay = $paymentDayDiff->invert == 0 ? $paymentDayDiff->days : 0;
-            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price)) {
+            if ($paymentDay < $expiredPaymentNumber && $trainerSession->payment_summary < ($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0))) {
                 $paymentMessages[$paymentDay][] =
                 [
-                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price) - $trainerSession->payment_summary) . ")",
+                    "message" => $trainerSession->member_name . " (". formatRupiah(($trainerSession->ts_package_price + $trainerSession->ts_admin_price - ($trainerSession->ts_discount_amount ?? 0)) - $trainerSession->payment_summary) . ")",
                     "id" => $trainerSession->id
                 ];
             }
@@ -242,6 +242,7 @@ class TrainerSessionController extends Controller
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
                 'payment_deadline'      => 'nullable|integer|min:0',
+                'discount_amount'       => 'nullable|string',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',
                 'branch_store_id'       => 'required',                        
@@ -257,6 +258,7 @@ class TrainerSessionController extends Controller
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
                 'payment_deadline'      => 'nullable|integer|min:0',
+                'discount_amount'       => 'nullable|string',
                 'fc_id'                 => 'nullable|exists:users,id',
                 'user_id'               => 'nullable',
                 'description'           => 'nullable',           
@@ -295,13 +297,18 @@ class TrainerSessionController extends Controller
 
             $data['package_price'] = $package->package_price;
             $data['admin_price'] = $package->admin_price;
+            $data['discount_amount'] = NormalizeSalesDiscount(
+                $data['discount_amount'] ?? 0,
+                'trainer',
+                Auth::user()->branch_store_id
+            );
             $data['days'] = $package->days;
             $data['number_of_session'] = $package->number_of_session;
             $firstPayment = (int) str_replace(".", "", $data['first_payment']);
             $data['payment_deadline'] = NormalizePaymentDeadline(
                 $data['payment_deadline'] ?? 0,
                 $firstPayment,
-                (int) $data['package_price'] + (int) $data['admin_price'],
+                (int) $data['package_price'] + (int) $data['admin_price'] - (int) $data['discount_amount'],
                 Auth::user()->branch_store_id
             );
             unset($data['first_payment']);
@@ -506,6 +513,7 @@ class TrainerSessionController extends Controller
             'trainer_id'            => 'nullable|exists:personal_trainers,id',
             'method_payment_id'     => 'nullable|exists:method_payments,id',
             'fc_id'                 => 'nullable|exists:users,id',
+            'discount_amount'       => 'nullable|string',
             'payment_deadline'      => 'nullable|integer|min:0',
         ]);
         $data['user_id'] = Auth::user()->id;
@@ -513,6 +521,15 @@ class TrainerSessionController extends Controller
 
         $selectedPackage = TrainerPackage::findOrFail($data["trainer_package_id"]);
         $currentPackage = TrainerPackage::find($item->trainer_package_id);
+        if (BranchStoreDiscountIsEnabled('trainer', Auth::user()->branch_store_id)) {
+            $data['discount_amount'] = NormalizeSalesDiscount(
+                $data['discount_amount'] ?? 0,
+                'trainer',
+                Auth::user()->branch_store_id
+            );
+        } else {
+            unset($data['discount_amount']);
+        }
         $data['trainer_id'] = $data['trainer_id'] ?: null;
         $data['start_date'] = $data['start_date'] ?: null;
 
@@ -525,7 +542,8 @@ class TrainerSessionController extends Controller
 
         $paidAmount = TrainerSessionPayment::where('trainer_session_id', $item->id)->sum('value');
         $totalPrice = (int) ($data['package_price'] ?? $item->package_price)
-            + (int) ($data['admin_price'] ?? $item->admin_price);
+            + (int) ($data['admin_price'] ?? $item->admin_price)
+            - (int) ($data['discount_amount'] ?? $item->discount_amount);
         $data['payment_deadline'] = NormalizePaymentDeadline(
             $data['payment_deadline'] ?? 0,
             $paidAmount,

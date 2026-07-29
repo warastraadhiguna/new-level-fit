@@ -98,6 +98,16 @@
                         </div>
                     </div>                       
                     @include('admin.partials.payment-deadline-field')
+                    @if (optional(Auth::user()->branchStore)->trainer_discount_enabled)
+                        <div class="col-xl-6">
+                            <div class="mb-3">
+                                <label class="form-label">Diskon PT</label>
+                                <input type="text" name="discount_amount" value="{{ old('discount_amount', 0) }}"
+                                    class="form-control rupiah" placeholder="0">
+                                <small class="text-muted">Diskon nominal rupiah, biaya admin tetap dihitung.</small>
+                            </div>
+                        </div>
+                    @endif
                     @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">

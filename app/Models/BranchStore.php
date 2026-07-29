@@ -23,12 +23,16 @@ class BranchStore extends Model
         'member_installment_enabled',
         'member_installment_grace_days',
         'member_installment_cancel_days',
+        'member_discount_enabled',
+        'trainer_discount_enabled',
         'type',
     ];
 
     protected $casts = [
         'is_payment_strict' => 'boolean',
         'member_installment_enabled' => 'boolean',
+        'member_discount_enabled' => 'boolean',
+        'trainer_discount_enabled' => 'boolean',
     ];
 
     protected $appends = [

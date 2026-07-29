@@ -132,6 +132,17 @@
                         </div>
                     </div>
                     @include('admin.partials.payment-deadline-field', ['paymentDeadline' => $trainerSession->payment_deadline])
+                    @if (optional(Auth::user()->branchStore)->trainer_discount_enabled)
+                        <div class="col-xl-6">
+                            <div class="mb-3">
+                                <label class="form-label">Diskon PT</label>
+                                <input type="text" name="discount_amount"
+                                    value="{{ old('discount_amount', $trainerSession->discount_amount) }}"
+                                    class="form-control rupiah" placeholder="0">
+                                <small class="text-muted">Diskon nominal rupiah, biaya admin tetap dihitung.</small>
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 
                 
@@ -149,10 +160,10 @@
 </div>
             <hr/>    
 <div class="row">            
-</div> <span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status : {{ $trainerSessionPayments->sum('value') < ($trainerSession->package_price+ $trainerSession->admin_price)? "UNPAID" : "PAID" }}</span>
+</div> <span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status : {{ $trainerSessionPayments->sum('value') < $trainerSession->total_payable ? "UNPAID" : "PAID" }}</span>
 </div>
 <div class="row">
-    @if ($trainerSessionPayments->sum('value') < ($trainerSession->package_price+ $trainerSession->admin_price))     
+    @if ($trainerSessionPayments->sum('value') < $trainerSession->total_payable)
         <div class="col-xl-12">
             <div class="page-title flex-wrap">
                 <div>                    
@@ -220,7 +231,7 @@
                         <div class="col-xl-12">
                             <div class="mb-3">                                
                                 <label for="exampleFormControlInput1" class="form-label">Underpayment</label>
-                                <input type="text"  placeholder="0"  class="form-control" value="{{   formatRupiah(($trainerSession->package_price+ $trainerSession->admin_price) - $trainerSessionPayments->sum('value')) }}"
+                                <input type="text"  placeholder="0"  class="form-control" value="{{ formatRupiah($trainerSession->total_payable - $trainerSessionPayments->sum('value')) }}"
                                     autocomplete="off" readonly>
                             </div>
                         </div>                        
@@ -249,7 +260,7 @@
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Note</label>
                                 <input type="hidden" name="value_sum" value="{{  $trainerSessionPayments->sum('value')}}">
-                                <input type="hidden" name="price" value="{{  $trainerSession->package_price+ $trainerSession->admin_price}}">
+                                <input type="hidden" name="price" value="{{ $trainerSession->total_payable }}">
                                 <input type="text" name="note" placeholder="Note..."    class="form-control"
                                     autocomplete="off" required>
                             </div>

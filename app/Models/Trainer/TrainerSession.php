@@ -27,6 +27,7 @@ class TrainerSession extends Model
         'old_days',
         'package_price',
         'admin_price',
+        'discount_amount',
         'payment_deadline',
         'number_of_session',
         'description',
@@ -38,9 +39,15 @@ class TrainerSession extends Model
 
     protected $casts = [
         'payment_deadline' => 'integer',
+        'discount_amount' => 'integer',
     ];
 
     protected $hidden = [];
+
+    public function getTotalPayableAttribute(): int
+    {
+        return max(0, (int) $this->package_price + (int) $this->admin_price - (int) $this->discount_amount);
+    }
 
     public function members()
     {
@@ -89,7 +96,7 @@ class TrainerSession extends Model
 
     private static function trainerSessionTotalPriceSql(string $sessionAlias = 'train_sess'): string
     {
-        return "({$sessionAlias}.package_price + {$sessionAlias}.admin_price)";
+        return "({$sessionAlias}.package_price + {$sessionAlias}.admin_price - IFNULL({$sessionAlias}.discount_amount, 0))";
     }
 
     private static function trainerSessionPaymentStatusCondition(string $paymentStatus = "paid", string $sessionAlias = 'train_sess'): string
@@ -110,7 +117,7 @@ class TrainerSession extends Model
 
     public static function getActivePTList($card_number = "", $trainner_session_id = "", $paymentStatus = "paid")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.branch_store_id, bs.name as branch_store_name,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, train_sess.branch_store_id, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.trainer_package_id, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         train_pack.package_name,
@@ -176,7 +183,7 @@ class TrainerSession extends Model
 
     public static function getPendingPTList($card_number = "", $trainner_session_id = "", $paymentStatus = "paid")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, bs.name as branch_store_name,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         train_pack.package_name,
@@ -244,7 +251,7 @@ class TrainerSession extends Model
     }
     public static function getPTWaitingList($card_number = "", $trainner_session_id = "", $paymentStatus = "paid")
     {
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, branch_stores.name as branch_store_name,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, branch_stores.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
         trainer_packages.package_name,
@@ -274,7 +281,7 @@ class TrainerSession extends Model
     {
         $branchStoreId = $branchStoreId ?: Auth::user()->branch_store_id;
 
-        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, bs.name as branch_store_name,
+        $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
         train_sess.id, train_sess.start_date, train_sess.created_at as trainer_session_created_at,
         train_sess.payment_deadline,
@@ -575,7 +582,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
+        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount,
         train_pack.package_name,
         pers_train.full_name AS trainer_name,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -784,7 +791,7 @@ class TrainerSession extends Model
         train_sess.id, train_sess.start_date, train_sess.created_at as trainer_session_created_at,
         train_sess.payment_deadline,
         CASE WHEN train_sess.payment_deadline > 0 THEN DATE_ADD(train_sess.created_at, INTERVAL train_sess.payment_deadline DAY) ELSE NULL END AS payment_deadline_date,
-        train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
+        train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount,
         train_pack.package_name,
         pers_train.full_name AS trainer_name, pers_train.id AS trainer_id,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -854,7 +861,7 @@ class TrainerSession extends Model
         train_sess.id, train_sess.start_date, train_sess.created_at as trainer_session_created_at,
         train_sess.payment_deadline,
         CASE WHEN train_sess.payment_deadline > 0 THEN DATE_ADD(train_sess.created_at, INTERVAL train_sess.payment_deadline DAY) ELSE NULL END AS payment_deadline_date,
-        train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price,
+        train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount,
         train_pack.package_name,
         pers_train.full_name AS trainer_name,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,

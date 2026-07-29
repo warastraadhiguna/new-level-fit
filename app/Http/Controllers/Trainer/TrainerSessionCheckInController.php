@@ -544,7 +544,11 @@ class TrainerSessionCheckInController extends Controller
     private function trainerSessionPaymentIsUnpaid($trainerSession): bool
     {
         return (int) $trainerSession->payment_summary
-            < ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price);
+            < (
+                (int) $trainerSession->ts_package_price
+                + (int) $trainerSession->ts_admin_price
+                - (int) ($trainerSession->ts_discount_amount ?? 0)
+            );
     }
 
     private function trainerSessionPaymentDeadlineStatus($trainerSession): ?array
@@ -618,7 +622,11 @@ class TrainerSessionCheckInController extends Controller
 
     private function trainerSessionUnpaidMessage($trainerSession): string
     {
-        $remainingPayment = ((int) $trainerSession->ts_package_price + (int) $trainerSession->ts_admin_price) - (int) $trainerSession->payment_summary;
+        $remainingPayment = (
+            (int) $trainerSession->ts_package_price
+            + (int) $trainerSession->ts_admin_price
+            - (int) ($trainerSession->ts_discount_amount ?? 0)
+        ) - (int) $trainerSession->payment_summary;
 
         return 'Pembayaran PT ' . $trainerSession->member_name . ' belum lunas. Sisa pembayaran: ' . formatRupiah($remainingPayment);
     }

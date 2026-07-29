@@ -20,6 +20,7 @@ class MemberRegistration extends Model
         'member_package_id',
         'package_price',
         'admin_price',
+        'discount_amount',
         'payment_deadline',
         'is_installment_plan',
         'installment_monthly_amount',
@@ -41,9 +42,15 @@ class MemberRegistration extends Model
         'payment_deadline' => 'integer',
         'is_installment_plan' => 'boolean',
         'installment_cancelled_at' => 'datetime',
+        'discount_amount' => 'integer',
     ];
 
     protected $hidden = [];
+
+    public function getTotalPayableAttribute(): int
+    {
+        return max(0, (int) $this->package_price + (int) $this->admin_price - (int) $this->discount_amount);
+    }
 
     //jangan ditiru, nando sesat, harusnya member
     public function members()
@@ -94,7 +101,7 @@ class MemberRegistration extends Model
                 ELSE NULL
             END as payment_deadline_date,
             mbr_reg.days as member_registration_days,
-            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
+            mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price, mbr_reg.discount_amount as mr_discount_amount, bs.id as 'branch_store_id', bs.name as 'branch_store_name',
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,
@@ -146,8 +153,8 @@ class MemberRegistration extends Model
 
             where mbr_reg.id > 0 AND "
             //--maaf ini akal2an untuk kasus nando di atas
-            . ($isUnpaidMember == "yes"? " ((mbr_reg.is_installment_plan = 1 AND COALESCE(mbr_reg.installment_status, 'pending') NOT IN ('active','completed')) OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price)))" :
-            ($isUnpaidMember == "no"? " $defaultSql AND ((mbr_reg.is_installment_plan = 1 AND mbr_reg.installment_status IN ('active','completed')) OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price)))" :  $defaultSql))
+            . ($isUnpaidMember == "yes"? " ((mbr_reg.is_installment_plan = 1 AND COALESCE(mbr_reg.installment_status, 'pending') NOT IN ('active','completed')) OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) < (mbr_reg.package_price + mbr_reg.admin_price - IFNULL(mbr_reg.discount_amount, 0))))" :
+            ($isUnpaidMember == "no"? " $defaultSql AND ((mbr_reg.is_installment_plan = 1 AND mbr_reg.installment_status IN ('active','completed')) OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price - IFNULL(mbr_reg.discount_amount, 0))))" :  $defaultSql))
 
             . ($card_number ? " and mbr.card_number='$card_number' " : '')
             . ($member_id ? " and mbr.id='$member_id' " : '')
@@ -185,7 +192,7 @@ class MemberRegistration extends Model
         $sortColumn = $sortableColumns[$sort] ?? "updated_at_check_in";
 
         $baseSql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days, mbr_reg.is_installment_plan, mbr_reg.installment_status,
-            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, bs.id as branch_store_id, bs.name as branch_store_name,
+            mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price, mbr_reg.discount_amount as mr_discount_amount, bs.id as branch_store_id, bs.name as branch_store_name,
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,
@@ -230,7 +237,7 @@ class MemberRegistration extends Model
             AND NOW() BETWEEN mbr_reg.start_date AND DATE_ADD(mbr_reg.start_date, INTERVAL (mbr_reg.days + ifnull(total_days,0)) DAY)
             AND mbr_reg.days > 1
             AND ((mbr_reg.is_installment_plan = 1 AND mbr_reg.installment_status IN ('active','completed'))
-                OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price)))"
+                OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price - IFNULL(mbr_reg.discount_amount, 0))))"
             . ($branchStoreId ? " and mbr.branch_store_id=" . (int) $branchStoreId . " " : '');
 
         $query = DB::query()->fromSub($baseSql, "active_members");
@@ -255,7 +262,7 @@ class MemberRegistration extends Model
     public static function getExpiredList($memberId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
-            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price,
+            mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price, mbr_reg.discount_amount as mr_discount_amount,
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,

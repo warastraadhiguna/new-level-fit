@@ -275,10 +275,10 @@
                                         </h6>
                                     </td>
                                     <td>
-                                            @if ($item->payment_summary >= ($item->mr_package_price+$item->mr_admin_price))
+                                            @if ($item->payment_summary >= ($item->mr_package_price + $item->mr_admin_price - ($item->mr_discount_amount ?? 0)))
                                                 <span class="badge badge-primary badge-lg">Paid</span>
                                             @else
-                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->mr_package_price+$item->mr_admin_price - $item->payment_summary) }}</span>                                            
+                                                <span class="badge badge-danger badge-lg">{{ formatRupiah($item->mr_package_price + $item->mr_admin_price - ($item->mr_discount_amount ?? 0) - $item->payment_summary) }}</span>
                                             @endif
                                     </td>
                                     <td>

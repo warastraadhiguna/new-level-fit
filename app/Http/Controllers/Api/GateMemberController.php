@@ -237,6 +237,7 @@ class GateMemberController extends Controller
                 'mr.installment_status',
                 'mr.package_price as mr_package_price',
                 'mr.admin_price as mr_admin_price',
+                'mr.discount_amount as mr_discount_amount',
                 'm.id',
                 'm.full_name',
                 'm.card_number',
@@ -311,7 +312,7 @@ class GateMemberController extends Controller
             return !$registration || !app(\App\Services\MemberInstallmentService::class)->canCheckIn($registration);
         }
         $isUnpaid = (int) $membership->payment_summary
-            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price - (int) ($membership->mr_discount_amount ?? 0));
         $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
 
         return $isUnpaid && (BranchStorePaymentIsStrict($branchStoreId) || !$isOneClubPackage);
@@ -323,7 +324,7 @@ class GateMemberController extends Controller
             return null;
         }
         $isUnpaid = (int) $membership->payment_summary
-            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price);
+            < ((int) $membership->mr_package_price + (int) $membership->mr_admin_price - (int) ($membership->mr_discount_amount ?? 0));
         $isOneClubPackage = (string) ($membership->is_all_club ?? '1') === '0';
         $deadlineDays = (int) ($membership->payment_deadline ?? 0);
 

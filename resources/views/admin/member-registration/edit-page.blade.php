@@ -104,6 +104,17 @@
                             </div>
                         </div>
                         @include('admin.partials.payment-deadline-field', ['paymentDeadline' => $memberRegistration->payment_deadline])
+                        @if (optional(Auth::user()->branchStore)->member_discount_enabled)
+                            <div class="col-xl-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Diskon Membership</label>
+                                    <input type="text" name="discount_amount"
+                                        value="{{ old('discount_amount', $memberRegistration->discount_amount) }}"
+                                        class="form-control rupiah" placeholder="0">
+                                    <small class="text-muted">Diskon nominal rupiah, biaya admin tetap dihitung.</small>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <div class="d-flex justify-content-between">
@@ -149,11 +160,11 @@
     </div>
 @endif
 <span class="alert alert-primary solid alert-dismissible fade show bg-info text-center">Payment Status :
-    {{ $memberRegistration->is_installment_plan ? strtoupper($memberRegistration->installment_status) : ($memberRegistrationPayments->sum('value') < ($memberRegistration->package_price + $memberRegistration->admin_price) ? "UNPAID" : "PAID") }}
+    {{ $memberRegistration->is_installment_plan ? strtoupper($memberRegistration->installment_status) : ($memberRegistrationPayments->sum('value') < $memberRegistration->total_payable ? "UNPAID" : "PAID") }}
 </span>
 
 <div class="row">
-    @if ($memberRegistrationPayments->sum('value') < ($memberRegistration->package_price+ $memberRegistration->admin_price))     
+    @if ($memberRegistrationPayments->sum('value') < $memberRegistration->total_payable)
         <div class="col-xl-12">
             <div class="page-title flex-wrap">
                 <div>                    
@@ -234,7 +245,7 @@
                         <div class="col-xl-12">
                             <div class="mb-3">                                
                                 <label for="exampleFormControlInput1" class="form-label">Underpayment</label>
-                                <input type="text"  placeholder="0"  class="form-control" value="{{   formatRupiah(($memberRegistration->package_price+ $memberRegistration->admin_price) - $memberRegistrationPayments->sum('value')) }}"
+                                <input type="text"  placeholder="0"  class="form-control" value="{{ formatRupiah($memberRegistration->total_payable - $memberRegistrationPayments->sum('value')) }}"
                                     autocomplete="off" readonly>
                             </div>
                         </div>                        
@@ -250,7 +261,7 @@
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Note</label>
                                 <input type="hidden" name="value_sum" value="{{  $memberRegistrationPayments->sum('value')}}">
-                                <input type="hidden" name="price" value="{{  $memberRegistration->package_price+ $memberRegistration->admin_price}}">
+                                <input type="hidden" name="price" value="{{ $memberRegistration->total_payable }}">
                                 <input type="text" name="note" placeholder="Note..."    class="form-control"
                                     autocomplete="off" required>
                             </div>
