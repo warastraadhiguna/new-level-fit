@@ -319,7 +319,9 @@
     const firstPayment = parseInt((input.value || '').replace(/\D/g, ''), 10) || 0;
     const packagePrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-package-price') || 0 : 0, 10);
     const adminPrice = parseInt(selectedPackage ? selectedPackage.getAttribute('data-admin-price') || 0 : 0, 10);
-    const totalPrice = packagePrice + adminPrice;
+    const discountInput = addMemberForm.querySelector('input[name="discount_amount"]');
+    const discount = parseInt((discountInput ? discountInput.value : '').replace(/\D/g, ''), 10) || 0;
+    const totalPrice = Math.max(0, packagePrice + adminPrice - discount);
 
     if (status && status.value === 'sell' && totalPrice > 0 && firstPayment > totalPrice) {
       const confirmed = confirm('The first payment is higher than the package price plus admin fee. Are you sure you want to continue?');

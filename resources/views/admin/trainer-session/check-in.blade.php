@@ -58,7 +58,7 @@
                                 class="form-control mdate-custom" required autocomplete="off" readonly>
                             <div class="col-xl-6">
                                 <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Periode Cuti</label>
+                                    <label for="exampleFormControlInput1" class="form-label">Periode Freeze</label>
                                     <select name="expired_date" class="form-control" required>
                                         <option selected>Select</option>
                                         <option value="30">1 Month</option>
@@ -69,7 +69,7 @@
                             </div>
                             <div class="col-xl-6">
                                 <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Cuti Price</label>
+                                    <label for="exampleFormControlInput1" class="form-label">Freeze Price</label>
                                     <input type="text" name="price" value="{{ old('price') }}"
                                         class="form-control rupiah" id="exampleFormControlInput1" autocomplete="off"
                                         required>

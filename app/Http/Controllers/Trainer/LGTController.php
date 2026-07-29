@@ -63,6 +63,6 @@ class LGTController extends Controller
         $pdf = Pdf::loadView('admin/lgt/cuti', [
             'trainerSession'        => $trainerSession[0],
         ]);
-        return $pdf->stream('Cuti Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
+        return $pdf->stream('Freeze Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
     }
 }

@@ -337,7 +337,7 @@
                                             class="btn light btn-info btn-xs mb-1 btn-block">Detail</a> --}}
                                         {{-- @if ($item->leave_day_status == 'Freeze')
                                             <a href="{{ route('cuti', $item->id) }}" target="_blank"
-                                                class="btn light btn-secondary btn-xs mb-1 btn-block">Agreement Cuti</a>
+                                                class="btn light btn-secondary btn-xs mb-1 btn-block">Agreement Freeze</a>
 
                                             <form action="{{ route('stopLeaveDays') }}" method="POST">
                                                 @method('put')
@@ -348,7 +348,7 @@
                                                     value="{{ $item->total_days }}">
                                                 <button type="submit"
                                                     class="btn light btn-outline-secondary btn-xs btn-block mb-1">Hentikan
-                                                    Cuti</button>
+                                                    Freeze</button>
                                             </form>
                                         @endif --}}
                                         {{-- Dropdown --}}
@@ -410,7 +410,7 @@
                                                     @if ($item->leave_day_status == 'Freeze')
                                                         <a href="{{ route('cuti', $item->id) }}" target="_blank"
                                                             class="btn light btn-secondary btn-xs mb-1 btn-block">Agreement
-                                                            Cuti</a>
+                                                            Freeze</a>
 
                                                         <form action="{{ route('stopLeaveDays') }}" method="POST">
                                                             @method('put')
@@ -421,7 +421,7 @@
                                                                 value="{{ $item->total_days }}">
                                                             <button type="submit"
                                                                 class="btn light btn-outline-secondary btn-xs btn-block mb-1">Hentikan
-                                                                Cuti</button>
+                                                                Freeze</button>
                                                         </form>
                                                     @endif
                                                 </li>

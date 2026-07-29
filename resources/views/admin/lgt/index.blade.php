@@ -256,7 +256,7 @@
                                         @endif
                                         @if ($item->leave_day_status == 'Freeze')
                                             <a href="{{ route('cutiLGT', $item->id) }}" target="_blank"
-                                                class="btn light btn-secondary btn-xs mb-1 btn-block">Cuti</a>
+                                                class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a>
                                         @endif
                                         <a href="{{ route('trainer-session.show', $item->id) }}"
                                             class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>

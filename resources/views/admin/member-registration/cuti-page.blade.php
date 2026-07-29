@@ -3,7 +3,7 @@
     <div class="card">
         <div class="card-body">
             <div class="teacher-deatails">
-                <h3 class="heading">Cuti Date:</h3>
+                <h3 class="heading">Freeze Date:</h3>
                 <table class="table" border="2">
                     <tbody style="color: rgb(85, 85, 85);">
                         <tr>

@@ -91,7 +91,7 @@
                 {{-- <td>#</td> --}}
             </tr>
             <tr>
-                <td>Periode Cuti</td>
+                <td>Periode Freeze</td>
                 <td>{{ DateFormat($memberRegistration->submission_date, 'DD MMMM YYYY') }} -
                     {{ DateFormat($memberRegistration->expired_leave_days, 'DD MMMM YYYY') }}
                     ({{ $memberRegistration->total_days }} Days)</td>

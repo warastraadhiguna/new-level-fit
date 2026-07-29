@@ -21,6 +21,7 @@ class TrainerSessionCheckInController extends Controller
     public function index()
     {
         $hasBranchStoreColumn = $this->trainerSessionCheckInHasBranchStoreColumn();
+        $today = Carbon::now('Asia/Jakarta')->toDateString();
         $branchStoreNameSql = $hasBranchStoreColumn
             ? 'COALESCE(check_in_branch.name, session_branch.name) as branch_store_name'
             : 'session_branch.name as branch_store_name';
@@ -31,8 +32,8 @@ class TrainerSessionCheckInController extends Controller
                 'members.member_code',
                 'members.id as member_id',
                 'members.full_name as member_name',
-                'cits.pt_id as pt_id',
-                'pt.full_name as trainer_name',
+                DB::raw('COALESCE(cits.pt_id, ts.trainer_id) as pt_id'),
+                DB::raw("COALESCE(check_in_pt.full_name, session_pt.full_name, '-') as trainer_name"),
                 'tp.package_name',
                 'cits.check_in_time',
                 'cits.check_out_time',
@@ -40,10 +41,14 @@ class TrainerSessionCheckInController extends Controller
             )
             ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
             ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-            ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
+            ->leftJoin('personal_trainers as check_in_pt', 'cits.pt_id', '=', 'check_in_pt.id')
+            ->leftJoin('personal_trainers as session_pt', 'ts.trainer_id', '=', 'session_pt.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
-            ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [NowDate(), NowDate()])
+            ->where(function ($query) use ($today) {
+                $query->whereDate('cits.check_in_time', $today)
+                    ->orWhereDate('cits.check_out_time', $today);
+            })
             ->when($hasBranchStoreColumn, function ($query) {
                 $query->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
                     ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [Auth::user()->branch_store_id]);
@@ -81,7 +86,7 @@ class TrainerSessionCheckInController extends Controller
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
-                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang cuti!!');
+                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang freeze!!');
             }
         }
 
@@ -177,7 +182,7 @@ class TrainerSessionCheckInController extends Controller
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
-                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang cuti!!');
+                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang freeze!!');
             }
         }
 
@@ -215,6 +220,7 @@ class TrainerSessionCheckInController extends Controller
                 'trainer_session_id'    => $trainerSession[0]->id,
                 'branch_store_id'       => Auth::user()->branch_store_id,
                 'check_in_time'         => now()->tz('Asia/Jakarta'),
+                'pt_id'                 => $trainerSession[0]->trainer_id,
                 'user_id'               => Auth::user()->id,
             ];
 
@@ -267,7 +273,7 @@ class TrainerSessionCheckInController extends Controller
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
-                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang cuti!!');
+                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang freeze!!');
             }
         }
 
@@ -324,6 +330,7 @@ class TrainerSessionCheckInController extends Controller
                 'trainer_session_id' => $trainerSession[0]->id,
                 'branch_store_id' => Auth::user()->branch_store_id,
                 'check_in_time' => now()->tz('Asia/Jakarta'),
+                'pt_id' => $trainerSession[0]->trainer_id,
                 'user_id' => Auth::user()->id,
             ];
 
@@ -382,7 +389,7 @@ class TrainerSessionCheckInController extends Controller
 
         if (!empty($trainerSession) && isset($trainerSession[0])) {
             if ($trainerSession[0]->leave_day_status == "Freeze") {
-                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang cuti!!');
+                return redirect()->back()->with('errorr', $trainerSession[0]->member_name . ' sedang freeze!!');
             }
         }
 
@@ -420,6 +427,7 @@ class TrainerSessionCheckInController extends Controller
                 'trainer_session_id'    => $trainerSession[0]->id,
                 'branch_store_id'       => Auth::user()->branch_store_id,
                 'check_in_time'         => now()->tz('Asia/Jakarta'),
+                'pt_id'                 => $trainerSession[0]->trainer_id,
                 'user_id'               => Auth::user()->id,
             ];
 

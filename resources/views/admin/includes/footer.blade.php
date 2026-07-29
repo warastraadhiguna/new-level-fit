@@ -367,7 +367,7 @@ if (window.location.pathname === '/add-data') {
             'description', 'formFile',
             'output', 'nickname', 'email', 'ig', 'emergency_contact', 'ec_name', 'member_package',
             'start_date',
-            'method_payment', 'fitness_consultant','registration_payment', 'first_payment'
+            'method_payment', 'fitness_consultant','registration_payment', 'first_payment', 'member_discount'
         ];
         var elementsToHide = ['cancellation-note', 'candidateFC'];
         // handleRadioChange()
@@ -381,12 +381,21 @@ if (window.location.pathname === '/add-data') {
         }
 
         function handleRadioChange() {
+            var discountInput = document.querySelector('#member_discount [name="discount_amount"]');
+
             if (missedGuestRadio.checked) {
                 toggleElements(elementsToShow, 'block');
                 toggleElements(elementsToHide, 'none');
+                if (discountInput) {
+                    discountInput.disabled = false;
+                }
             } else if (sellRadio.checked) {
                 toggleElements(elementsToShow, 'none');
-                toggleElements(elementsToHide, 'block');                
+                toggleElements(elementsToHide, 'block');
+                if (discountInput) {
+                    discountInput.value = '0';
+                    discountInput.disabled = true;
+                }
             }
         }
 

@@ -320,7 +320,7 @@
                                                 @if ($item->leave_day_status == 'Freeze')
                                                     <li>
                                                         <a href="{{ route('cutiTrainerSession', $item->id) }}" target="_blank"
-                                                            class="btn light btn-secondary btn-xs mb-1 btn-block">Cuti</a>
+                                                            class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a>
                                                     </li>
                                                 @endif
 

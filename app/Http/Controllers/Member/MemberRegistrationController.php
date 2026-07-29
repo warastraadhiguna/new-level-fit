@@ -245,6 +245,10 @@ class MemberRegistrationController extends Controller
                 ],
             ]);
 
+            if ($request->status !== 'sell') {
+                $data['discount_amount'] = 0;
+            }
+
             if ($request->status == 'sell') {
 
                 $fc = Auth::user()->id;
@@ -1166,7 +1170,7 @@ class MemberRegistrationController extends Controller
 
             if ($exists) {
                 return redirect()->route('member-active.index')
-                    ->with('success', 'Cuti sudah tercatat (request duplikat diabaikan).');
+                    ->with('success', 'Freeze sudah tercatat (request duplikat diabaikan).');
             }
 
             LeaveDay::create([
@@ -1202,7 +1206,7 @@ class MemberRegistrationController extends Controller
                 ]);
             }
 
-            return redirect()->route('member-active.index')->with('success', 'Cuti Membership Successfully Added');
+            return redirect()->route('member-active.index')->with('success', 'Freeze Membership Successfully Added');
         });
     }
 
@@ -1286,7 +1290,7 @@ class MemberRegistrationController extends Controller
         $pdf = Pdf::loadView('admin/member-registration/cuti', [
             'memberRegistration'        => $memberRegistration[0]
         ]);
-        return $pdf->stream('Cuti Membership-' . $fileName1 . '-' . $fileName2 . '.pdf');
+        return $pdf->stream('Freeze Membership-' . $fileName1 . '-' . $fileName2 . '.pdf');
     }
 
     public function filter(Request $request)
@@ -1397,7 +1401,7 @@ class MemberRegistrationController extends Controller
             // dd($currentLeaveDay->price);
             if ($newDay == 0) {
                 DB::rollback();
-                return redirect()->route('member-active.index')->with('errorr', "Cuti yang baru saja dibuat, tidak bisa dihentikan (hapus data)!");
+                return redirect()->route('member-active.index')->with('errorr', "Freeze yang baru saja dibuat tidak bisa dihentikan (hapus data)!");
             }
 
             $currentLeaveDay->update([

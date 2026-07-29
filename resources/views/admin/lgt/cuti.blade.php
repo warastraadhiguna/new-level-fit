@@ -90,7 +90,7 @@
                 <td>{{ formatRupiah($trainerSession->total_price_continue) }}</td>
             </tr>
             <tr>
-                <td>Periode Cuti</td>
+                <td>Periode Freeze</td>
                 <td>{{ DateFormat($trainerSession->submission_date_continue, 'DD MMMM YYYY') }}-
                     {{ DateFormat($trainerSession->expired_leave_days, 'DD MMMM YYYY') }}</td>
                 <td>Tanggal Pembayaran</td>

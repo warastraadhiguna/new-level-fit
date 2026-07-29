@@ -136,7 +136,7 @@
                                                 class="btn light btn-secondary btn-xs mb-1 btn-block">Agrement</a>
                                             @if ($item->old_days != 0)
                                                 <a href="{{ route('cuti', $item->id) }}" target="_blank"
-                                                    class="btn light btn-secondary btn-xs mb-1 btn-block">Cuti</a>
+                                                    class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a>
                                             @endif
                                             <a href="{{ route('member-active.show', $item->id) }}"
                                                 class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>

@@ -863,7 +863,7 @@ class TrainerSession extends Model
         CASE WHEN train_sess.payment_deadline > 0 THEN DATE_ADD(train_sess.created_at, INTERVAL train_sess.payment_deadline DAY) ELSE NULL END AS payment_deadline_date,
         train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount,
         train_pack.package_name,
-        pers_train.full_name AS trainer_name,
+        pers_train.full_name AS trainer_name, pers_train.id AS trainer_id,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
 	
         DATE_ADD(train_sess.start_date, INTERVAL COALESCE(leave_days_view.total_days_continue, 0) + train_sess.days DAY) AS expired_date,

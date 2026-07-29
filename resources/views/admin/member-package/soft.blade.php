@@ -16,7 +16,7 @@
                         <thead>
                             <tr>
                                 <th>Package Name</th>
-                                <th>Number Of Months</th>
+                                <th>Number Of Days</th>
                                 <th>Package Price</th>
                                 <th>Admin Price</th>
                                 <th>Description</th>

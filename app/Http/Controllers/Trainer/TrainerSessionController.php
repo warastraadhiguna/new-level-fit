@@ -658,7 +658,7 @@ class TrainerSessionController extends Controller
         $leaveDay->price = str_replace(',', '', $leaveDay['price']);
         $leaveDay->save();
 
-        return redirect()->route('trainer-session.index')->with('success', 'Cuti PT Successfully Added');
+        return redirect()->route('trainer-session.index')->with('success', 'Freeze PT Successfully Added');
     }
 
     public function destroy(TrainerSession $trainerSession)
@@ -741,7 +741,7 @@ class TrainerSessionController extends Controller
         $pdf = Pdf::loadView('admin/trainer-session/cuti', [
             'trainerSession'        => $trainerSession[0],
         ]);
-        return $pdf->stream('Cuti Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
+        return $pdf->stream('Freeze Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
     }
 
     public function listCuti($id)
@@ -754,7 +754,7 @@ class TrainerSessionController extends Controller
         $pdf = Pdf::loadView('admin/trainer-session/cuti', [
             'trainerSession'        => $trainerSession,
         ]);
-        return $pdf->stream('Cuti Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
+        return $pdf->stream('Freeze Trainer Session -' . $fileName1 . '-' . $fileName2 . '.pdf');
     }
 
     public function history()

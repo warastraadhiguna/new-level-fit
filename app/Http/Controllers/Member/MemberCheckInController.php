@@ -86,7 +86,7 @@ class MemberCheckInController extends Controller
         }
 
         if ($memberRegistration[0]->leave_day_status == "Freeze") {
-            return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang cuti!!');
+            return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang freeze!!');
         }
 
         if ($this->shouldBlockUnpaidMemberCheckIn($memberRegistration[0])) {

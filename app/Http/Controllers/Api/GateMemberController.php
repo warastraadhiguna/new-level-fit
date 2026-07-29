@@ -112,7 +112,7 @@ class GateMemberController extends Controller
 
         if ($membership->leave_day_status === 'Freeze') {
             return response()->json([
-                'message' => $membership->full_name . ' sedang cuti.',
+                'message' => $membership->full_name . ' sedang freeze.',
             ], 409);
         }
 

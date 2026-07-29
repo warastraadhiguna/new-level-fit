@@ -35,8 +35,8 @@ class MemberPTCheckInReportExport implements FromView
                 'members.member_code',
                 'members.id as member_id',
                 'members.full_name as member_name',
-                'cits.pt_id as pt_id',
-                'pt.full_name as trainer_name',
+                DB::raw('COALESCE(cits.pt_id, ts.trainer_id) as pt_id'),
+                DB::raw("COALESCE(check_in_pt.full_name, session_pt.full_name, '-') as trainer_name"),
                 'tp.package_name',                
                 'cits.check_in_time',
                 'cits.check_out_time',
@@ -44,10 +44,14 @@ class MemberPTCheckInReportExport implements FromView
             )
             ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
             ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
-            ->join('personal_trainers as pt', 'cits.pt_id', '=', 'pt.id')
+            ->leftJoin('personal_trainers as check_in_pt', 'cits.pt_id', '=', 'check_in_pt.id')
+            ->leftJoin('personal_trainers as session_pt', 'ts.trainer_id', '=', 'session_pt.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')            
-            ->whereBetween(DB::raw('DATE(cits.check_in_time)'), [$fromDate, $toDate])
+            ->where(function ($query) use ($fromDate, $toDate) {
+                $query->whereBetween(DB::raw('DATE(cits.check_in_time)'), [$fromDate, $toDate])
+                    ->orWhereBetween(DB::raw('DATE(cits.check_out_time)'), [$fromDate, $toDate]);
+            })
             ->when($hasTrainerCheckInBranchStoreColumn, function ($query) use ($branchId) {
                 $query->leftJoin('branch_stores as check_in_branch', 'cits.branch_store_id', '=', 'check_in_branch.id')
                     ->whereRaw('COALESCE(cits.branch_store_id, ts.branch_store_id) = ?', [$branchId]);
@@ -57,7 +61,7 @@ class MemberPTCheckInReportExport implements FromView
             ->when($memberId, function ($query) use ($memberId) {
                 $query->where('members.id', $memberId);
             })
-            ->when($ptId, fn ($q) => $q->where('pt.id', $ptId))            
+            ->when($ptId, fn ($q) => $q->whereRaw('COALESCE(cits.pt_id, ts.trainer_id) = ?', [$ptId]))
             ->orderBy('cits.check_in_time', 'desc')                
             ->get();
 

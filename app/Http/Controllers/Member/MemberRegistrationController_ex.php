@@ -718,7 +718,7 @@ class MemberRegistrationController extends Controller
         $leaveDay->price = str_replace(',', '', $leaveDay['price']);
         $leaveDay->save();
 
-        return redirect()->route('member-active.index')->with('success', 'Cuti Membership Successfully Added');
+        return redirect()->route('member-active.index')->with('success', 'Freeze Membership Successfully Added');
     }
 
     public function destroy($id)
@@ -853,7 +853,7 @@ class MemberRegistrationController extends Controller
         $pdf = Pdf::loadView('admin/member-registration/cuti', [
             'memberRegistration'        => $memberRegistration,
         ]);
-        return $pdf->stream('Cuti Membership-' . $fileName1 . '-' . $fileName2 . '.pdf');
+        return $pdf->stream('Freeze Membership-' . $fileName1 . '-' . $fileName2 . '.pdf');
     }
 
     public function filter(Request $request)
