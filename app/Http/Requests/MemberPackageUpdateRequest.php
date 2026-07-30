@@ -25,6 +25,7 @@ class MemberPackageUpdateRequest extends FormRequest
     public function rules()
     {
         return [
+            '_submission_token'     => 'required|string|size:36',
             'branch_store_id'       => 'required',            
             'package_name'          => 'string',
             'days'                  => 'numeric',

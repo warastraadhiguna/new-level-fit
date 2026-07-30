@@ -3,8 +3,9 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="{{ route('member-package.store') }}" method="POST" enctype="multipart/form-data"
-                class="member-package-form">
+                class="member-package-form js-idempotent-package-form">
                 @csrf
+                <input type="hidden" name="_submission_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                 <input type="hidden" name="form_context" value="create">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">Create Member Package</h1>

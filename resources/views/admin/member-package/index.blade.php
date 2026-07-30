@@ -97,6 +97,7 @@
 </div>
 @include('admin.member-package.create')
 @include('admin.member-package.edit')
+@include('admin.partials.package-submit-guard')
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {

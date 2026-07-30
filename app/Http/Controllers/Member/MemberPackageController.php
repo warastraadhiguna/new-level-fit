@@ -10,7 +10,9 @@ use App\Models\Member\MemberPackage;
 use App\Models\Member\MemberPackageCategory;
 use App\Models\Member\MemberPackageType;
 use App\Models\User;
+use App\Support\IdempotentSubmission;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MemberPackageController extends Controller
 {
@@ -36,9 +38,32 @@ class MemberPackageController extends Controller
 
     public function store(MemberPackageStoreRequest $request)
     {
-        $data = $request->all();
-        $data['user_id'] = Auth::user()->id;
-        MemberPackage::create($data);
+        $cacheKey = IdempotentSubmission::claim(
+            $request->input('_submission_token'),
+            'member-package:create',
+            (int) Auth::id()
+        );
+
+        if (!$cacheKey) {
+            return redirect()->route('member-package.index')
+                ->with('success', 'Permintaan ini sudah diterima. Data tidak disimpan dua kali.');
+        }
+
+        try {
+            DB::transaction(function () use ($request) {
+                $data = $request->validated();
+                unset($data['_submission_token']);
+                $data['user_id'] = Auth::id();
+
+                MemberPackage::create($data);
+            });
+
+            IdempotentSubmission::complete($cacheKey);
+        } catch (\Throwable $exception) {
+            IdempotentSubmission::release($cacheKey);
+            throw $exception;
+        }
+
         return redirect()->route('member-package.index')->with('success', 'Member Package Added Successfully');
     }
 
@@ -49,10 +74,33 @@ class MemberPackageController extends Controller
 
     public function update(MemberPackageUpdateRequest $request, string $id)
     {
-        $item = MemberPackage::find($id);
-        $data = $request->all();
-        $data['user_id'] = Auth::user()->id;
-        $item->update($data);
+        $cacheKey = IdempotentSubmission::claim(
+            $request->input('_submission_token'),
+            'member-package:update:' . $id,
+            (int) Auth::id()
+        );
+
+        if (!$cacheKey) {
+            return redirect()->route('member-package.index')
+                ->with('success', 'Permintaan update ini sudah diterima dan tidak diproses ulang.');
+        }
+
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $item = MemberPackage::findOrFail($id);
+                $data = $request->validated();
+                unset($data['_submission_token']);
+                $data['user_id'] = Auth::id();
+
+                $item->update($data);
+            });
+
+            IdempotentSubmission::complete($cacheKey);
+        } catch (\Throwable $exception) {
+            IdempotentSubmission::release($cacheKey);
+            throw $exception;
+        }
+
         return redirect()->route('member-package.index')->with('success', 'Member Package Updated Successfully');
     }
 

@@ -88,3 +88,4 @@
 </div>
 @include('admin.trainer-package.create')
 @include('admin.trainer-package.edit')
+@include('admin.partials.package-submit-guard')

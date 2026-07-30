@@ -3,8 +3,10 @@
     aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="{{ route('trainer-package.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('trainer-package.store') }}" method="POST" enctype="multipart/form-data"
+                class="js-idempotent-package-form">
                 @csrf
+                <input type="hidden" name="_submission_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">Create Trainer Package</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

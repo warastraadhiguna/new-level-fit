@@ -9,7 +9,9 @@ use App\Models\BranchStore;
 use App\Models\Member\MemberPackage;
 use App\Models\Trainer\TrainerPackage;
 use App\Models\User;
+use App\Support\IdempotentSubmission;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TrainerPackageController extends Controller
 {
@@ -42,11 +44,32 @@ class TrainerPackageController extends Controller
 
     public function store(TrainerPackageStoreRequest $request)
     {
-        $data = $request->all();
-        $data['user_id'] = Auth::user()->id;
-        $data['status'] = $request->has('status') ? 'LGT' : null;
+        $cacheKey = IdempotentSubmission::claim(
+            $request->input('_submission_token'),
+            'trainer-package:create',
+            (int) Auth::id()
+        );
 
-        TrainerPackage::create($data);
+        if (!$cacheKey) {
+            return redirect()->route('trainer-package.index')
+                ->with('success', 'Permintaan ini sudah diterima. Data tidak disimpan dua kali.');
+        }
+
+        try {
+            DB::transaction(function () use ($request) {
+                $data = $request->validated();
+                unset($data['_submission_token']);
+                $data['user_id'] = Auth::id();
+                $data['status'] = $request->has('status') ? 'LGT' : null;
+
+                TrainerPackage::create($data);
+            });
+
+            IdempotentSubmission::complete($cacheKey);
+        } catch (\Throwable $exception) {
+            IdempotentSubmission::release($cacheKey);
+            throw $exception;
+        }
 
         return redirect()->route('trainer-package.index')->with('success', 'Trainer Package Added Successfully');
     }
@@ -58,11 +81,34 @@ class TrainerPackageController extends Controller
 
     public function update(TrainerPackageUpdateRequest $request, string $id)
     {
-        $item = TrainerPackage::find($id);
-        $data = $request->all();
-        $data['status'] = $request->has('status') ? 'LGT' : null;
-        $data['user_id'] = Auth::user()->id;
-        $item->update($data);
+        $cacheKey = IdempotentSubmission::claim(
+            $request->input('_submission_token'),
+            'trainer-package:update:' . $id,
+            (int) Auth::id()
+        );
+
+        if (!$cacheKey) {
+            return redirect()->route('trainer-package.index')
+                ->with('success', 'Permintaan update ini sudah diterima dan tidak diproses ulang.');
+        }
+
+        try {
+            DB::transaction(function () use ($request, $id) {
+                $item = TrainerPackage::findOrFail($id);
+                $data = $request->validated();
+                unset($data['_submission_token']);
+                $data['status'] = $request->has('status') ? 'LGT' : null;
+                $data['user_id'] = Auth::id();
+
+                $item->update($data);
+            });
+
+            IdempotentSubmission::complete($cacheKey);
+        } catch (\Throwable $exception) {
+            IdempotentSubmission::release($cacheKey);
+            throw $exception;
+        }
+
         return redirect()->route('trainer-package.index')->with('success', 'Trainer Package Updated Successfully');
     }
 

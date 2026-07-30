@@ -4,9 +4,10 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form action="{{ route('member-package.update', $value->id) }}" method="POST"
-                    enctype="multipart/form-data" class="member-package-form">
+                    enctype="multipart/form-data" class="member-package-form js-idempotent-package-form">
                     @method('PUT')
                     @csrf
+                    <input type="hidden" name="_submission_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                     <input type="hidden" name="form_context" value="edit-{{ $value->id }}">
                     <div class="modal-header">
                         <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Member Package</h1>
