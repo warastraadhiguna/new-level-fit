@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApplicationAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,26 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::user() &&  Auth::user()->role == 'ADMIN' ||  Auth::user()->role == 'CS' || Auth::user()->role == 'CSPOS' || Auth::user()->role == 'FC') {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        if (
+            $user->role === 'ADMIN'
+            && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
+        ) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun Anda tidak memiliki akses ke New Level Fit Management.',
+            ]);
+        }
+
+        if (in_array($user->role, ['ADMIN', 'CS', 'CSPOS', 'FC'], true)) {
             return $next($request);
         }
 

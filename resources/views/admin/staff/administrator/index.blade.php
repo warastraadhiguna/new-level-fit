@@ -72,6 +72,31 @@
                                     id="exampleFormControlInput1" autocomplete="off" required>
                             </div>
                         </div>
+                        <div class="col-xl-12">
+                            <div class="mb-3">
+                                <label class="form-label">Application Access</label>
+                                <input type="hidden" name="application_access[]" value="management">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" checked disabled
+                                        id="createAdministratorManagementAccess">
+                                    <label class="form-check-label" for="createAdministratorManagementAccess">
+                                        New Level Fit Management
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                        name="application_access[]" value="gym_landing"
+                                        id="createAdministratorGymLandingAccess"
+                                        {{ in_array('gym_landing', old('application_access', []), true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="createAdministratorGymLandingAccess">
+                                        Gym Landing Page
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    Kosongkan Gym Landing Page jika administrator hanya boleh masuk Management.
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -100,6 +125,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="row">
+                            <input type="hidden" name="application_access[]" value="management">
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Branch</label>
@@ -150,6 +176,32 @@
                                     <small>Leave blank if you don't want to change</small>
                                 </div>
                             </div>
+                            <div class="col-xl-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Application Access</label>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" checked disabled
+                                            id="editAdministratorManagementAccess{{ $item->id }}">
+                                        <label class="form-check-label"
+                                            for="editAdministratorManagementAccess{{ $item->id }}">
+                                            New Level Fit Management
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                            name="application_access[]" value="gym_landing"
+                                            id="editAdministratorGymLandingAccess{{ $item->id }}"
+                                            {{ $item->hasApplicationAccess('gym_landing') ? 'checked' : '' }}>
+                                        <label class="form-check-label"
+                                            for="editAdministratorGymLandingAccess{{ $item->id }}">
+                                            Gym Landing Page
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">
+                                        Kosongkan Gym Landing Page jika administrator hanya boleh masuk Management.
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -198,6 +250,7 @@
                                     <th>Full Name</th>
                                     <th>Email</th>
                                     <th>Gender</th>
+                                    <th>Application Access</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -215,6 +268,14 @@
                                         </td>
                                         <td>
                                             <h6>{{ $item->gender }}</h6>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-primary">Management</span>
+                                            @if ($item->hasApplicationAccess('gym_landing'))
+                                                <span class="badge badge-success">Gym Landing</span>
+                                            @else
+                                                <span class="badge badge-secondary">Management Only</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <div>

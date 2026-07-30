@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Support\ApplicationAccess;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +17,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run()
     {
-        User::withTrashed()->updateOrCreate(
+        $admin = User::withTrashed()->updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'branch_store_id' => DB::table('branch_stores')->orderBy('id')->value('id'),
@@ -28,5 +29,12 @@ class AdminUserSeeder extends Seeder
                 'deleted_at' => null,
             ]
         );
+
+        foreach (ApplicationAccess::ADMIN_APPLICATIONS as $applicationCode) {
+            $admin->applicationAccesses()->updateOrCreate(
+                ['application_code' => $applicationCode],
+                ['is_active' => true]
+            );
+        }
     }
 }

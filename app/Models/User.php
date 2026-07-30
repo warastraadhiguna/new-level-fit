@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -53,5 +54,22 @@ class User extends Authenticatable
     public function branchStore()
     {
         return $this->belongsTo(BranchStore::class);
+    }
+
+    public function applicationAccesses()
+    {
+        return $this->hasMany(UserApplicationAccess::class);
+    }
+
+    public function hasApplicationAccess($applicationCode)
+    {
+        if (!Schema::hasTable('user_application_access')) {
+            return true;
+        }
+
+        return $this->applicationAccesses()
+            ->where('application_code', $applicationCode)
+            ->where('is_active', true)
+            ->exists();
     }
 }
