@@ -34,7 +34,7 @@ class AdministratorController extends Controller
             'gender'    => 'required',
             'role'      => 'required|in:ADMIN',
             'password'  => 'required|string|min:6',
-            'application_access' => 'nullable|array',
+            'application_access' => 'required|array|min:1',
             'application_access.*' => 'in:' . implode(',', ApplicationAccess::ADMIN_APPLICATIONS),
         ]);
 
@@ -67,7 +67,7 @@ class AdministratorController extends Controller
             'email'     => 'email',
             'gender'    => 'required',
             'password'  => 'nullable|string|min:6',
-            'application_access' => 'nullable|array',
+            'application_access' => 'required|array|min:1',
             'application_access.*' => 'in:' . implode(',', ApplicationAccess::ADMIN_APPLICATIONS),
         ]);
 
@@ -133,8 +133,6 @@ class AdministratorController extends Controller
 
     private function normalizeApplicationAccess(array $applicationCodes)
     {
-        $applicationCodes[] = ApplicationAccess::MANAGEMENT;
-
         return array_values(array_unique(array_intersect(
             $applicationCodes,
             ApplicationAccess::ADMIN_APPLICATIONS

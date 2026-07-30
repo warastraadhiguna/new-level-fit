@@ -1,5 +1,5 @@
--- Jalankan pada database bersama yang digunakan new-level-fit-master
--- dan landing-page/gym-landing-page.
+-- Jalankan pada database bersama yang digunakan aplikasi Management
+-- dan Member (landing-page/gym-landing-page).
 --
 -- Query ini aman untuk data lama:
 -- semua ADMIN existing tetap mendapat akses ke kedua aplikasi.
@@ -34,7 +34,7 @@ FROM `users`
 WHERE `role` = 'ADMIN';
 
 -- Contoh opsional jika ingin mengatur manual berdasarkan email.
--- Admin Management Only:
+-- Admin hanya Management:
 --
 -- UPDATE `user_application_access` AS `uaa`
 -- INNER JOIN `users` AS `u` ON `u`.`id` = `uaa`.`user_id`
@@ -43,7 +43,7 @@ WHERE `role` = 'ADMIN';
 -- WHERE `u`.`email` = 'admin@example.com'
 --   AND `uaa`.`application_code` = 'gym_landing';
 --
--- Berikan akses Gym Landing:
+-- Berikan akses Member:
 --
 -- INSERT INTO `user_application_access`
 --     (`user_id`, `application_code`, `is_active`, `created_at`, `updated_at`)

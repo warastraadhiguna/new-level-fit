@@ -75,12 +75,13 @@
                         <div class="col-xl-12">
                             <div class="mb-3">
                                 <label class="form-label">Application Access</label>
-                                <input type="hidden" name="application_access[]" value="management">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" checked disabled
-                                        id="createAdministratorManagementAccess">
+                                    <input class="form-check-input" type="checkbox"
+                                        name="application_access[]" value="management"
+                                        id="createAdministratorManagementAccess"
+                                        {{ in_array('management', old('application_access', ['management']), true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="createAdministratorManagementAccess">
-                                        New Level Fit Management
+                                        Management
                                     </label>
                                 </div>
                                 <div class="form-check">
@@ -89,11 +90,11 @@
                                         id="createAdministratorGymLandingAccess"
                                         {{ in_array('gym_landing', old('application_access', []), true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="createAdministratorGymLandingAccess">
-                                        Gym Landing Page
+                                        Member
                                     </label>
                                 </div>
                                 <small class="text-muted">
-                                    Kosongkan Gym Landing Page jika administrator hanya boleh masuk Management.
+                                    Pilih minimal satu aplikasi yang dapat diakses administrator.
                                 </small>
                             </div>
                         </div>
@@ -125,7 +126,6 @@
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            <input type="hidden" name="application_access[]" value="management">
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Branch</label>
@@ -180,11 +180,13 @@
                                 <div class="mb-3">
                                     <label class="form-label">Application Access</label>
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" checked disabled
-                                            id="editAdministratorManagementAccess{{ $item->id }}">
+                                        <input class="form-check-input" type="checkbox"
+                                            name="application_access[]" value="management"
+                                            id="editAdministratorManagementAccess{{ $item->id }}"
+                                            {{ $item->hasApplicationAccess('management') ? 'checked' : '' }}>
                                         <label class="form-check-label"
                                             for="editAdministratorManagementAccess{{ $item->id }}">
-                                            New Level Fit Management
+                                            Management
                                         </label>
                                     </div>
                                     <div class="form-check">
@@ -194,11 +196,11 @@
                                             {{ $item->hasApplicationAccess('gym_landing') ? 'checked' : '' }}>
                                         <label class="form-check-label"
                                             for="editAdministratorGymLandingAccess{{ $item->id }}">
-                                            Gym Landing Page
+                                            Member
                                         </label>
                                     </div>
                                     <small class="text-muted">
-                                        Kosongkan Gym Landing Page jika administrator hanya boleh masuk Management.
+                                        Pilih minimal satu aplikasi yang dapat diakses administrator.
                                     </small>
                                 </div>
                             </div>
@@ -270,11 +272,17 @@
                                             <h6>{{ $item->gender }}</h6>
                                         </td>
                                         <td>
-                                            <span class="badge badge-primary">Management</span>
+                                            @if ($item->hasApplicationAccess('management'))
+                                                <span class="badge badge-primary">Management</span>
+                                            @endif
                                             @if ($item->hasApplicationAccess('gym_landing'))
-                                                <span class="badge badge-success">Gym Landing</span>
-                                            @else
-                                                <span class="badge badge-secondary">Management Only</span>
+                                                <span class="badge badge-success">Member</span>
+                                            @endif
+                                            @if (
+                                                !$item->hasApplicationAccess('management')
+                                                && !$item->hasApplicationAccess('gym_landing')
+                                            )
+                                                <span class="badge badge-secondary">No Access</span>
                                             @endif
                                         </td>
                                         <td>

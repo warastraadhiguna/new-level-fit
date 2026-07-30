@@ -52,7 +52,7 @@ class LoginController extends Controller
             $request->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors([
-                'email' => 'Akun Anda tidak memiliki akses ke New Level Fit Management.',
+                'email' => 'Akun Anda tidak memiliki akses ke Management.',
             ]);
         }
     }
