@@ -209,6 +209,17 @@
     </script>
 @endif
 
+@if ($errors->any())
+    <script>
+        swal({
+            title: "Data belum dapat disimpan",
+            text: @json(implode("\n", $errors->all())),
+            icon: "error",
+            button: "OK",
+        });
+    </script>
+@endif
+
 <script>
     $(document).ready(function() {
         $('.rupiah').mask("#,##0", {

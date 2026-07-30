@@ -11,23 +11,20 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    @if ($errors->any())
-                        <div class="alert alert-danger">
-                            <ul>
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
                     <div class="row">
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Branch</label>
                                 <select name="branch_store_id" class="form-control" aria-label="Default select example"
                                     required>
-                                    @foreach($branch_stores as $branch_store)                                        
-                                        <option value="{{ $branch_store->id }}">{{ $branch_store->name }}</option>
+                                    <option value="" disabled {{ old('branch_store_id') ? '' : 'selected' }}>
+                                        &lt;- Choose Branch -&gt;
+                                    </option>
+                                    @foreach($branch_stores as $branch_store)
+                                        <option value="{{ $branch_store->id }}"
+                                            {{ (string) old('branch_store_id') === (string) $branch_store->id ? 'selected' : '' }}>
+                                            {{ $branch_store->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -106,23 +103,17 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @if ($errors->any())
-                            <div class="alert alert-danger">
-                                <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Branch</label>
                                     <select name="branch_store_id" class="form-control" aria-label="Default select example"
                                         required>
-                                        @foreach($branch_stores as $branch_store)                                        
-                                            <option value="{{ $branch_store->id }}" {{ $item->branch_store_id == $branch_store->id? 'selected' : '' }}>{{ $branch_store->name }}</option>
+                                        @foreach($branch_stores as $branch_store)
+                                            <option value="{{ $branch_store->id }}"
+                                                {{ (string) old('branch_store_id', $item->branch_store_id) === (string) $branch_store->id ? 'selected' : '' }}>
+                                                {{ $branch_store->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>

@@ -23,7 +23,7 @@ class FitnessConsultantController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'branch_store_id'    => 'required',
+            'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'required|string|max:200',
             'email'     => 'required|email',
             'gender'    => 'required',
@@ -45,7 +45,7 @@ class FitnessConsultantController extends Controller
     {
         $item = User::find($id);
         $data = $request->validate([
-            'branch_store_id'    => 'required',
+            'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'required|string|max:200',
             'email'     => 'email',
             'gender'    => 'required',
