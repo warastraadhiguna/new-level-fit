@@ -119,11 +119,17 @@
                     </div>
                     <div class="col-xl-6">
                         <div class="mb-3">
-                            <label for="formFile" class="form-label">Photo</label>
-                            <input class="form-control" type="file" name="photos" onchange="loadFile(event)"
-                                id="formFile">
-                            <img src="{{ Storage::url($members->photos) }}" class="lazyload mt-2"
-                                style="width: 100px;" alt="image">
+                            @include('admin.partials.webcam-photo-input', [
+                                'cameraKey' => 'member-edit-photo',
+                                'inputId' => 'memberEditPhotoInput',
+                            ])
+                            @if ($members->photos)
+                                <div class="mt-2">
+                                    <small class="text-muted d-block mb-1">Foto saat ini</small>
+                                    <img src="{{ Storage::url($members->photos) }}" class="lazyload"
+                                        style="width: 100px;" alt="Foto member saat ini">
+                                </div>
+                            @endif
                         </div>
                         <img id="output" class="img-fluid mt-2 mb-4" width="100" />
                     </div>

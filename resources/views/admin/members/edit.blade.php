@@ -118,9 +118,10 @@
                     </div>
                     <div class="col-xl-6">
                         <div class="mb-3">
-                            <label for="formFile" class="form-label">Photo</label>
-                            <input class="form-control" type="file" name="photos" onchange="loadFile(event)"
-                                id="formFile">
+                            @include('admin.partials.webcam-photo-input', [
+                                'cameraKey' => 'missed-guest-edit-photo',
+                                'inputId' => 'missedGuestEditPhotoInput',
+                            ])
                         </div>
                         <img id="output" class="img-fluid mt-2 mb-4" width="200" />
                     </div>
