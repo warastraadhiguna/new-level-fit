@@ -21,6 +21,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
@@ -198,9 +199,37 @@ class MemberRegistrationController extends Controller
     {
         DB::beginTransaction();
         try {
+            $request->merge([
+                'phone_number' => trim((string) $request->input('phone_number')),
+            ]);
+
             $data = $request->validate([
                 'full_name'             => 'required',
-                'phone_number'          => 'required',
+                'phone_number' => [
+                    'required',
+                    'string',
+                    'max:250',
+                    function ($attribute, $value, $fail) use ($request) {
+                        // One Day Visit memang boleh memakai data member yang sudah ada.
+                        if ($request->input('status') === 'one_day_visit') {
+                            return;
+                        }
+
+                        $existingMember = Member::with('branchStore')
+                            ->where('phone_number', $value)
+                            ->first();
+
+                        if ($existingMember) {
+                            $branchName = optional($existingMember->branchStore)->name;
+                            $location = $branchName ? ' di cabang ' . $branchName : '';
+                            $fail(
+                                'Nomor telepon ' . $value . ' sudah terdaftar atas nama '
+                                . $existingMember->full_name . $location
+                                . '. Silakan cari dan gunakan/edit data member tersebut.'
+                            );
+                        }
+                    },
+                ],
                 'status'                => 'required',
                 'nickname'              => 'nullable',
                 'born'                  => 'nullable',
@@ -475,10 +504,68 @@ class MemberRegistrationController extends Controller
                 return redirect()->back()->with('success', 'One Day Visit Added Successfully');
             }
             return redirect()->back()->with('success', 'Member Registration Added Successfully');
+        } catch (QueryException $e) {
+            DB::rollback();
+
+            if ($this->isDuplicateEntryException($e)) {
+                return redirect()->back()
+                    ->withErrors([$this->duplicateEntryField($e) => $this->duplicateEntryMessage($e, $request)])
+                    ->withInput();
+            }
+
+            throw $e;
         } catch (Exception $e) {
             DB::rollback();
             throw $e;
         }
+    }
+
+    private function isDuplicateEntryException(QueryException $exception): bool
+    {
+        return (int) ($exception->errorInfo[1] ?? 0) === 1062
+            || stripos($exception->getMessage(), 'Duplicate entry') !== false;
+    }
+
+    private function duplicateEntryField(QueryException $exception): string
+    {
+        $message = strtolower($exception->getMessage());
+
+        if (strpos($message, 'card_number') !== false) {
+            return 'card_number';
+        }
+
+        if (strpos($message, 'member_code') !== false || strpos($message, "key 'member_code'") !== false) {
+            return 'member_code';
+        }
+
+        return 'phone_number';
+    }
+
+    private function duplicateEntryMessage(QueryException $exception, Request $request): string
+    {
+        $field = $this->duplicateEntryField($exception);
+
+        if ($field === 'card_number') {
+            return 'Nomor kartu tersebut sudah digunakan oleh member lain. Silakan gunakan nomor kartu yang berbeda.';
+        }
+
+        if ($field === 'member_code') {
+            return 'Nomor member tersebut sudah digunakan. Silakan gunakan nomor member yang berbeda.';
+        }
+
+        $phoneNumber = trim((string) $request->input('phone_number'));
+        $existingMember = Member::with('branchStore')->where('phone_number', $phoneNumber)->first();
+
+        if ($existingMember) {
+            $branchName = optional($existingMember->branchStore)->name;
+
+            return 'Nomor telepon ' . $phoneNumber . ' sudah terdaftar atas nama '
+                . $existingMember->full_name
+                . ($branchName ? ' di cabang ' . $branchName : '')
+                . '. Silakan cari dan gunakan/edit data member tersebut.';
+        }
+
+        return 'Nomor telepon tersebut sudah terdaftar. Silakan gunakan/edit data member yang sudah ada.';
     }
 
     public function show($id)
