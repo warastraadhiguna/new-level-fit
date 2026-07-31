@@ -25,6 +25,7 @@ class BranchStore extends Model
         'member_installment_cancel_days',
         'member_discount_enabled',
         'trainer_discount_enabled',
+        'pos_inventory_enabled',
         'type',
     ];
 
@@ -33,6 +34,7 @@ class BranchStore extends Model
         'member_installment_enabled' => 'boolean',
         'member_discount_enabled' => 'boolean',
         'trainer_discount_enabled' => 'boolean',
+        'pos_inventory_enabled' => 'boolean',
     ];
 
     protected $appends = [

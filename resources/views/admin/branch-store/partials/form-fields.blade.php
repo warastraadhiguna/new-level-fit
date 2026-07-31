@@ -109,6 +109,17 @@
             </select>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">POS & Inventory</label>
+            @php $posInventoryEnabled = old('pos_inventory_enabled', isset($branchStore) ? (int) $branchStore->pos_inventory_enabled : 0); @endphp
+            <select name="pos_inventory_enabled" class="form-control" required>
+                <option value="0" {{ (string) $posInventoryEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $posInventoryEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Jika nonaktif, seluruh menu dan endpoint POS, produk, pembelian, serta stok tidak dapat diakses pada cabang ini. Data lama tetap tersimpan.</small>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>

@@ -7,6 +7,7 @@ use App\Models\BranchStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -82,9 +83,15 @@ class BranchStoreController extends Controller
             'personal_trainers',
             'class_sessions',
             'trainers',
+            'pos_branch_products',
+            'pos_purchases',
+            'pos_sales',
         ];
 
         foreach ($tables as $table) {
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
             if (DB::table($table)->where('branch_store_id', $branchStoreId)->exists()) {
                 return true;
             }
@@ -108,6 +115,7 @@ class BranchStoreController extends Controller
             'member_installment_cancel_days' => ['required', 'integer', 'min:1', 'max:365', 'gte:member_installment_grace_days'],
             'member_discount_enabled' => ['required', 'boolean'],
             'trainer_discount_enabled' => ['required', 'boolean'],
+            'pos_inventory_enabled' => ['required', 'boolean'],
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);

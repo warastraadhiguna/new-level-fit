@@ -88,6 +88,25 @@
                 </li>
             @endif
 
+            @if (in_array(Auth::user()->role, ['ADMIN', 'CS', 'CSPOS'], true) && optional(Auth::user()->branchStore)->pos_inventory_enabled)
+                <li>
+                    <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                        <i class="material-symbols-outlined">point_of_sale</i>
+                        <span class="nav-text">POS</span>
+                    </a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('pos.index') }}">Kasir</a></li>
+                        <li><a href="{{ route('pos-sales.index') }}">Riwayat Penjualan</a></li>
+                        @if (Auth::user()->role == 'ADMIN')
+                            <li><a href="{{ route('pos-products.index') }}">Produk & Stok</a></li>
+                            <li><a href="{{ route('pos-purchases.index') }}">Pembelian</a></li>
+                            <li><a href="{{ route('pos-suppliers.index') }}">Supplier</a></li>
+                            <li><a href="{{ route('pos-stock.index') }}">Kartu & Penyesuaian Stok</a></li>
+                        @endif
+                    </ul>
+                </li>
+            @endif
+
             <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                     <i class="material-icons"> app_registration </i>
                     <span class="nav-text">Report</span>

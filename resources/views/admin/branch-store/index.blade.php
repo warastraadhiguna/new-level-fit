@@ -79,6 +79,7 @@
                                 <th>Payment Strict</th>
                                 <th>Cicilan Membership</th>
                                 <th>Diskon</th>
+                                <th>POS & Inventory</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
                             </tr>
@@ -95,6 +96,11 @@
                                     <td>
                                         <div>{{ $branchStore->phone }}</div>
                                         <div>{{ $branchStore->email }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ $branchStore->pos_inventory_enabled ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
                                     </td>
                                     <td>
                                         @if ($branchStore->type === 'male')

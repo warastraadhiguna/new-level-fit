@@ -8,6 +8,12 @@ use App\Http\Controllers\Member\MemberRegistrationController;
 use App\Http\Controllers\Member\MemberRegistrationOverController;
 use App\Http\Controllers\Member\MissedGuestController;
 use App\Http\Controllers\MergeCreateDataController;
+use App\Http\Controllers\Pos\PosController;
+use App\Http\Controllers\Pos\ProductCategoryController;
+use App\Http\Controllers\Pos\ProductController;
+use App\Http\Controllers\Pos\PurchaseController;
+use App\Http\Controllers\Pos\StockAdjustmentController;
+use App\Http\Controllers\Pos\SupplierController;
 use App\Http\Controllers\Report\MemberExpiredListController;
 use App\Http\Controllers\Report\MemberListController;
 use App\Http\Controllers\Report\ReportController;
@@ -90,6 +96,25 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('secret-branch-store', '\App\Http\Controllers\Admin\BranchStoreController')->except(['create', 'show', 'edit']);
     Route::resource('sold-by', '\App\Http\Controllers\Admin\SoldByController');
     Route::resource('referral', '\App\Http\Controllers\Admin\RefferalController');
+
+    Route::middleware('pos.enabled')->group(function () {
+        Route::get('pos', ['\App\Http\Controllers\Pos\PosController', 'index'])->name('pos.index');
+        Route::post('pos/checkout', ['\App\Http\Controllers\Pos\PosController', 'checkout'])->name('pos.checkout');
+        Route::get('pos-sales', ['\App\Http\Controllers\Pos\PosController', 'sales'])->name('pos-sales.index');
+        Route::get('pos-sales/{id}', ['\App\Http\Controllers\Pos\PosController', 'showSale'])->name('pos-sales.show');
+
+        Route::middleware('admin.only')->group(function () {
+            Route::post('pos-sales/{id}/void', ['\App\Http\Controllers\Pos\PosController', 'voidSale'])->name('pos-sales.void');
+            Route::resource('pos-products', '\App\Http\Controllers\Pos\ProductController')->only(['index', 'store', 'update', 'destroy']);
+            Route::post('pos-products-attach', ['\App\Http\Controllers\Pos\ProductController', 'attach'])->name('pos-products.attach');
+            Route::resource('pos-product-categories', '\App\Http\Controllers\Pos\ProductCategoryController')->only(['store', 'update']);
+            Route::resource('pos-suppliers', '\App\Http\Controllers\Pos\SupplierController')->only(['index', 'store', 'update', 'destroy']);
+            Route::resource('pos-purchases', '\App\Http\Controllers\Pos\PurchaseController')->only(['index', 'create', 'store', 'show', 'destroy']);
+            Route::post('pos-purchases/{id}/receive', ['\App\Http\Controllers\Pos\PurchaseController', 'receive'])->name('pos-purchases.receive');
+            Route::get('pos-stock', ['\App\Http\Controllers\Pos\StockAdjustmentController', 'index'])->name('pos-stock.index');
+            Route::post('pos-stock/adjust', ['\App\Http\Controllers\Pos\StockAdjustmentController', 'store'])->name('pos-stock.adjust');
+        });
+    });
 
     Route::resource('staff', '\App\Http\Controllers\Staff\StaffController');
     Route::get('old-staff', [StaffController::class, 'showOldStaff'])->name('old-staff');
