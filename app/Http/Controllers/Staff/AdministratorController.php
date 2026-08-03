@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\ApplicationAccess;
+use App\Support\HandlesDuplicateStaffEmail;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdministratorController extends Controller
 {
+    use HandlesDuplicateStaffEmail;
+
     public function __construct()
     {
         $this->middleware('admin.only');
@@ -27,25 +31,37 @@ class AdministratorController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeStaffEmail($request);
+
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'required|string|max:200',
-            'email'     => 'required|email',
+            'email'     => $this->staffEmailRules(),
             'gender'    => 'required',
             'role'      => 'required|in:ADMIN',
             'password'  => 'required|string|min:6',
             'application_access' => 'required|array|min:1',
             'application_access.*' => 'in:' . implode(',', ApplicationAccess::ADMIN_APPLICATIONS),
-        ]);
+        ], $this->staffEmailValidationMessages());
 
         $applicationCodes = $this->normalizeApplicationAccess($data['application_access'] ?? []);
         unset($data['application_access']);
         $data['password'] = bcrypt($data['password']);
 
-        DB::transaction(function () use ($data, $applicationCodes) {
-            $user = User::create($data);
-            $this->syncApplicationAccess($user, $applicationCodes);
-        });
+        try {
+            DB::transaction(function () use ($data, $applicationCodes) {
+                $user = User::create($data);
+                $this->syncApplicationAccess($user, $applicationCodes);
+            });
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateStaffEmailException($exception)) {
+                return redirect('/staff?page=' . Request()->input('page'))
+                    ->withErrors(['email' => $this->duplicateStaffEmailMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
 
         return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Administrator Berhasil Ditambahkan');
     }
@@ -61,15 +77,17 @@ class AdministratorController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->normalizeStaffEmail($request);
+
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'string|max:200',
-            'email'     => 'email',
+            'email'     => $this->staffEmailRules((int) $id),
             'gender'    => 'required',
             'password'  => 'nullable|string|min:6',
             'application_access' => 'required|array|min:1',
             'application_access.*' => 'in:' . implode(',', ApplicationAccess::ADMIN_APPLICATIONS),
-        ]);
+        ], $this->staffEmailValidationMessages());
 
         $applicationCodes = $this->normalizeApplicationAccess($data['application_access'] ?? []);
         unset($data['application_access']);
@@ -80,11 +98,21 @@ class AdministratorController extends Controller
             unset($data['password']);
         }
 
-        DB::transaction(function () use ($id, $data, $applicationCodes) {
-            $item = User::where('role', 'ADMIN')->findOrFail($id);
-            $item->update($data);
-            $this->syncApplicationAccess($item, $applicationCodes);
-        });
+        try {
+            DB::transaction(function () use ($id, $data, $applicationCodes) {
+                $item = User::where('role', 'ADMIN')->findOrFail($id);
+                $item->update($data);
+                $this->syncApplicationAccess($item, $applicationCodes);
+            });
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateStaffEmailException($exception)) {
+                return redirect('/staff?page=' . Request()->input('page'))
+                    ->withErrors(['email' => $this->duplicateStaffEmailMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
 
         return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Administrator Berhasil Diubah');
     }

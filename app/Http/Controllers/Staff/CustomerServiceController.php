@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Staff\CustomerService;
 use App\Models\User;
+use App\Support\HandlesDuplicateStaffEmail;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class CustomerServiceController extends Controller
 {
+    use HandlesDuplicateStaffEmail;
+
     public function index()
     {
         //
@@ -21,17 +25,29 @@ class CustomerServiceController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeStaffEmail($request);
+
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'required|string|max:200',
-            'email'     => 'required|email',
+            'email'     => $this->staffEmailRules(),
             'gender'    => 'required',
             'role'      => '',
-        ]);
+        ], $this->staffEmailValidationMessages());
 
         $data['password'] = bcrypt($request->password);
 
-        User::create($data);
+        try {
+            User::create($data);
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateStaffEmailException($exception)) {
+                return redirect('/staff?page=' . Request()->input('page'))
+                    ->withErrors(['email' => $this->duplicateStaffEmailMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
         return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Customer Service Berhasil Ditambahkan');
     }
 
@@ -43,17 +59,29 @@ class CustomerServiceController extends Controller
     public function update(Request $request, string $id)
     {
         $item = User::find($id);
+        $this->normalizeStaffEmail($request);
+
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name' => 'required|string|max:200',
-            'email'     => 'email',
+            'email'     => $this->staffEmailRules((int) $id),
             'gender'    => 'required',
             'role'      => '',
-        ]);
+        ], $this->staffEmailValidationMessages());
 
         $data['password'] = bcrypt($request->password);
 
-        $item->update($data);
+        try {
+            $item->update($data);
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateStaffEmailException($exception)) {
+                return redirect('/staff?page=' . Request()->input('page'))
+                    ->withErrors(['email' => $this->duplicateStaffEmailMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
         return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Customer Service Berhasil Diubah');
     }
 

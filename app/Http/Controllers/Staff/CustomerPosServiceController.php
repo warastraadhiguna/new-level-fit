@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\HandlesDuplicateStaffEmail;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class CustomerPosServiceController extends Controller
 {
+    use HandlesDuplicateStaffEmail;
+
     public function index()
     {
         //
@@ -20,17 +24,29 @@ class CustomerPosServiceController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeStaffEmail($request);
+
         $data = $request->validate([
             'full_name' => 'required|string|max:200',
-            'email'     => 'required|email',
+            'email'     => $this->staffEmailRules(),
             'gender'    => 'required',
             'role'      => '',
             'club'      => 'required'
-        ]);
+        ], $this->staffEmailValidationMessages());
 
         $data['password'] = bcrypt($request->password);
 
-        User::create($data);
+        try {
+            User::create($data);
+        } catch (QueryException $exception) {
+            if ($this->isDuplicateStaffEmailException($exception)) {
+                return redirect()->route('staff.index')
+                    ->withErrors(['email' => $this->duplicateStaffEmailMessage()])
+                    ->withInput();
+            }
+
+            throw $exception;
+        }
         return redirect()->route('staff.index')->with('message', 'Customer Service POS Added Successfully');
     }
 
