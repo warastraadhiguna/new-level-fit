@@ -90,11 +90,11 @@
             <div style="background-color: rgb(0, 201, 33); font-size: 20px; color: rgb(255, 255, 255); text-align: center; border-radius: 7px;">
                 <p>${message}</p>
             </div>
-            <div class="trans-list" style="margin-top: 10px;">
+            <div class="trans-list" style="width: 280px; height: 280px; margin: 15px auto; overflow: hidden; border-radius: 14px; background: #f1f1f1; box-shadow: 0 4px 14px rgba(0, 0, 0, .18);">
                 @if ($memberPhoto)
-                    <img src="{{ Storage::url($memberPhoto) }}" class="lazyload" style="width: 100px;" alt="image">
+                    <img src="{{ Storage::url($memberPhoto) }}" class="lazyload" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: center;" alt="image">
                 @else
-                    <img src="{{ asset('default.png') }}" class="lazyload" style="width: 100px;" alt="default image">
+                    <img src="{{ asset('default.png') }}" class="lazyload" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: center;" alt="default image">
                 @endif
             </div>
             <h2 style="margin-top: 10px;">${memberName}</h2>
