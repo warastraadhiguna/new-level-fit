@@ -58,7 +58,7 @@
                             <h6>{{ $item->method_payment_name }}</h6>
                         </td>
                         <td>
-                            <h6>{{ $item->fc_name }}</h6>
+                            <h6>{{ $item->fc_name ?? '-' }}</h6>
                         </td>
                         <td>
                             <h6>{{ $item->staff_name }}</h6>
@@ -75,7 +75,7 @@
                             @endif
                         </td>
                         <td>
-                            <h6>{{ $item->description }}</h6>
+                            <h6>{{ $item->description ?? '-' }}</h6>
                         </td>
                     </tr>
                 @endforeach

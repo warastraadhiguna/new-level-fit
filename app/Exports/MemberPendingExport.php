@@ -2,8 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Member\MemberRegistration;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -12,14 +10,6 @@ class MemberPendingExport implements FromView
 {
     public function view(): View
     {
-        $nowTime = Carbon::now()->tz('Asia/Jakarta');
-        $nowTimeString = DateFormat($nowTime, "Y-MM-DD");
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
-        $toDate = $toDate ? $toDate : $nowTimeString;
-        $fromDate = $fromDate ? $fromDate : $nowTimeString;
-
         $memberRegistrations = DB::table('member_registrations as a')
             ->select(
                 'a.id',
@@ -57,7 +47,7 @@ class MemberPendingExport implements FromView
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
-            ->join('fitness_consultants as g', 'a.fc_id', '=', 'g.id')
+            ->leftJoin('fitness_consultants as g', 'a.fc_id', '=', 'g.id')
             ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
             ->join(
                 'users as f',
@@ -67,8 +57,6 @@ class MemberPendingExport implements FromView
             )
             ->leftJoin('leave_days as ld', 'a.id', '=', 'ld.member_registration_id')
             ->whereRaw('NOW() < a.start_date')
-            ->where('a.created_at', '>=', $fromDate)
-            ->where('a.created_at', '<=', $toDate)
             ->distinct()
             ->get();
 

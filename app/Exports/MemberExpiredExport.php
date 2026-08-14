@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Models\Member\Member;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -14,14 +13,6 @@ class MemberExpiredExport implements FromView
 {
     public function view(): View
     {
-        $nowTime = Carbon::now()->tz('Asia/Jakarta');
-        $nowTimeString = DateFormat($nowTime, "Y-MM-DD");
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
-        $toDate = $toDate ? $toDate : $nowTimeString;
-        $fromDate = $fromDate ? $fromDate : $nowTimeString;
-
         $memberRegistrationsOver = Member::select(
             'a.id',
             'a.phone_number',
@@ -58,8 +49,6 @@ class MemberExpiredExport implements FromView
             ->leftJoin(DB::raw('(select distinct member_id as registered_member_id from member_registrations where DATE_ADD(start_date, INTERVAL days DAY) >= now()) as c'), function ($join) {
                 $join->on('a.id', '=', 'c.registered_member_id');
             })
-            ->where('a.created_at', '>=', $fromDate)
-            ->where('a.created_at', '<=', $toDate)
             ->whereNull('c.registered_member_id')
             ->where('b.days', '>', '1')
             ->get();

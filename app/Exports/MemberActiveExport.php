@@ -2,8 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Member\MemberRegistration;
-use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -12,14 +10,6 @@ class MemberActiveExport implements FromView
 {
     public function view(): View
     {
-        $nowTime = Carbon::now()->tz('Asia/Jakarta');
-        $nowTimeString = DateFormat($nowTime, "Y-MM-DD");
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
-        $toDate = $toDate ? $toDate : $nowTimeString;
-        $fromDate = $fromDate ? $fromDate : $nowTimeString;
-
         $memberRegistrations = DB::table('member_registrations as a')
             ->select(
                 'a.id',
@@ -79,14 +69,12 @@ class MemberActiveExport implements FromView
                 '=',
                 'f.id'
             )
-            ->join('fitness_consultants as g', 'a.fc_id', '=', 'g.id')
+            ->leftJoin('fitness_consultants as g', 'a.fc_id', '=', 'g.id')
             ->leftJoin('leave_days as ld', 'a.id', '=', 'ld.member_registration_id')
 
             ->leftJoin(DB::raw('(select * from (select a.* from (select * from check_in_members) as a inner join (SELECT max(id)
                                 as id FROM check_in_members group by member_registration_id) as b on a.id=b.id) as tableH) as h'), 'a.id', '=', 'h.member_registration_id')
             ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
-            ->where('a.created_at', '>=', $fromDate)
-            ->where('a.created_at', '<=', $toDate)
             ->orderBy('h.check_in_time', 'desc')
             ->orderBy('h.check_out_time', 'desc')
             ->orderBy('a.updated_at', 'desc')

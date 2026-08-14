@@ -49,6 +49,13 @@
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
+            <div class="col-xl-12">
+                <div class="page-title flex-wrap justify-content-between">
+                    <a href="{{ route('member-unpaid', ['excel' => 1]) }}" class="btn btn-info">
+                        Download Excel
+                    </a>
+                </div>
+            </div>
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
@@ -301,50 +308,9 @@
     </div>
 </div>
 
-{{-- MODAL --}}
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Download Excel by Date</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-6">
-                        <div class="mb-3">
-                            <label class="form-label">From Date</label>
-                            <input type="date" id="fromDate" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="mb-3">
-                            <label class="form-label">To Date</label>
-                            <input type="date" id="toDate" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="reloadPage()" class="btn btn-primary">Download</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 @include('admin.member-registration.check-in')
 
 <script>
-    function reloadPage() {
-        var fromDate = document.getElementById("fromDate").value;
-        var toDate = document.getElementById("toDate").value;
-
-        window.open(window.location.href + '?excel=1&fromDate=' + fromDate + '&toDate=' + toDate, '_self');
-    }
-
     function updateTableWithFilteredData(data) {
         var tableBody = document.querySelector("#myTable tbody");
 

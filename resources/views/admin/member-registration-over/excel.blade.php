@@ -64,11 +64,7 @@
                             <h6>{{ $item->staff_full_name }}</h6>
                         </td>
                         <td>
-                            @if ($item->leave_day_status == 'Freeze')
-                                <span class="badge badge-secondary badge-lg">Freeze</span>
-                            @else
-                                <span class="badge badge-primary badge-lg">Running</span>
-                            @endif
+                            <span class="badge badge-danger badge-lg">Expired</span>
                         </td>
                         <td>
                             <h6>{{ $item->description }}</h6>

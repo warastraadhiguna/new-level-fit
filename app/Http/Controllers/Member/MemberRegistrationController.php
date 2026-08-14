@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Exports\MemberActiveExport;
 use App\Exports\MemberPendingExport;
+use App\Exports\MemberUnpaidExport;
 use App\Exports\OneVisitExport;
 use App\Http\Controllers\Controller;
 use App\Models\Member\LeaveDay;
@@ -29,8 +30,6 @@ class MemberRegistrationController extends Controller
 {
     public function index(Request $request)
     {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
         $search     = trim((string) $request->input('search', ''));
         $perPage    = (int) $request->input('per_page', 10);
         $perPage    = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
@@ -39,7 +38,7 @@ class MemberRegistrationController extends Controller
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
-            return Excel::download(new MemberActiveExport(), 'member-active, ' . $fromDate . ' to ' . $toDate . '.xlsx');
+            return Excel::download(new MemberActiveExport(), 'member-active.xlsx');
         }
 
         $memberRegistrations = MemberRegistration::getActiveListPaginated($search, $perPage, $sort, $direction)
@@ -76,6 +75,10 @@ class MemberRegistrationController extends Controller
 
     public function unpaid()
     {
+        if (Request()->input('excel') == "1") {
+            return Excel::download(new MemberUnpaidExport(), 'member-unpaid.xlsx');
+        }
+
         $memberRegistrations = MemberRegistration::getActiveList("", "", "yes", Auth::user()->branch_store_id);
 
         // $expiredPaymentNumber = env("EXPIRED_PAYMENT_NUMBER", 7);
@@ -104,12 +107,9 @@ class MemberRegistrationController extends Controller
 
     public function pending()
     {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
-            return Excel::download(new MemberPendingExport(), 'member-pending, ' . $fromDate . ' to ' . $toDate . '.xlsx');
+            return Excel::download(new MemberPendingExport(), 'member-pending.xlsx');
         }
 
         $memberRegistrations = MemberRegistration::getPendingList();

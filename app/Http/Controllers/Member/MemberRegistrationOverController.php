@@ -14,12 +14,9 @@ class MemberRegistrationOverController extends Controller
 {
     public function index()
     {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
-            return Excel::download(new MemberExpiredExport(), 'member-expired, ' . $fromDate . ' to ' . $toDate . '.xlsx');
+            return Excel::download(new MemberExpiredExport(), 'member-expired.xlsx');
         }
 
         $memberRegistrationsOver = MemberRegistration::expiredRegistrations()->get();
