@@ -93,7 +93,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
 
     Route::resource('source-code', '\App\Http\Controllers\Admin\SourceCodeController');
     Route::resource('payment-method', '\App\Http\Controllers\Admin\MethodPaymentController');
-    Route::resource('secret-branch-store', '\App\Http\Controllers\Admin\BranchStoreController')->except(['create', 'show', 'edit']);
+    Route::resource('secret-branch-store', '\App\Http\Controllers\Admin\BranchStoreController')
+        ->except(['create', 'show', 'edit'])
+        ->middleware('admin.only');
     Route::resource('sold-by', '\App\Http\Controllers\Admin\SoldByController');
     Route::resource('referral', '\App\Http\Controllers\Admin\RefferalController');
 

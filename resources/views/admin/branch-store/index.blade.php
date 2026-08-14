@@ -20,6 +20,33 @@
     </div>
 </div>
 
+<script>
+    document.addEventListener('change', function (event) {
+        if (!event.target.classList.contains('js-dashboard-finance-role')) {
+            return;
+        }
+
+        const form = event.target.closest('form');
+        const roleCheckboxes = form.querySelectorAll('.js-dashboard-finance-role');
+
+        if (event.target.dataset.allRoles === '1' && event.target.checked) {
+            roleCheckboxes.forEach(function (checkbox) {
+                if (checkbox !== event.target) {
+                    checkbox.checked = false;
+                }
+            });
+            return;
+        }
+
+        if (event.target.checked) {
+            const allRolesCheckbox = form.querySelector('.js-dashboard-finance-role[data-all-roles="1"]');
+            if (allRolesCheckbox) {
+                allRolesCheckbox.checked = false;
+            }
+        }
+    });
+</script>
+
 @foreach ($branchStores as $branchStore)
     <div class="modal fade" id="modalEditBranchStore{{ $branchStore->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -80,6 +107,7 @@
                                 <th>Cicilan Membership</th>
                                 <th>Diskon</th>
                                 <th>POS & Inventory</th>
+                                <th>Akses Keuangan Dashboard</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
                             </tr>
@@ -96,11 +124,6 @@
                                     <td>
                                         <div>{{ $branchStore->phone }}</div>
                                         <div>{{ $branchStore->email }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">
-                                            {{ $branchStore->pos_inventory_enabled ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
                                     </td>
                                     <td>
                                         @if ($branchStore->type === 'male')
@@ -139,6 +162,25 @@
                                                 {{ $branchStore->trainer_discount_enabled ? 'Aktif' : 'Nonaktif' }}
                                             </span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ $branchStore->pos_inventory_enabled ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $financeRoles = $branchStore->dashboard_finance_visible_roles ?: [\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES];
+                                        @endphp
+                                        @if (in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $financeRoles, true))
+                                            <span class="badge badge-success">Semua Role</span>
+                                        @else
+                                            @foreach ($financeRoles as $financeRole)
+                                                <span class="badge badge-info mb-1">
+                                                    {{ \App\Models\BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS[$financeRole] ?? $financeRole }}
+                                                </span>
+                                            @endforeach
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($branchStore->admin_logo_url)

@@ -122,6 +122,52 @@
     </div>
     <div class="col-xl-12">
         <div class="mb-3">
+            <label class="form-label d-block">Akses Informasi Keuangan Dashboard</label>
+            @php
+                $financeAccessKey = $branchStore->id ?? 'new';
+                $selectedFinanceRoles = old(
+                    'dashboard_finance_visible_roles',
+                    !empty($branchStore) && !empty($branchStore->dashboard_finance_visible_roles)
+                        ? $branchStore->dashboard_finance_visible_roles
+                        : [\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES]
+                );
+            @endphp
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                            name="dashboard_finance_visible_roles[]"
+                            value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES }}"
+                            data-all-roles="1"
+                            id="financeRoleAll{{ $financeAccessKey }}"
+                            {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $selectedFinanceRoles, true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="financeRoleAll{{ $financeAccessKey }}">
+                            Semua Role
+                        </label>
+                    </div>
+                </div>
+                @foreach (\App\Models\BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS as $roleCode => $roleLabel)
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                                name="dashboard_finance_visible_roles[]"
+                                value="{{ $roleCode }}"
+                                id="financeRole{{ $roleCode }}{{ $financeAccessKey }}"
+                                {{ in_array($roleCode, $selectedFinanceRoles, true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="financeRole{{ $roleCode }}{{ $financeAccessKey }}">
+                                {{ $roleLabel }}
+                            </label>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <small class="text-muted">
+                Pilih Semua Role atau minimal satu role tertentu. Pengguna yang tidak dipilih tidak akan menerima kartu maupun nominal keuangan pada dashboard.
+            </small>
+        </div>
+    </div>
+    <div class="col-xl-12">
+        <div class="mb-3">
             <label class="form-label">Admin Logo</label>
             <input type="file" name="admin_logo" class="form-control" accept=".png,.jpg,.jpeg,.ico,.webp">
             <small class="text-muted">Logo ini dipakai untuk admin header, preloader, dan favicon.</small>

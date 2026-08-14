@@ -17,6 +17,10 @@ class DashboardController extends Controller
     public function index()
     {
         $branchId = Auth::user()->branch_store_id;
+        $activeBranchStore = BranchStore::find($branchId);
+        $canViewDashboardFinance = $activeBranchStore
+            ? $activeBranchStore->canRoleViewDashboardFinance(Auth::user()->role)
+            : false;
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
         
@@ -324,6 +328,7 @@ class DashboardController extends Controller
             'incomeOfActivePT'                  => $incomeOfPT,
             'incomeOfActiveLGT'                 => $incomeOfActiveLGT,
             'incomeOfOneDayVisit'               => $incomeOfOneDayVisit,
+            'canViewDashboardFinance'           => $canViewDashboardFinance,
             'branch_stores'                     => BranchStore::get(),
             'totalMember'                       => $totalMembers,
             'totalMemberRegister'               => MemberRegistration::where('days', '>', 1)->count(),

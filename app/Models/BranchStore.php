@@ -11,6 +11,15 @@ class BranchStore extends Model
 {
     use HasFactory;
 
+    public const DASHBOARD_FINANCE_ALL_ROLES = 'ALL';
+
+    public const DASHBOARD_FINANCE_ROLE_OPTIONS = [
+        'ADMIN' => 'Administrator',
+        'CS' => 'Customer Service',
+        'CSPOS' => 'Customer Service POS',
+        'FC' => 'Fitness Consultant',
+    ];
+
     protected $fillable = [
         'name',
         'slug',
@@ -26,6 +35,7 @@ class BranchStore extends Model
         'member_discount_enabled',
         'trainer_discount_enabled',
         'pos_inventory_enabled',
+        'dashboard_finance_visible_roles',
         'type',
     ];
 
@@ -35,7 +45,24 @@ class BranchStore extends Model
         'member_discount_enabled' => 'boolean',
         'trainer_discount_enabled' => 'boolean',
         'pos_inventory_enabled' => 'boolean',
+        'dashboard_finance_visible_roles' => 'array',
     ];
+
+    public function canRoleViewDashboardFinance(?string $role): bool
+    {
+        $allowedRoles = $this->dashboard_finance_visible_roles;
+
+        // Data lama yang belum diatur tetap mempertahankan perilaku sebelumnya.
+        if (empty($allowedRoles)) {
+            return true;
+        }
+
+        $allowedRoles = array_map('strtoupper', $allowedRoles);
+        $role = strtoupper((string) $role);
+
+        return in_array(self::DASHBOARD_FINANCE_ALL_ROLES, $allowedRoles, true)
+            || in_array($role, $allowedRoles, true);
+    }
 
     protected $appends = [
         'admin_logo_url',

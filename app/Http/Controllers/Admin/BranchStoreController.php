@@ -102,7 +102,7 @@ class BranchStoreController extends Controller
 
     private function validatedData(Request $request, ?int $branchStoreId = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'slug' => ['nullable', 'string', 'max:200', Rule::unique('branch_stores', 'slug')->ignore($branchStoreId)],
             'address' => ['required', 'string'],
@@ -116,9 +116,30 @@ class BranchStoreController extends Controller
             'member_discount_enabled' => ['required', 'boolean'],
             'trainer_discount_enabled' => ['required', 'boolean'],
             'pos_inventory_enabled' => ['required', 'boolean'],
+            'dashboard_finance_visible_roles' => ['required', 'array', 'min:1'],
+            'dashboard_finance_visible_roles.*' => [
+                'required',
+                Rule::in(array_merge(
+                    [BranchStore::DASHBOARD_FINANCE_ALL_ROLES],
+                    array_keys(BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
+                )),
+            ],
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);
+
+        $roles = array_values(array_unique(array_map(
+            'strtoupper',
+            $data['dashboard_finance_visible_roles']
+        )));
+
+        $data['dashboard_finance_visible_roles'] = in_array(
+            BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
+            $roles,
+            true
+        ) ? [BranchStore::DASHBOARD_FINANCE_ALL_ROLES] : $roles;
+
+        return $data;
     }
 
     private function resolveSlug(?string $submittedSlug, string $name, ?int $ignoreId = null): string

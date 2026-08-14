@@ -1,4 +1,5 @@
 {{-- MEMBER REGISTRATION TOTAL AMOUNT --}}
+@if ($canViewDashboardFinance)
 @php
     $totalIncomeOfActiveMember = 0;
     $totalIncomeOfAdminActiveMember = 0;
@@ -9,6 +10,7 @@
         $totalIncomeOfAdminActiveMember += $item->admin_price;
     @endphp
 @endforeach
+@endif
 
 @if(Auth::user()->role === 'ADMIN' )
 <!-- Modal -->
@@ -65,6 +67,7 @@
 </div>
 @endif
 
+@if ($canViewDashboardFinance)
 <div class="row">
     <div class="col-xl-3 col-sm-3 col-md-6">
         <div class="card">
@@ -212,6 +215,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <hr />
 
