@@ -409,6 +409,13 @@ class MemberRegistration extends Model
                 'a.photos',
                 'b.days',
                 'b.start_date',
+                'b.package_name',
+                'b.is_all_club',
+                'b.branch_store_name',
+                'b.mr_package_price',
+                'b.mr_admin_price',
+                'b.mr_discount_amount',
+                'b.payment_summary',
                 'max_end_date',
                 'total_package_price',
                 'total_admin_price',
@@ -420,14 +427,24 @@ class MemberRegistration extends Model
                     b.id,
                     b.days,
                     b.start_date,
+                    mp.package_name,
+                    mp.is_all_club,
+                    bs.name as branch_store_name,
+                    b.package_price as mr_package_price,
+                    b.admin_price as mr_admin_price,
+                    b.discount_amount as mr_discount_amount,
+                    ifnull((select sum(value) from member_registration_payments mrp where mrp.member_registration_id = b.id), 0) as payment_summary,
                     max(DATE_ADD(b.start_date, INTERVAL b.days DAY)) as max_end_date,
-                    sum(package_price) as total_package_price,
+                    sum(b.package_price) as total_package_price,
                     DATE_ADD(b.start_date, INTERVAL b.days DAY) as expired_date_date,
-                    sum(admin_price) as total_admin_price
+                    sum(b.admin_price) as total_admin_price
                 from members a
                 inner join member_registrations b on a.id = b.member_id
+                inner join member_packages mp on mp.id = b.member_package_id
+                inner join branch_stores bs on bs.id = a.branch_store_id
                 where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now()
-                group by a.id, b.id, b.days, b.start_date
+                group by a.id, b.id, b.days, b.start_date, mp.package_name, mp.is_all_club,
+                    bs.name, b.package_price, b.admin_price, b.discount_amount
             ) as b'), function ($join) {
                 $join->on('a.id', '=', 'b.id_max');
             })
@@ -447,11 +464,13 @@ class MemberRegistration extends Model
     public static function getPendingList($memberId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
-            mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price, mbr_pkg.description,
+            mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price,
+            mbr_reg.discount_amount as mr_discount_amount, mbr_reg.is_installment_plan, mbr_reg.installment_status, mbr_pkg.description,
+            bs.id as branch_store_id, bs.name as branch_store_name,
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
             mbr.phone_number, mbr.born, mbr.photos, mbr.gender, mbr.id_code_count,
-            mbr_pkg.package_name, mbr_pkg.days, mbr_pkg.package_price,
+            mbr_pkg.package_name, mbr_pkg.days, mbr_pkg.package_price, mbr_pkg.is_all_club,
             mtd_pay.name as method_payment_name, usr.full_name as staff_name,
             -- fit_cons.full_name as fc_name, fit_cons.phone_number as fc_phone_number,
             cim_view.current_check_in_members_id, cim_view.check_in_time, cim_view.check_out_time, cim_view.updated_at_check_in,
@@ -467,9 +486,11 @@ class MemberRegistration extends Model
                 END as status,
             CASE when member_registration_id_continue is null then 'No Leave Days' else 'Freeze' end as leave_day_status, 
             CONCAT(YEAR(CURDATE()), ' - ', MONTH(mbr.born), ' - ', DAY(mbr.born)) as member_birthday,
-            DATEDIFF(CONCAT(YEAR(CURDATE()), ' - ', MONTH(mbr.born), ' - ', DAY(mbr.born)), CURDATE()) as days_until_birthday
+            DATEDIFF(CONCAT(YEAR(CURDATE()), ' - ', MONTH(mbr.born), ' - ', DAY(mbr.born)), CURDATE()) as days_until_birthday,
+            ifnull((select sum(value) from member_registration_payments mrp where mbr_reg.id=mrp.member_registration_id),0) as payment_summary
             from members as mbr
 
+            inner join branch_stores bs on mbr.branch_store_id = bs.id
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
             inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id

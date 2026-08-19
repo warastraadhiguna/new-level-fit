@@ -18,8 +18,9 @@ class MemberUnpaidExport implements FromView
             Auth::user()->branch_store_id
         );
 
-        return view('admin.member-registration.excel', [
+        return view('admin.member-registration.excel-list', [
             'memberRegistrations' => $memberRegistrations,
+            'exportType' => 'unpaid',
         ]);
     }
 }
