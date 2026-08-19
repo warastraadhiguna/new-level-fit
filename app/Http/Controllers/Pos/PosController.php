@@ -65,19 +65,25 @@ class PosController extends Controller
         return redirect()->route('pos-sales.show', $sale->id)->with('success', 'Transaksi berhasil.');
     }
 
-    public function sales()
+    public function sales(Request $request)
     {
+        $dateFrom = $request->query('date_from', now()->toDateString());
+        $dateTo = $request->query('date_to', now()->toDateString());
+
         $query = Sale::with(['cashier', 'payments.methodPayment', 'items'])
             ->where('branch_store_id', Auth::user()->branch_store_id);
 
-        if (request('date_from')) {
-            $query->whereDate('created_at', '>=', request('date_from'));
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
         }
-        if (request('date_to')) {
-            $query->whereDate('created_at', '<=', request('date_to'));
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        $sales = $query->latest('id')->get();
+        $sales = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
         $completed = $sales->where('status', 'completed');
         $costOfGoods = $completed->sum(function ($sale) {
             return $sale->items->sum(function ($item) {
@@ -90,6 +96,8 @@ class PosController extends Controller
             'content' => 'admin.pos.sales.index',
             'sales' => $sales,
             'grossProfit' => (float) $completed->sum('grand_total') - $costOfGoods,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ]);
     }
 

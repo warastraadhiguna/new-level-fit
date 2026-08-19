@@ -173,6 +173,7 @@
 
 <script>
     $(document).ready(function() {
+        const defaultOrderDirection = $('#myTable').data('order-direction') || 'asc';
         let table = new DataTable('#myTable', {
             buttons: [
                 'copyHtml5',
@@ -181,7 +182,7 @@
                 'pdfHtml5'
             ],
             order: [
-                [1, 'asc']
+                [1, defaultOrderDirection]
             ]
         });
     });
