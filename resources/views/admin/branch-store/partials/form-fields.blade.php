@@ -120,6 +120,15 @@
             <small class="text-muted">Jika nonaktif, seluruh menu dan endpoint POS, produk, pembelian, serta stok tidak dapat diakses pada cabang ini. Data lama tetap tersimpan.</small>
         </div>
     </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
+            <label class="form-label">Booking Class Dibuka (H-N)</label>
+            <input type="number" min="0" max="30" name="class_booking_advance_days"
+                value="{{ old('class_booking_advance_days', $branchStore->class_booking_advance_days ?? 1) }}"
+                class="form-control" required>
+            <small class="text-muted">Contoh: 1 berarti booking dibuka sejak H-1. Isi 0 jika hanya boleh booking pada hari class.</small>
+        </div>
+    </div>
     <div class="col-xl-12">
         <div class="mb-3">
             <label class="form-label d-block">Akses Informasi Keuangan Dashboard</label>

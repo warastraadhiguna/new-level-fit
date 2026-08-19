@@ -116,6 +116,7 @@ class BranchStoreController extends Controller
             'member_discount_enabled' => ['required', 'boolean'],
             'trainer_discount_enabled' => ['required', 'boolean'],
             'pos_inventory_enabled' => ['required', 'boolean'],
+            'class_booking_advance_days' => ['required', 'integer', 'min:0', 'max:30'],
             'dashboard_finance_visible_roles' => ['required', 'array', 'min:1'],
             'dashboard_finance_visible_roles.*' => [
                 'required',

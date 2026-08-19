@@ -36,6 +36,7 @@ class BranchStore extends Model
         'trainer_discount_enabled',
         'pos_inventory_enabled',
         'dashboard_finance_visible_roles',
+        'class_booking_advance_days',
         'type',
     ];
 
@@ -46,6 +47,7 @@ class BranchStore extends Model
         'trainer_discount_enabled' => 'boolean',
         'pos_inventory_enabled' => 'boolean',
         'dashboard_finance_visible_roles' => 'array',
+        'class_booking_advance_days' => 'integer',
     ];
 
     public function canRoleViewDashboardFinance(?string $role): bool

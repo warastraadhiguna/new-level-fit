@@ -107,6 +107,7 @@
                                 <th>Cicilan Membership</th>
                                 <th>Diskon</th>
                                 <th>POS & Inventory</th>
+                                <th>Booking Class</th>
                                 <th>Akses Keuangan Dashboard</th>
                                 <th>Admin Logo</th>
                                 <th>Action</th>
@@ -167,6 +168,9 @@
                                         <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">
                                             {{ $branchStore->pos_inventory_enabled ? 'Aktif' : 'Nonaktif' }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">H-{{ (int) ($branchStore->class_booking_advance_days ?? 1) }}</span>
                                     </td>
                                     <td>
                                         @php
