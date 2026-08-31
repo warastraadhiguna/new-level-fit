@@ -76,6 +76,15 @@
     </div>
     <div class="col-xl-4">
         <div class="mb-3">
+            <label class="form-label">Pengingat Cicilan (H-berapa)</label>
+            <input type="number" min="0" max="90" name="member_installment_reminder_days"
+                value="{{ old('member_installment_reminder_days', $branchStore->member_installment_reminder_days ?? 7) }}"
+                class="form-control" required>
+            <small class="text-muted">Gunakan 0 agar pengingat muncul tepat pada tanggal jatuh tempo.</small>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
             <label class="form-label">Masa Tenggang Cicilan (hari)</label>
             <input type="number" min="0" max="30" name="member_installment_grace_days"
                 value="{{ old('member_installment_grace_days', $branchStore->member_installment_grace_days ?? 7) }}" class="form-control" required>

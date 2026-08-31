@@ -111,6 +111,7 @@ class BranchStoreController extends Controller
             'email' => ['required', 'email', 'max:45'],
             'is_payment_strict' => ['required', 'boolean'],
             'member_installment_enabled' => ['required', 'boolean'],
+            'member_installment_reminder_days' => ['required', 'integer', 'min:0', 'max:90'],
             'member_installment_grace_days' => ['required', 'integer', 'min:0', 'max:30'],
             'member_installment_cancel_days' => ['required', 'integer', 'min:1', 'max:365', 'gte:member_installment_grace_days'],
             'member_discount_enabled' => ['required', 'boolean'],

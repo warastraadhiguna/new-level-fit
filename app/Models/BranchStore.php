@@ -30,6 +30,7 @@ class BranchStore extends Model
         'admin_logo',
         'is_payment_strict',
         'member_installment_enabled',
+        'member_installment_reminder_days',
         'member_installment_grace_days',
         'member_installment_cancel_days',
         'member_discount_enabled',
@@ -43,6 +44,7 @@ class BranchStore extends Model
     protected $casts = [
         'is_payment_strict' => 'boolean',
         'member_installment_enabled' => 'boolean',
+        'member_installment_reminder_days' => 'integer',
         'member_discount_enabled' => 'boolean',
         'trainer_discount_enabled' => 'boolean',
         'pos_inventory_enabled' => 'boolean',

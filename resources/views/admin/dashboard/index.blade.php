@@ -12,16 +12,15 @@
 @endforeach
 @endif
 
-@if(Auth::user()->role === 'ADMIN' )
-<!-- Modal -->
+@if(Auth::user()->role === 'ADMIN')
 <div class="modal fade modal-sm" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Change Branch</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Change Branch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
             <form action="{{ route('administrator-branch-update') }}" method="POST"
                 enctype="multipart/form-data">
                 @csrf
@@ -42,11 +41,86 @@
                     <button type="submit" class="btn btn-primary">Update</button>
                 </div>
             </form>
+            </div>
         </div>
     </div>
 </div>
+@endif
+
+@if($installmentReminderEnabled)
+<div class="modal fade" id="installmentReminderModal" tabindex="-1" aria-labelledby="installmentReminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="installmentReminderModalLabel">Pengingat Pembayaran Cicilan Tahunan</h5>
+                    <small>Tagihan mulai ditampilkan H-{{ $installmentReminderDays }} sebelum jatuh tempo. Tunggakan lama tetap ditampilkan.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if($installmentReminders->isEmpty())
+                    <div class="alert alert-success mb-0">
+                        Tidak ada cicilan yang perlu diingatkan pada bulan ini.
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <colgroup>
+                                <col style="width: 25%">
+                                <col style="width: 30%">
+                                <col style="width: 20%">
+                                <col style="width: 25%">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Member &amp; Aksi</th>
+                                    <th>Package</th>
+                                    <th>Tagihan</th>
+                                    <th>Jatuh Tempo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($installmentReminders as $reminder)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $reminder->member_name }}</strong>
+                                            <small class="d-block">{{ $reminder->member_code ?: '-' }}</small>
+                                            <a href="{{ route('member-active.edit', $reminder->member_registration_id) }}"
+                                                class="btn btn-primary btn-xs mt-2">
+                                                <i class="la la-external-link-alt me-1"></i>Buka Member
+                                            </a>
+                                        </td>
+                                        <td>{{ $reminder->package_name }}</td>
+                                        <td>
+                                            Bulan {{ $reminder->unpaid_months }}
+                                            <small class="d-block">{{ $reminder->unpaid_installment_count }} tagihan</small>
+                                            <strong class="d-block mt-1">{{ formatRupiah($reminder->outstanding_amount) }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong class="d-block mb-1">{{ \Carbon\Carbon::parse($reminder->earliest_due_date)->format('d-m-Y') }}</strong>
+                                            @if((int) $reminder->overdue_installment_count > 0)
+                                                <span class="badge badge-danger">TERLAMBAT</span>
+                                                <small class="d-block text-danger mt-1">{{ $reminder->overdue_installment_count }} tagihan lewat jatuh tempo</small>
+                                            @else
+                                                <span class="badge badge-warning">SEGERA JATUH TEMPO</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
 </div>
+@endif
+
+@if(Auth::user()->role === 'ADMIN' || $installmentReminderEnabled)
 <div class="row">
+    @if(Auth::user()->role === 'ADMIN')
     <div class="col-xl-6 col-xxl-6 col-lg-6 col-sm-6">
         <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal">
             <div class="widget-stat card bg-info">
@@ -64,6 +138,34 @@
             </div>
         </a>
     </div>
+    @endif
+
+    @if($installmentReminderEnabled)
+    <div class="col-xl-6 col-xxl-6 col-lg-6 col-sm-6">
+        <a href="#" data-bs-toggle="modal" data-bs-target="#installmentReminderModal">
+            <div class="widget-stat card {{ $overdueInstallmentReminderCount > 0 ? 'bg-danger' : 'bg-warning' }}">
+                <div class="card-body p-4">
+                    <div class="media">
+                        <span class="me-3">
+                            <i class="la la-bell"></i>
+                        </span>
+                        <div class="media-body text-white text-end">
+                            <p class="mb-1 text-white">Pengingat Cicilan Tahunan</p>
+                            <h3 class="text-white mb-0">{{ $installmentReminders->count() }} Member</h3>
+                            @if($overdueInstallmentReminderCount > 0)
+                                <small class="text-white">{{ $overdueInstallmentReminderCount }} member terlambat</small>
+                            @elseif($installmentReminders->isNotEmpty())
+                                <small class="text-white">Jatuh tempo dalam {{ $installmentReminderDays }} hari</small>
+                            @else
+                                <small class="text-white">Tidak ada tagihan</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    @endif
 </div>
 @endif
 

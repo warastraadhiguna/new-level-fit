@@ -145,6 +145,7 @@
                                     <td>
                                         @if ($branchStore->member_installment_enabled)
                                             <span class="badge badge-success">Aktif</span>
+                                            <small class="d-block">Pengingat H-{{ $branchStore->member_installment_reminder_days }}</small>
                                             <small class="d-block">{{ $branchStore->member_installment_grace_days }} hari grace / {{ $branchStore->member_installment_cancel_days }} hari batal</small>
                                         @else
                                             <span class="badge badge-secondary">Nonaktif</span>

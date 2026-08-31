@@ -23,6 +23,57 @@ class DashboardController extends Controller
             : false;
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
+
+        $installmentReminderEnabled = (bool) optional($activeBranchStore)->member_installment_enabled;
+        $installmentReminderDays = max(0, (int) optional($activeBranchStore)->member_installment_reminder_days);
+        $installmentReminders = collect();
+        $overdueInstallmentReminderCount = 0;
+
+        if ($installmentReminderEnabled) {
+            $today = Carbon::today();
+            $reminderUntil = $today->copy()->addDays($installmentReminderDays);
+
+            $installmentReminders = DB::table('member_registration_installments as i')
+                ->join('member_registrations as mr', 'mr.id', '=', 'i.member_registration_id')
+                ->join('members as m', 'm.id', '=', 'mr.member_id')
+                ->join('member_packages as mp', 'mp.id', '=', 'mr.member_package_id')
+                ->select(
+                    'mr.id as member_registration_id',
+                    'm.full_name as member_name',
+                    'm.member_code',
+                    'mp.package_name'
+                )
+                ->selectRaw('MIN(i.due_date) as earliest_due_date')
+                ->selectRaw('COUNT(i.id) as unpaid_installment_count')
+                ->selectRaw('SUM(GREATEST(i.amount - i.paid_amount, 0)) as outstanding_amount')
+                ->selectRaw('GROUP_CONCAT(i.month_number ORDER BY i.due_date SEPARATOR ", ") as unpaid_months')
+                ->selectRaw('SUM(CASE WHEN i.due_date < ? THEN 1 ELSE 0 END) as overdue_installment_count', [
+                    $today->toDateString(),
+                ])
+                ->where('m.branch_store_id', $branchId)
+                ->where('mr.is_installment_plan', true)
+                ->where('i.type', 'monthly')
+                ->whereIn('i.status', ['pending', 'partial', 'overdue'])
+                ->whereColumn('i.paid_amount', '<', 'i.amount')
+                ->whereDate('i.due_date', '<=', $reminderUntil->toDateString())
+                ->where(function ($query) {
+                    $query->whereNull('mr.installment_status')
+                        ->orWhere('mr.installment_status', '<>', 'cancelled');
+                })
+                ->groupBy(
+                    'mr.id',
+                    'm.full_name',
+                    'm.member_code',
+                    'mp.package_name'
+                )
+                ->orderByDesc('overdue_installment_count')
+                ->orderBy('earliest_due_date')
+                ->get();
+
+            $overdueInstallmentReminderCount = $installmentReminders
+                ->where('overdue_installment_count', '>', 0)
+                ->count();
+        }
         
         // Income of Member Registrations
         $incomeOfMember = DB::table('member_registrations as a')
@@ -329,6 +380,10 @@ class DashboardController extends Controller
             'incomeOfActiveLGT'                 => $incomeOfActiveLGT,
             'incomeOfOneDayVisit'               => $incomeOfOneDayVisit,
             'canViewDashboardFinance'           => $canViewDashboardFinance,
+            'installmentReminderEnabled'        => $installmentReminderEnabled,
+            'installmentReminderDays'           => $installmentReminderDays,
+            'installmentReminders'              => $installmentReminders,
+            'overdueInstallmentReminderCount'   => $overdueInstallmentReminderCount,
             'branch_stores'                     => BranchStore::get(),
             'totalMember'                       => $totalMembers,
             'totalMemberRegister'               => MemberRegistration::where('days', '>', 1)->count(),
