@@ -45,7 +45,7 @@ class MemberInstallmentService
                 'month_number' => $month,
                 'payment_order' => $month === 1 ? 1 : ($month === 12 ? 2 : $month + 1),
                 'type' => $month === 12 ? 'deposit' : 'monthly',
-                'due_date' => ($month === 12 ? $start : $start->copy()->addMonthsNoOverflow($month - 1))->toDateString(),
+                'due_date' => $start->copy()->addMonthsNoOverflow($month - 1)->toDateString(),
                 'amount' => $monthly,
                 'paid_amount' => 0,
                 'status' => 'pending',
@@ -62,6 +62,9 @@ class MemberInstallmentService
         if (!$registration->is_installment_plan) {
             return;
         }
+
+        $this->syncDueDates($registration);
+
         if ($registration->installment_status === 'cancelled') {
             return;
         }
@@ -115,5 +118,20 @@ class MemberInstallmentService
     {
         $this->refresh($registration);
         return in_array($registration->fresh()->installment_status, ['active', 'completed'], true);
+    }
+
+    private function syncDueDates(MemberRegistration $registration): void
+    {
+        $start = Carbon::parse($registration->start_date)->startOfDay();
+
+        foreach ($registration->installments()->get() as $installment) {
+            $expectedDueDate = $start->copy()
+                ->addMonthsNoOverflow((int) $installment->month_number - 1)
+                ->toDateString();
+
+            if ($installment->due_date->toDateString() !== $expectedDueDate) {
+                $installment->forceFill(['due_date' => $expectedDueDate])->save();
+            }
+        }
     }
 }
