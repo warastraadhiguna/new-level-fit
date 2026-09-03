@@ -8,7 +8,9 @@ use App\Support\ApplicationAccess;
 use App\Support\HandlesDuplicateStaffEmail;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AdministratorController extends Controller
 {
@@ -38,7 +40,7 @@ class AdministratorController extends Controller
             'full_name' => 'required|string|max:200',
             'email'     => $this->staffEmailRules(),
             'gender'    => 'required',
-            'role'      => 'required|in:ADMIN',
+            'role'      => ['required', Rule::in($this->manageableRoles())],
             'password'  => 'required|string|min:6',
             'application_access' => 'required|array|min:1',
             'application_access.*' => 'in:' . implode(',', ApplicationAccess::ADMIN_APPLICATIONS),
@@ -100,7 +102,7 @@ class AdministratorController extends Controller
 
         try {
             DB::transaction(function () use ($id, $data, $applicationCodes) {
-                $item = User::where('role', 'ADMIN')->findOrFail($id);
+                $item = User::whereIn('role', $this->manageableRoles())->findOrFail($id);
                 $item->update($data);
                 $this->syncApplicationAccess($item, $applicationCodes);
             });
@@ -119,6 +121,8 @@ class AdministratorController extends Controller
 
     public function destroy(User $administrator)
     {
+        $this->ensureCanManage($administrator);
+
         try {
             $administrator->delete();
             return redirect('/staff?page=' . Request()->input('page'))->with('success', 'Administrator Berhasil Dihapus');
@@ -130,7 +134,7 @@ class AdministratorController extends Controller
     public function restore($id)
     {
         $administrator = User::withTrashed()
-            ->where('role', 'ADMIN')
+            ->whereIn('role', $this->manageableRoles())
             ->find($id);
 
         if (!$administrator) {
@@ -145,7 +149,7 @@ class AdministratorController extends Controller
     {
         try {
             $administrator = User::onlyTrashed()
-                ->where('role', 'ADMIN')
+                ->whereIn('role', $this->manageableRoles())
                 ->find($id);
 
             if (!$administrator) {
@@ -165,6 +169,16 @@ class AdministratorController extends Controller
             $applicationCodes,
             ApplicationAccess::ADMIN_APPLICATIONS
         )));
+    }
+
+    private function manageableRoles(): array
+    {
+        return Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
+    }
+
+    private function ensureCanManage(User $user): void
+    {
+        abort_unless(in_array(strtoupper((string) $user->role), $this->manageableRoles(), true), 403);
     }
 
     private function syncApplicationAccess(User $user, array $applicationCodes)

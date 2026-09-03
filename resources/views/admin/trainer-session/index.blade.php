@@ -304,7 +304,7 @@
                                                     @endif
                                                 @endif
 
-                                                @if (Auth::user()->role == 'ADMIN')
+                                                @if (Auth::user()->isAdmin())
                                                     <li>
                                                         <a href="{{ route('trainer-session.edit', $item->id) }}"
                                                             class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
@@ -329,7 +329,7 @@
                                                         class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>
                                                 </li>
 
-                                                @if (Auth::user()->role == 'ADMIN')
+                                                @if (Auth::user()->isAdmin())
                                                     <li>
                                                         <form action="{{ route('trainer-session.destroy', $item->id) }}"
                                                             method="POST"

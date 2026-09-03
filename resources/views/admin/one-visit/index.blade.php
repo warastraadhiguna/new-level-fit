@@ -55,7 +55,7 @@
                                         @php
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
                                         @endphp
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <a href="{{ route('member-active.edit', $item->id) }}"
                                                 class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                         @endif
@@ -63,7 +63,7 @@
                                             class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>
                                         <a href="{{ route('renewal', $item->id) }}"
                                             class="btn light btn-dark btn-xs mb-1 btn-block">Renewal</a>
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <form action="{{ route('member-active.destroy', $item->id) }}"
                                                 method="POST">
                                                 @method('delete')

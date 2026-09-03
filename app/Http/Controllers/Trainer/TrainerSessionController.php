@@ -452,7 +452,7 @@ class TrainerSessionController extends Controller
 
     public function moveBranchPage(string $id)
     {
-        if (Auth::user()->role !== 'ADMIN') {
+        if (!Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -576,7 +576,7 @@ class TrainerSessionController extends Controller
 
     public function moveBranch(Request $request, string $id)
     {
-        if (Auth::user()->role !== 'ADMIN') {
+        if (!Auth::user()->isAdmin()) {
             abort(403);
         }
 

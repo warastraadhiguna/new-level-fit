@@ -164,13 +164,13 @@
                                         @php
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
                                         @endphp
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <a href="{{ route('trainer-session.edit', $item->id) }}"
                                                 class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                         @endif
                                         <a href="{{ route('trainer-session.show', $item->id) }}"
                                             class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <form action="{{ route('trainer-session.destroy', $item->id) }}"
                                                 onclick="return confirm('Delete Data ?')" method="POST">
                                                 @method('delete')

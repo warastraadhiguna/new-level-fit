@@ -106,7 +106,7 @@
                             </select>
                         </div>
                     </div>
-                    @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
+                    @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
                         <div class="col-xl-6">
                             <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
@@ -199,7 +199,7 @@
                             <td>{{ $trainerSessionPayment->note }}</td>
                             <td>{{ data_get($trainerSessionPayment, 'user.full_name', 'Deleted user') }}</td>
                             <td>
-                                @if (Auth::user()->role == 'ADMIN')
+                                @if (Auth::user()->isAdmin())
                                     <form action="{{ route('trainer-session-payment.destroy', $trainerSessionPayment->id) }}"
                                         method="POST">
                                         @method('delete')

@@ -107,7 +107,7 @@
                                     </td>
                                     <td>
                                         <div>
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <a href="{{ route('member-active.edit', $item->mr_id) }}"
                                                     class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                             @endif

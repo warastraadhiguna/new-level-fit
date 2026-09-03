@@ -163,7 +163,7 @@
                                     <th>Phone Number</th>
                                     <th>Gender</th>
                                     <th>Description</th>
-                                    @if (Auth::user()->role == 'ADMIN')
+                                    @if (Auth::user()->isAdmin())
                                         <th>Action</th>
                                     @endif
                                 </tr>
@@ -186,7 +186,7 @@
                                         <td>
                                             <h6>{{ $item->description }}</h6>
                                         </td>
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <td>
                                                 <div>
                                                 @if ($pageType == "new")                                                          

@@ -38,7 +38,7 @@
                         id="myTable">
                         <thead>
                             <tr>
-                                @if (Auth::user()->role == 'ADMIN')
+                                @if (Auth::user()->isAdmin())
                                     <th></th>
                                 @endif
                                 <th>No</th>
@@ -54,7 +54,7 @@
                         <tbody>
                             @foreach ($trainerSessions as $item)
                                 <tr>
-                                    @if (Auth::user()->role == 'ADMIN')
+                                    @if (Auth::user()->isAdmin())
                                         <td>
                                             <input type="checkbox" name="selectedMemberActive[]"
                                                 value="{{ $item->id }}">
@@ -128,7 +128,7 @@
                                     </td>
                                     <td>
                                         <div>
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <a href="{{ route('member-active.edit', $item->id) }}"
                                                     class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                             @endif
@@ -145,7 +145,7 @@
                                                 id="checkInButton">Freeze</button>
                                             <a href="{{ route('renewal', $item->id) }}"
                                                 class="btn light btn-dark btn-xs mb-1 btn-block">Renewal</a>
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <form action="{{ route('member-active.destroy', $item->id) }}"
                                                     method="POST">
                                                     @method('delete')
@@ -161,7 +161,7 @@
                             @endforeach
                         </tbody>
                     </table>
-                    @if (Auth::user()->role == 'ADMIN')
+                    @if (Auth::user()->isAdmin())
                         <button type="submit" class="btn btn-danger mb-2"
                             onclick="return confirm('Delete selected member active?')">Delete Selected</button>
                     @endif

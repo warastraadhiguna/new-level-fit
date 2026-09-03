@@ -18,9 +18,7 @@ class DashboardController extends Controller
     {
         $branchId = Auth::user()->branch_store_id;
         $activeBranchStore = BranchStore::find($branchId);
-        $canViewDashboardFinance = $activeBranchStore
-            ? $activeBranchStore->canRoleViewDashboardFinance(Auth::user()->role)
-            : false;
+        $canViewDashboardFinance = Auth::user()->isOwner();
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
 
@@ -75,103 +73,108 @@ class DashboardController extends Controller
                 ->count();
         }
         
-        // Income of Member Registrations
-        $incomeOfMember = DB::table('member_registrations as a')
-            ->select(
-                'a.package_price',
-                'a.start_date',
-                'a.admin_price',
-                'a.id',
-                DB::raw('SUM(a.package_price) as total_price'),
-                DB::raw('SUM(a.admin_price) as admin_price')
-            )
-            ->join('members', 'member_id', '=', 'members.id')
-            ->where('a.days', '>', '1')
-            ->where('members.branch_store_id', $branchId)
-            ->whereBetween('a.created_at', [$startDate, $endDate])
-            ->groupBy(
-                'a.id',
-                'a.start_date',
-                'a.admin_price',
-                'a.description',
-                'a.package_price',
-            )
-            ->get();
+        $incomeOfMember = collect();
+        $incomeOfPT = collect();
+        $incomeOfActiveLGT = collect();
+        $incomeOfOneDayVisit = collect();
 
-        $incomeOfPT = DB::table('trainer_sessions as a')
-            ->select(
-                'a.package_price',
-                'a.start_date',
-                'a.admin_price',
-                'a.id',
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                DB::raw('SUM(a.package_price) as total_price'),
-                DB::raw('SUM(a.admin_price) as admin_price')
-            )
-            ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
-            ->where('a.branch_store_id', $branchId)            
-            ->whereNull('b.status')
-            ->whereBetween('a.created_at', [$startDate, $endDate])
-            ->groupBy(
-                'a.id',
-                'a.start_date',
-                'a.admin_price',
-                'a.description',
-                'a.package_price',
-                'expired_date',
-                'status'
-            )
-            ->get();
+        if ($canViewDashboardFinance) {
+            // Income of Member Registrations
+            $incomeOfMember = DB::table('member_registrations as a')
+                ->select(
+                    'a.package_price',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.id',
+                    DB::raw('SUM(a.package_price) as total_price'),
+                    DB::raw('SUM(a.admin_price) as admin_price')
+                )
+                ->join('members', 'member_id', '=', 'members.id')
+                ->where('a.days', '>', '1')
+                ->where('members.branch_store_id', $branchId)
+                ->whereBetween('a.created_at', [$startDate, $endDate])
+                ->groupBy(
+                    'a.id',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.description',
+                    'a.package_price',
+                )
+                ->get();
 
-        $incomeOfActiveLGT = DB::table('trainer_sessions as a')
-            ->select(
-                'a.package_price',
-                'a.start_date',
-                'a.admin_price',
-                'a.id',
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                DB::raw('SUM(a.package_price) as total_price'),
-                DB::raw('SUM(a.admin_price) as admin_price')
-            )
-            ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
-            ->where('b.status', 'LGT')
-            ->where('a.branch_store_id', $branchId)                  
-            ->whereBetween('a.created_at', [$startDate, $endDate])
-            ->groupBy(
-                'a.id',
-                'a.start_date',
-                'a.admin_price',
-                'a.description',
-                'a.package_price',
-                'expired_date',
-                'status'
-            )
-            ->get();
+            $incomeOfPT = DB::table('trainer_sessions as a')
+                ->select(
+                    'a.package_price',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.id',
+                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                    DB::raw('SUM(a.package_price) as total_price'),
+                    DB::raw('SUM(a.admin_price) as admin_price')
+                )
+                ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
+                ->where('a.branch_store_id', $branchId)
+                ->whereNull('b.status')
+                ->whereBetween('a.created_at', [$startDate, $endDate])
+                ->groupBy(
+                    'a.id',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.description',
+                    'a.package_price',
+                    'expired_date',
+                    'status'
+                )
+                ->get();
 
-        $incomeOfOneDayVisit = DB::table('member_registrations as a')
-            ->select(
-                'a.package_price',
-                'a.start_date',
-                'a.admin_price',
-                'a.id',
-                DB::raw('SUM(a.package_price) as total_price'),
-                DB::raw('SUM(a.admin_price) as admin_price')
-            )
-            ->join('member_packages as b', 'a.member_package_id', '=', 'b.id')
-            ->join('members', 'member_id', '=', 'members.id')            
-            ->where('a.days', '=', '1')
-            ->where('members.branch_store_id', $branchId)                  
-            ->whereBetween('a.created_at', [$startDate, $endDate])
-            ->groupBy(
-                'a.id',
-                'a.start_date',
-                'a.admin_price',
-                'a.description',
-                'a.package_price',
-                // 'expired_date',
-                // 'status'
-            )
-            ->get();
+            $incomeOfActiveLGT = DB::table('trainer_sessions as a')
+                ->select(
+                    'a.package_price',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.id',
+                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                    DB::raw('SUM(a.package_price) as total_price'),
+                    DB::raw('SUM(a.admin_price) as admin_price')
+                )
+                ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
+                ->where('b.status', 'LGT')
+                ->where('a.branch_store_id', $branchId)
+                ->whereBetween('a.created_at', [$startDate, $endDate])
+                ->groupBy(
+                    'a.id',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.description',
+                    'a.package_price',
+                    'expired_date',
+                    'status'
+                )
+                ->get();
+
+            $incomeOfOneDayVisit = DB::table('member_registrations as a')
+                ->select(
+                    'a.package_price',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.id',
+                    DB::raw('SUM(a.package_price) as total_price'),
+                    DB::raw('SUM(a.admin_price) as admin_price')
+                )
+                ->join('member_packages as b', 'a.member_package_id', '=', 'b.id')
+                ->join('members', 'member_id', '=', 'members.id')
+                ->where('a.days', '=', '1')
+                ->where('members.branch_store_id', $branchId)
+                ->whereBetween('a.created_at', [$startDate, $endDate])
+                ->groupBy(
+                    'a.id',
+                    'a.start_date',
+                    'a.admin_price',
+                    'a.description',
+                    'a.package_price',
+                )
+                ->get();
+        }
 
         // TOTAL MEMBERS
         $totalMembers = DB::table('members as a')

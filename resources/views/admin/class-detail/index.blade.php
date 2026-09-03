@@ -72,7 +72,7 @@
                                 <th>Email</th>
                                 <th>User</th>          
                                 <th>Status</th>                                                                                                     
-                                @if (Auth::user()->role == 'ADMIN')
+                                @if (Auth::user()->isAdmin())
                                     <th>Action</th>
                                 @endif
                             </tr>
@@ -95,7 +95,7 @@
                                     <td>
                                         <h6>{{ $item->status == "1"? "Continue" : "Canceled" }}</h6>
                                     </td>                                                                                                  
-                                    @if (Auth::user()->role == 'ADMIN')
+                                    @if (Auth::user()->isAdmin())
                                         <td>
                                             <div>
                                                 <button type="button"

@@ -61,8 +61,22 @@ class User extends Authenticatable
         return $this->hasMany(UserApplicationAccess::class);
     }
 
+    public function isOwner(): bool
+    {
+        return strtoupper((string) $this->role) === 'OWNER';
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array(strtoupper((string) $this->role), ['ADMIN', 'OWNER'], true);
+    }
+
     public function hasApplicationAccess($applicationCode)
     {
+        if ($this->isOwner()) {
+            return true;
+        }
+
         if (!Schema::hasTable('user_application_access')) {
             return true;
         }

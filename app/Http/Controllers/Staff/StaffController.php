@@ -24,9 +24,11 @@ class StaffController extends Controller
 {
     public function index()
     {
+        $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
+
         $data = [
             'title'                 => 'Staff List',
-            'administrator'         => User::with("branchStore")->where('role', 'ADMIN')->get(),
+            'administrator'         => User::with("branchStore")->whereIn('role', $administratorRoles)->get(),
             'customerService'       => User::with("branchStore")->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->where('role', 'CSPOS')->get(),
             'fitnessConsultant'     => User::with("branchStore")->where('role', 'FC')->get(),
@@ -44,9 +46,11 @@ class StaffController extends Controller
 
     public function showOldStaff()
     {
+        $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
+
         $data = [
             'title'                 => 'Old Staff List',
-            'administrator'         => User::with("branchStore")->onlyTrashed()->where('role', 'ADMIN')->get(),
+            'administrator'         => User::with("branchStore")->onlyTrashed()->whereIn('role', $administratorRoles)->get(),
             'customerService'       => User::with("branchStore")->onlyTrashed()->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->onlyTrashed()->where('role', 'CSPOS')->get(),
             'fitnessConsultant'     => User::with("branchStore")->onlyTrashed()->where('role', 'FC')->get(),

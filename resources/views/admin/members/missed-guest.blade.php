@@ -56,7 +56,7 @@
                                                     class="btn light btn-primary btn-xs btn-block mb-1">Appointment Schedule</a> --}}
                                             <a href="{{ route('members.edit', $item->id) }}"
                                                 class="btn light btn-warning btn-xs btn-block mb-1">Edit</a>
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <form action="{{ route('member.destroy', $item->id) }}"
                                                     onclick="return confirm('Delete Data ?')" method="POST">
                                                     @method('delete')

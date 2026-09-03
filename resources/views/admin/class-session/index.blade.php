@@ -21,7 +21,7 @@
                                 <th>Price</th>
                                 <th>Description</th>
                                 <th>Instructor</th>                                
-                                @if (Auth::user()->role == 'ADMIN')
+                                @if (Auth::user()->isAdmin())
                                     <th>Action</th>
                                 @endif
                             </tr>
@@ -44,7 +44,7 @@
                                     <td>
                                         <h6>{{ $item->classInstructor->full_name }}</h6>
                                     </td>                                    
-                                    @if (Auth::user()->role == 'ADMIN')
+                                    @if (Auth::user()->isAdmin())
                                         <td>
                                             <div>
                                                 <button type="button"

@@ -25,7 +25,7 @@ class IsAdmin
         }
 
         if (
-            $user->role === 'ADMIN'
+            $user->isAdmin()
             && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
         ) {
             Auth::logout();
@@ -37,7 +37,7 @@ class IsAdmin
             ]);
         }
 
-        if (in_array($user->role, ['ADMIN', 'CS', 'CSPOS', 'FC'], true)) {
+        if (in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC'], true)) {
             return $next($request);
         }
 

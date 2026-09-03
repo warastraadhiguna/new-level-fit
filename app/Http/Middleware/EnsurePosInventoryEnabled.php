@@ -15,7 +15,7 @@ class EnsurePosInventoryEnabled
 
         if (
             !$user
-            || !in_array($user->role, ['ADMIN', 'CS', 'CSPOS'], true)
+            || !in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS'], true)
             || !$user->branch_store_id
             || !Schema::hasColumn('branch_stores', 'pos_inventory_enabled')
             || !BranchStore::whereKey($user->branch_store_id)->where('pos_inventory_enabled', true)->exists()

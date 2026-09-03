@@ -4,7 +4,7 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
-            @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
+            @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
                 <li>
                     <a href="{{ route('dashboard') }}" aria-expanded="false">
                         <i class="material-symbols-outlined">home</i>
@@ -25,7 +25,7 @@
                 </ul>
             </li>
 
-            @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
+            @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">diversity_3</i>
@@ -40,7 +40,7 @@
                 </li>
             @endif
 
-            @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS')
+            @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
                 <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person_3</i>
@@ -65,7 +65,7 @@
                 </a>
                 <ul aria-expanded="false">
                     <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
-                    @if (Auth::user()->role == 'ADMIN' || Auth::user()->role == 'CS')
+                    @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
                         <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>                          
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
@@ -79,7 +79,7 @@
                 </ul>
             </li>
 
-            @if (Auth::user()->role == 'ADMIN')
+            @if (Auth::user()->isAdmin())
                 <li>
                     <a href="{{ route('staff.index') }}?page=cs" href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person</i>
@@ -88,7 +88,7 @@
                 </li>
             @endif
 
-            @if (in_array(Auth::user()->role, ['ADMIN', 'CS', 'CSPOS'], true) && optional(Auth::user()->branchStore)->pos_inventory_enabled)
+            @if (in_array(strtoupper((string) Auth::user()->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS'], true) && optional(Auth::user()->branchStore)->pos_inventory_enabled)
                 <li>
                     <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">point_of_sale</i>
@@ -97,7 +97,7 @@
                     <ul aria-expanded="false">
                         <li><a href="{{ route('pos.index') }}">Kasir</a></li>
                         <li><a href="{{ route('pos-sales.index') }}">Riwayat Penjualan</a></li>
-                        @if (Auth::user()->role == 'ADMIN')
+                        @if (Auth::user()->isAdmin())
                             <li><a href="{{ route('pos-products.index') }}">Produk & Stok</a></li>
                             <li><a href="{{ route('pos-purchases.index') }}">Pembelian</a></li>
                             <li><a href="{{ route('pos-suppliers.index') }}">Supplier</a></li>
@@ -150,7 +150,7 @@
                 </ul>
             </li>
 
-            @if (Auth::user()->role == 'ADMIN')
+            @if (Auth::user()->isAdmin())
                 {{-- <li>
                     <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-icons"> flight_class </i>

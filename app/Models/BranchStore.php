@@ -54,6 +54,10 @@ class BranchStore extends Model
 
     public function canRoleViewDashboardFinance(?string $role): bool
     {
+        if (strtoupper((string) $role) === 'OWNER') {
+            return true;
+        }
+
         $allowedRoles = $this->dashboard_finance_visible_roles;
 
         // Data lama yang belum diatur tetap mempertahankan perilaku sebelumnya.

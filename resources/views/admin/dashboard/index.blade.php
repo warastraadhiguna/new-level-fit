@@ -12,7 +12,7 @@
 @endforeach
 @endif
 
-@if(Auth::user()->role === 'ADMIN')
+@if(Auth::user()->isAdmin())
 <div class="modal fade modal-sm" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -118,9 +118,9 @@
 </div>
 @endif
 
-@if(Auth::user()->role === 'ADMIN' || $installmentReminderEnabled)
+@if(Auth::user()->isAdmin() || $installmentReminderEnabled)
 <div class="row">
-    @if(Auth::user()->role === 'ADMIN')
+    @if(Auth::user()->isAdmin())
     <div class="col-xl-6 col-xxl-6 col-lg-6 col-sm-6">
         <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal">
             <div class="widget-stat card bg-info">

@@ -6,7 +6,7 @@
         <div class="row"><div class="col-md-6"></div><div class="col-md-6"><div class="d-flex justify-content-between"><span>Subtotal</span><span>Rp. {{ number_format($sale->subtotal, 0, ',', '.') }}</span></div><div class="d-flex justify-content-between"><span>Discount</span><span>Rp. {{ number_format($sale->discount_amount, 0, ',', '.') }}</span></div><div class="d-flex justify-content-between fs-4"><strong>Total</strong><strong>Rp. {{ number_format($sale->grand_total, 0, ',', '.') }}</strong></div><div class="d-flex justify-content-between"><span>Paid</span><span>Rp. {{ number_format($sale->paid_amount, 0, ',', '.') }}</span></div><div class="d-flex justify-content-between"><span>Change</span><span>Rp. {{ number_format($sale->change_amount, 0, ',', '.') }}</span></div></div></div>
         @if ($sale->status === 'void')<div class="alert alert-danger mt-4"><strong>Void:</strong> {{ $sale->void_reason }} ({{ optional($sale->voided_at)->format('d M Y H:i') }})</div>@endif
     </div>
-    @if ($sale->status === 'completed' && Auth::user()->role === 'ADMIN')
+    @if ($sale->status === 'completed' && Auth::user()->isAdmin())
         <div class="card-footer no-print"><form action="{{ route('pos-sales.void', $sale->id) }}" method="POST" onsubmit="return confirm('Void transaksi dan kembalikan seluruh stok?')">@csrf<div class="input-group"><input class="form-control" name="void_reason" placeholder="Alasan void wajib diisi" required><button class="btn btn-danger">Void Transaction</button></div></form></div>
     @endif
 </div></div>

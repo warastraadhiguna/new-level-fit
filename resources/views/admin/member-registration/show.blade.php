@@ -365,7 +365,7 @@
                                             @endphp
                                             <td>{{ $item->check_out_time ? $formattedDuration : 'Not Yet' }}</td>
                                             <td>
-                                                @if (Auth::user()->role == 'ADMIN')
+                                                @if (Auth::user()->isAdmin())
                                                     <form action="{{ route('member-check-in.destroy', $item->id) }}"
                                                         onclick="return confirm('Delete Data ?')" method="POST">
                                                         @method('delete')

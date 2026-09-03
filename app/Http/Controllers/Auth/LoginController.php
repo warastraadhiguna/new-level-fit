@@ -44,7 +44,7 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         if (
-            strtoupper((string) $user->role) === 'ADMIN'
+            $user->isAdmin()
             && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
         ) {
             Auth::logout();

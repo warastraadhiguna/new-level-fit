@@ -158,7 +158,7 @@
                                                 Member</a>
                                             <a href="{{ route('members.show', $item->id) }}"
                                                 class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <a href="{{ route('members.create-membership', $item->id) }}"
                                                     class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
                                             @endif
@@ -181,7 +181,7 @@
                                                     </button>
                                                 @endif
                                             @endif
-                                            @if (Auth::user()->role == 'ADMIN')
+                                            @if (Auth::user()->isAdmin())
                                                 <form action="{{ route('member.destroy', $item->id) }}"
                                                     onclick="return confirm('Delete Data ?')" method="POST">
                                                     @method('delete')

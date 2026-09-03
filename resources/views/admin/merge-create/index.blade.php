@@ -30,7 +30,7 @@
                                 class="form-control" id="exampleFormControlInput1" autocomplete="off" required>
                         </div>
                     </div>
-                    @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
+                    @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
                         <div class="col-xl-6" id="candidateFC">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Candidate Fitness Consultant</label>
@@ -226,7 +226,7 @@
                         </div>
                     @endif
                     @include('admin.partials.payment-deadline-field')
-                    @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
+                    @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>

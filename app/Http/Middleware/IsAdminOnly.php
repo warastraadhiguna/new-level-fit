@@ -10,7 +10,7 @@ class IsAdminOnly
 {
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::user() && Auth::user()->role === 'ADMIN') {
+        if (Auth::user() && Auth::user()->isAdmin()) {
             return $next($request);
         }
 

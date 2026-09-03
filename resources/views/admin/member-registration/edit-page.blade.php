@@ -200,7 +200,7 @@
                             <td>{{ $memberRegistrationPayment->note }}</td>
                             <td>{{ data_get($memberRegistrationPayment, 'user.full_name', 'Deleted user') }}</td>
                             <td>
-                                @if (Auth::user()->role == 'ADMIN')
+                                @if (Auth::user()->isAdmin())
                                     <form action="{{ route('member-registration-payment.destroy', $memberRegistrationPayment->id) }}"
                                         method="POST">
                                         @method('delete')

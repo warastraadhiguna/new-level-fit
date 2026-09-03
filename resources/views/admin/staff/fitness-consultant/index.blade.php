@@ -196,7 +196,7 @@
                                     <th>Full Name</th>
                                     <th>Email</th>
                                     <th>Gender</th>
-                                    @if (Auth::user()->role == 'ADMIN')
+                                    @if (Auth::user()->isAdmin())
                                         <th>Action</th>
                                     @endif
                                 </tr>
@@ -216,7 +216,7 @@
                                         <td>
                                             <h6>{{ $item->gender }}</h6>
                                         </td>
-                                        @if (Auth::user()->role == 'ADMIN')
+                                        @if (Auth::user()->isAdmin())
                                             <td>
                                                 <div>
                                                 @if ($pageType == "new")                                                        

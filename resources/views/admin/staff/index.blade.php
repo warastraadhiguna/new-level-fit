@@ -40,7 +40,7 @@
                             Class Instructor
                         </a>
                     </li>                     --}}
-                    @if (Auth::user()->role == 'ADMIN')
+                    @if (Auth::user()->isAdmin())
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'admin' ? 'show active' : '' }}" data-bs-toggle="tab"
                                 href="#administrator">

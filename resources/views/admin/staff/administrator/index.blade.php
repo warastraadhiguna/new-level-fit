@@ -6,7 +6,9 @@
                 @csrf
                 <input type="hidden" name="page" value="admin">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Create Administrator</h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">
+                        Create {{ Auth::user()->isOwner() ? 'Administrator / Owner' : 'Administrator' }}
+                    </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -48,7 +50,10 @@
                                     {{-- <option disabled selected value>
                                         <- Choose ->
                                     </option> --}}
-                                    <option value="ADMIN">Admin</option>
+                                    <option value="ADMIN" {{ old('role') === 'ADMIN' ? 'selected' : '' }}>Admin</option>
+                                    @if (Auth::user()->isOwner())
+                                        <option value="OWNER" {{ old('role') === 'OWNER' ? 'selected' : '' }}>Owner</option>
+                                    @endif
                                 </select>
                             </div>
                         </div>
@@ -121,7 +126,7 @@
                     @csrf
                     <input type="hidden" name="page" value="admin">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Administrator</h1>
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Edit {{ $item->isOwner() ? 'Owner' : 'Administrator' }}</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -222,7 +227,7 @@
     <div class="card">
         <div class="card-body">
             <div class="col-xl-12">
-                <h4>Administrator List</h4>
+                <h4>{{ Auth::user()->isOwner() ? 'Administrator & Owner List' : 'Administrator List' }}</h4>
             </div>
         </div>
     </div>
@@ -235,7 +240,7 @@
                         <div>
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#modalAddAdministrator">
-                                + New Administrator
+                                + New {{ Auth::user()->isOwner() ? 'Administrator / Owner' : 'Administrator' }}
                             </button>
                         </div>
                     </div>
@@ -251,6 +256,7 @@
                                     <th>Branch</th>                                             
                                     <th>Full Name</th>
                                     <th>Email</th>
+                                    <th>Role</th>
                                     <th>Gender</th>
                                     <th>Application Access</th>
                                     <th>Action</th>
@@ -269,16 +275,25 @@
                                             <h6>{{ $item->email }}</h6>
                                         </td>
                                         <td>
+                                            <span class="badge {{ $item->isOwner() ? 'badge-danger' : 'badge-primary' }}">
+                                                {{ $item->role }}
+                                            </span>
+                                        </td>
+                                        <td>
                                             <h6>{{ $item->gender }}</h6>
                                         </td>
                                         <td>
-                                            @if ($item->hasApplicationAccess('management'))
+                                            @if ($item->isOwner())
+                                                <span class="badge badge-danger">All Applications</span>
+                                            @elseif ($item->hasApplicationAccess('management'))
                                                 <span class="badge badge-primary">Management</span>
                                             @endif
-                                            @if ($item->hasApplicationAccess('gym_landing'))
+                                            @if (!$item->isOwner() && $item->hasApplicationAccess('gym_landing'))
                                                 <span class="badge badge-success">Member</span>
                                             @endif
                                             @if (
+                                                !$item->isOwner()
+                                                &&
                                                 !$item->hasApplicationAccess('management')
                                                 && !$item->hasApplicationAccess('gym_landing')
                                             )

@@ -163,7 +163,7 @@
                                 </select>
                             </div>
                         </div>
-                        @if (Auth::user()->role == 'CS' || Auth::user()->role == 'ADMIN')
+                        @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
                             <div class="col-xl-6" id="fitness_consultant">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Fitness
