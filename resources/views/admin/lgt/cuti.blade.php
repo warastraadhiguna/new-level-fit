@@ -27,18 +27,26 @@
 </head>
 
 <body>
-    <div class="img text-end">
-        <img src="https://gym.gelorasports.com/logokecil.png" class="img-fluid" width="200" alt="">
-    </div>
+    @php
+        $documentBranchStore = Auth::user()->branchStore;
+        $documentBranchName = optional($documentBranchStore)->name ?: config('app.name');
+    @endphp
 
-    <h4>LEVELFIT</h4>
+    @if (optional($documentBranchStore)->admin_logo_url)
+        <div class="img text-end">
+            <img src="{{ $documentBranchStore->admin_logo_url }}" class="img-fluid" width="200"
+                alt="{{ $documentBranchName }}">
+        </div>
+    @endif
+
+    <h4>{{ $documentBranchName }}</h4>
     <h5>FREEZE MEMBERSHIP</h5>
 
     <table>
         <tbody>
             <tr>
                 <td style="width: 150px;">No Member: {{ $trainerSession->member_code }}</td>
-                <td style="width: 150px;">Club: Semarang</td>
+                <td style="width: 150px;">Club: {{ $documentBranchName }}</td>
                 <td style="width: 150px;">Nama FC: {{ $trainerSession->fc_name }}</td>
             </tr>
         </tbody>

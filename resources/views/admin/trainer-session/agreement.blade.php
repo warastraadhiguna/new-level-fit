@@ -27,18 +27,19 @@
 </head>
 
 <body>
-    {{-- <div class="img text-end">
-        <img src="https://levelfit.warastra-adhiguna.online/LEVELFIT.png" class="img-fluid" width="100" alt="">
-    </div> --}}
+    @php
+        $documentBranchStore = Auth::user()->branchStore;
+        $documentBranchName = optional($documentBranchStore)->name ?: config('app.name');
+    @endphp
 
-    <h4>{{ config('app.name') }}</h4>
+    <h4>{{ $documentBranchName }}</h4>
     <h5>PRIVATE TRAINING AGREEMENT</h5>
 
     <table>
         <tbody>
             <tr>
                 <td style="width: 150px;">No Member: {{ $trainerSession->member_code }}</td>
-                <td style="width: 150px;">Club: Semarang</td>
+                <td style="width: 150px;">Club: {{ $documentBranchName }}</td>
                 {{-- <td style="width: 150px;">Nama FC: {{ $trainerSession->fc_name }}</td> --}}
             </tr>
         </tbody>
@@ -110,7 +111,7 @@
                     Program yang telah disepakati, dalam hal ini tidak ada pengembalian uang dan atau pelatihan, dan
                     Program ini tidak dapat dipindah tangankan.</li>
                 <li>Penyesuaian jangka waktu Program ini dianggap sah apabila MANAJEMEN CLUB menyetujui</li>
-                <li>LEVELFIT berhak untuk mengatur dan menyediakan pelatih pengganti yang sesuai dan mematuhi
+                <li>{{ $documentBranchName }} berhak untuk mengatur dan menyediakan pelatih pengganti yang sesuai dan mematuhi
                     persyaratan dalam pelaksanaan Program Private Training apabila terjadi halangan atau perubahan pada
                     jadwal dari pelatih anggota</li>
                 <li>Pembayaran untuk Program Private Training tidak dapat dikembalikan, tidak dapat dipindah tangankan,
