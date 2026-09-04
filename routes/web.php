@@ -103,6 +103,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
         Route::get('pos', ['\App\Http\Controllers\Pos\PosController', 'index'])->name('pos.index');
         Route::post('pos/checkout', ['\App\Http\Controllers\Pos\PosController', 'checkout'])->name('pos.checkout');
         Route::get('pos-sales', ['\App\Http\Controllers\Pos\PosController', 'sales'])->name('pos-sales.index');
+        Route::get('pos-sales/{id}/receipt', ['\App\Http\Controllers\Pos\PosController', 'receipt'])->name('pos-sales.receipt');
         Route::get('pos-sales/{id}', ['\App\Http\Controllers\Pos\PosController', 'showSale'])->name('pos-sales.show');
 
         Route::middleware('admin.only')->group(function () {

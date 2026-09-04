@@ -2,7 +2,7 @@
 
 namespace App\Models\Pos;
 
-use App\Models\MethodPayment;
+use App\Models\BranchStore;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,5 +32,10 @@ class Sale extends Model
     public function cashier()
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function branchStore()
+    {
+        return $this->belongsTo(BranchStore::class, 'branch_store_id');
     }
 }

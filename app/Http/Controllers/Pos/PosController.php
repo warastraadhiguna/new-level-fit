@@ -62,7 +62,9 @@ class PosController extends Controller
 
         $sale = $inventory->checkout($data, Auth::user()->branch_store_id, Auth::id());
 
-        return redirect()->route('pos-sales.show', $sale->id)->with('success', 'Transaksi berhasil.');
+        return redirect()
+            ->route('pos-sales.show', $sale->id)
+            ->with('success', 'Transaksi berhasil.');
     }
 
     public function sales(Request $request)
@@ -110,6 +112,15 @@ class PosController extends Controller
                 ->where('branch_store_id', Auth::user()->branch_store_id)
                 ->findOrFail($id),
         ]);
+    }
+
+    public function receipt($id)
+    {
+        $sale = Sale::with(['items', 'payments.methodPayment', 'cashier', 'branchStore'])
+            ->where('branch_store_id', Auth::user()->branch_store_id)
+            ->findOrFail($id);
+
+        return view('admin.pos.sales.receipt', compact('sale'));
     }
 
     public function voidSale(Request $request, $id, PosInventoryService $inventory)
