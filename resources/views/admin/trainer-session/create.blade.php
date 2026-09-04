@@ -97,6 +97,7 @@
                                 class="form-control" placeholder="First Payment" required>
                         </div>
                     </div>                       
+                    @include('admin.partials.pos-received-amount-field')
                     @include('admin.partials.payment-deadline-field')
                     @if (optional(Auth::user()->branchStore)->trainer_discount_enabled)
                         <div class="col-xl-6">

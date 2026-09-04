@@ -16,12 +16,22 @@ class MemberRegistrationPaymentController extends Controller
         $data = $request->validate([
             'member_registration_id'  => 'required',
             'value'  => 'required|string',
+            'received_amount' => 'nullable|string',
             'note'  => 'required|string',
             'method_payment_id'  => 'required',
         ]);
 
         $data["user_id"] = Auth::user()->id;
         $data["value"] = (int) str_replace(".", "", $data["value"]);
+        $receivedAmount = NormalizePosReceivedAmount(
+            $data['received_amount'] ?? null,
+            $data['value'],
+            Auth::user()->branch_store_id
+        );
+        unset($data['received_amount']);
+        if ($receivedAmount !== null) {
+            $data['received_amount'] = $receivedAmount;
+        }
         $data["note"] = trim($data["note"]);
 
         if ($data["note"] === '') {
@@ -33,7 +43,7 @@ class MemberRegistrationPaymentController extends Controller
         }
 
         try {
-            DB::transaction(function () use (&$data) {
+            $payment = DB::transaction(function () use (&$data) {
                 $memberRegistration = MemberRegistration::query()
                     ->lockForUpdate()
                     ->findOrFail($data["member_registration_id"]);
@@ -52,17 +62,29 @@ class MemberRegistrationPaymentController extends Controller
                     throw new \RuntimeException('The value is more than price should paid!!');
                 }
 
-                MemberRegistrationPayment::create($data);
+                $payment = MemberRegistrationPayment::create($data);
 
                 if ($paidAmount + $data["value"] >= $price) {
                     $memberRegistration->update(['payment_deadline' => 0]);
                 }
+
+                return $payment;
             });
         } catch (\RuntimeException $e) {
             return redirect()->back()->with('errorr', $e->getMessage());
         }
 
-        return redirect("member-active/". $data["member_registration_id"] ."/edit")->with('message', 'Payment Added Successfully');
+        $redirect = redirect("member-active/". $data["member_registration_id"] ."/edit")
+            ->with('message', 'Payment Added Successfully');
+
+        if (optional(Auth::user()->branchStore)->pos_inventory_enabled) {
+            $redirect->with('payment_receipt_url', route('payment-receipts.member', [
+                'id' => $payment->id,
+                'autoprint' => 1,
+            ]));
+        }
+
+        return $redirect;
     }
     public function destroy($id)
     {

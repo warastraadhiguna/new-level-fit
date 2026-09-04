@@ -120,6 +120,41 @@ function NormalizeSalesDiscount($value, string $type, ?int $branchStoreId = null
     return max(0, (int) str_replace(['.', ','], '', (string) $value));
 }
 
+function BranchStorePosIsEnabled(?int $branchStoreId = null): bool
+{
+    $branchStoreId = $branchStoreId ?: optional(auth()->user())->branch_store_id;
+
+    return $branchStoreId
+        ? (bool) \App\Models\BranchStore::whereKey($branchStoreId)->value('pos_inventory_enabled')
+        : false;
+}
+
+function NormalizePosReceivedAmount($value, int $paymentAmount, ?int $branchStoreId = null): ?int
+{
+    if (!BranchStorePosIsEnabled($branchStoreId)) {
+        return null;
+    }
+
+    $receivedAmount = max(0, (int) str_replace(['.', ','], '', (string) $value));
+
+    if ($receivedAmount < $paymentAmount) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'received_amount' => 'Uang bayar tidak boleh lebih kecil dari nilai pembayaran.',
+        ]);
+    }
+
+    return $receivedAmount;
+}
+
+function WithPosReceivedAmount(array $paymentData, ?int $receivedAmount): array
+{
+    if ($receivedAmount !== null) {
+        $paymentData['received_amount'] = $receivedAmount;
+    }
+
+    return $paymentData;
+}
+
 
 function NowDate($format = 'Y-MM-DD')
 {

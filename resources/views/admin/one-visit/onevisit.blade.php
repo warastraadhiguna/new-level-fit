@@ -66,6 +66,7 @@
                             </select>
                         </div>
                     </div>
+                    @include('admin.partials.pos-received-amount-field')
                     <div class="col-xl-6" id="description">
                         <div class="mb-3">
                             <label for="exampleFormControlTextarea1" class="form-label text-primary">

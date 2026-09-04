@@ -9,6 +9,7 @@ use App\Http\Controllers\Member\MemberRegistrationOverController;
 use App\Http\Controllers\Member\MissedGuestController;
 use App\Http\Controllers\MergeCreateDataController;
 use App\Http\Controllers\Pos\PosController;
+use App\Http\Controllers\Pos\PaymentReceiptController;
 use App\Http\Controllers\Pos\ProductCategoryController;
 use App\Http\Controllers\Pos\ProductController;
 use App\Http\Controllers\Pos\PurchaseController;
@@ -98,6 +99,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
         ->middleware('admin.only');
     Route::resource('sold-by', '\App\Http\Controllers\Admin\SoldByController');
     Route::resource('referral', '\App\Http\Controllers\Admin\RefferalController');
+
+    Route::get('payment-receipts/member/{id}', [PaymentReceiptController::class, 'member'])->name('payment-receipts.member');
+    Route::get('payment-receipts/trainer/{id}', [PaymentReceiptController::class, 'trainer'])->name('payment-receipts.trainer');
 
     Route::middleware('pos.enabled')->group(function () {
         Route::get('pos', ['\App\Http\Controllers\Pos\PosController', 'index'])->name('pos.index');

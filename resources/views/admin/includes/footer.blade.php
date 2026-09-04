@@ -379,7 +379,7 @@ if (window.location.pathname === '/add-data') {
             'description', 'formFile',
             'output', 'nickname', 'email', 'ig', 'emergency_contact', 'ec_name', 'member_package',
             'start_date',
-            'method_payment', 'fitness_consultant','registration_payment', 'first_payment', 'member_discount'
+            'method_payment', 'fitness_consultant','registration_payment', 'first_payment', 'received_amount', 'member_discount'
         ];
         var elementsToHide = ['cancellation-note', 'candidateFC'];
         // handleRadioChange()

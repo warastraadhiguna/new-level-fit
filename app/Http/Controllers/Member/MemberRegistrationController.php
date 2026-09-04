@@ -199,6 +199,7 @@ class MemberRegistrationController extends Controller
     {
         DB::beginTransaction();
         try {
+            $createdPayment = null;
             $request->merge([
                 'phone_number' => trim((string) $request->input('phone_number')),
             ]);
@@ -248,6 +249,7 @@ class MemberRegistrationController extends Controller
                 'lo_pt_by'              => 'nullable',
                 'start_date'            => 'required_if:status,sell',
                 'payment_deadline'      => 'nullable|integer|min:0',
+                'received_amount'       => 'nullable|string',
                 'discount_amount'       => 'nullable|string',
                 'description'           => 'nullable',
                 'card_number' => [
@@ -343,6 +345,11 @@ class MemberRegistrationController extends Controller
                     Auth::user()->branch_store_id
                 );
                 $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $receivedAmount = NormalizePosReceivedAmount(
+                    $data['received_amount'] ?? null,
+                    $firstPayment,
+                    Auth::user()->branch_store_id
+                );
                 $data['payment_deadline'] = NormalizePaymentDeadline(
                     $data['payment_deadline'] ?? 0,
                     $firstPayment,
@@ -385,13 +392,13 @@ class MemberRegistrationController extends Controller
                     'discount_amount'
                 ])));
 
-                MemberRegistrationPayment::create([
+                $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
                     "value" =>  $firstPayment,
                     "note" =>  "First Payment",
                     "method_payment_id" => $data["method_payment_id"]
-                ]);
+                ], $receivedAmount));
 
             } elseif ($request->status == 'one_day_visit') {
                 $data += $request->validate([
@@ -466,13 +473,20 @@ class MemberRegistrationController extends Controller
 
                 $package = MemberPackage::findOrFail($data['member_package_id']);
 
-                MemberRegistrationPayment::create([
+                $paymentAmount = (int) $package->package_price + (int) $package->admin_price - (int) $data['discount_amount'];
+                $receivedAmount = NormalizePosReceivedAmount(
+                    $data['received_amount'] ?? null,
+                    $paymentAmount,
+                    Auth::user()->branch_store_id
+                );
+
+                $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
                     "member_registration_id" =>  $newMemberRegistrationId,
                     "user_id" =>  Auth::user()->id,
-                    "value" =>  $package->package_price + $package->admin_price - $data['discount_amount'],
-                    "note" =>  "First Payment",
+                    "value" =>  $paymentAmount,
+                    "note" =>  !empty($data['description']) ? $data['description'] : "One Day Visit",
                     "method_payment_id" => $data["method_payment_id"]
-                ]);
+                ], $receivedAmount));
             } else {
                 $fc = Auth::user()->role;
                 $data['branch_store_id'] = Auth::user()->branch_store_id;
@@ -501,9 +515,15 @@ class MemberRegistrationController extends Controller
 
             DB::commit();
             if ($request->status == 'one_day_visit') {
-                return redirect()->back()->with('success', 'One Day Visit Added Successfully');
+                return $this->withPaymentReceipt(
+                    redirect()->back()->with('success', 'One Day Visit Added Successfully'),
+                    $createdPayment
+                );
             }
-            return redirect()->back()->with('success', 'Member Registration Added Successfully');
+            return $this->withPaymentReceipt(
+                redirect()->back()->with('success', 'Member Registration Added Successfully'),
+                $createdPayment
+            );
         } catch (QueryException $e) {
             DB::rollback();
 
@@ -925,6 +945,7 @@ class MemberRegistrationController extends Controller
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'first_payment'     => 'required',
+                    'received_amount'   => 'nullable|string',
                     'discount_amount'   => 'nullable|string',
                     'payment_deadline'  => 'nullable|integer|min:0',
                     'description'       => 'nullable',
@@ -937,6 +958,7 @@ class MemberRegistrationController extends Controller
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
                     'first_payment'     => 'required',
+                    'received_amount'   => 'nullable|string',
                     'discount_amount'   => 'nullable|string',
                     'payment_deadline'  => 'nullable|integer|min:0',
                     'fc_id'             => 'nullable|exists:users,id',
@@ -946,8 +968,14 @@ class MemberRegistrationController extends Controller
 
             $package = MemberPackage::findOrFail($data['member_package_id']);
             $firstPayment = (int) str_replace(".", "", $data['first_payment']);
+            $receivedAmount = NormalizePosReceivedAmount(
+                $data['received_amount'] ?? null,
+                $firstPayment,
+                Auth::user()->branch_store_id
+            );
 
             unset($data['first_payment']);
+            unset($data['received_amount']);
 
             $startTime = date('H:i:s', strtotime('00:00:00'));
             $startDate = new \DateTime($data['start_date'] . ' ' . $startTime);
@@ -972,17 +1000,20 @@ class MemberRegistrationController extends Controller
 
             $newMemberRegistration = MemberRegistration::create($data);
 
-            MemberRegistrationPayment::create([
+            $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
                 "member_registration_id" => $newMemberRegistration->id,
                 "user_id" => Auth::user()->id,
                 "value" => $firstPayment,
                 "note" => "First Payment",
                 "method_payment_id" => $data["method_payment_id"],
-            ]);
+            ], $receivedAmount));
 
             DB::commit();
 
-            return redirect()->route('member-active.index')->with('success', 'Membership Added Successfully');
+            return $this->withPaymentReceipt(
+                redirect()->route('member-active.index')->with('success', 'Membership Added Successfully'),
+                $createdPayment
+            );
         } catch (Exception $e) {
             DB::rollback();
             throw $e;
@@ -1003,6 +1034,7 @@ class MemberRegistrationController extends Controller
                     'member_package_id' => 'required|exists:member_packages,id',
                     'start_date'        => 'required',
                     'method_payment_id' => 'required|exists:method_payments,id',
+                    'received_amount'   => 'nullable|string',
                     'fc_id'             => 'nullable|exists:users,id',
                     'payment_deadline'  => 'nullable|integer|min:0',
                     'discount_amount'   => 'nullable|string',
@@ -1064,6 +1096,12 @@ class MemberRegistrationController extends Controller
                 );
                 $data['member_id'] = $memberRegistration->member_id;
                 $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $receivedAmount = NormalizePosReceivedAmount(
+                    $data['received_amount'] ?? null,
+                    $firstPayment,
+                    Auth::user()->branch_store_id
+                );
+                unset($data['received_amount']);
                 $data['payment_deadline'] = NormalizePaymentDeadline(
                     $data['payment_deadline'] ?? 0,
                     $firstPayment,
@@ -1108,17 +1146,20 @@ class MemberRegistrationController extends Controller
 
                 $newMemberRegistration = MemberRegistration::create($data);
 
-                MemberRegistrationPayment::create([
+                $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
                     "value" =>  $firstPayment,
                     "note" =>  "First Payment",
                     "method_payment_id" => $data["method_payment_id"]
-                ]);
+                ], $receivedAmount));
 
                 DB::commit();
 
-                return redirect()->route('member-active.index')->with('success', 'Renewal Successfully');
+                return $this->withPaymentReceipt(
+                    redirect()->route('member-active.index')->with('success', 'Renewal Successfully'),
+                    $createdPayment
+                );
             } catch (Exception $e) {
                 DB::rollback();
                 throw $e;
@@ -1135,6 +1176,7 @@ class MemberRegistrationController extends Controller
                         'member_package_id' => 'required|exists:member_packages,id',
                         'start_date'        => 'required',
                         'method_payment_id' => 'required|exists:method_payments,id',
+                        'received_amount'   => 'nullable|string',
                         'payment_deadline'  => 'nullable|integer|min:0',
                         'discount_amount'   => 'nullable|string',
                         'description'       => 'nullable',
@@ -1145,6 +1187,7 @@ class MemberRegistrationController extends Controller
                         'member_package_id' => 'required|exists:member_packages,id',
                         'start_date'        => 'required',
                         'method_payment_id' => 'required|exists:method_payments,id',
+                        'received_amount'   => 'nullable|string',
                         'payment_deadline'  => 'nullable|integer|min:0',
                         'fc_id'             => 'nullable|exists:users,id',
                         'discount_amount'   => 'nullable|string',
@@ -1183,6 +1226,12 @@ class MemberRegistrationController extends Controller
 
                 $data['member_id'] = $memberRegistration->member_id;
                 $firstPayment = (int) str_replace(".", "", $request->first_payment);
+                $receivedAmount = NormalizePosReceivedAmount(
+                    $data['received_amount'] ?? null,
+                    $firstPayment,
+                    Auth::user()->branch_store_id
+                );
+                unset($data['received_amount']);
                 $data['payment_deadline'] = NormalizePaymentDeadline(
                     $data['payment_deadline'] ?? 0,
                     $firstPayment,
@@ -1192,17 +1241,20 @@ class MemberRegistrationController extends Controller
 
                 $newMemberRegistration = MemberRegistration::create($data);
 
-                MemberRegistrationPayment::create([
+                $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
                     "value" =>  $firstPayment,
                     "note" =>  "First Payment",
                     "method_payment_id" => $data["method_payment_id"]
-                ]);
+                ], $receivedAmount));
 
                 DB::commit();
 
-                return redirect()->route('member-active.index')->with('success', 'Renewal Successfully');
+                return $this->withPaymentReceipt(
+                    redirect()->route('member-active.index')->with('success', 'Renewal Successfully'),
+                    $createdPayment
+                );
             } catch (Exception $e) {
                 DB::rollback();
                 throw $e;
@@ -1528,6 +1580,18 @@ class MemberRegistrationController extends Controller
         ];
 
         return view('admin.layouts.wrapper', $data);
+    }
+
+    private function withPaymentReceipt($redirect, ?MemberRegistrationPayment $payment)
+    {
+        if ($payment && optional(Auth::user()->branchStore)->pos_inventory_enabled) {
+            $redirect->with('payment_receipt_url', route('payment-receipts.member', [
+                'id' => $payment->id,
+                'autoprint' => 1,
+            ]));
+        }
+
+        return $redirect;
     }
 
     public function historyDetail($id)

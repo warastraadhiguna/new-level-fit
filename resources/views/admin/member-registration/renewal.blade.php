@@ -170,14 +170,6 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-xl-6" id="first_payment">
-                            <div class="mb-3">
-                                <label class="form-label">First Payment</label>
-                                <input type="text" name="first_payment" value="{{ old('first_payment') }}"
-                                    class="form-control" placeholder="First Payment" required>
-                            </div>
-                        </div>                          
-                        @include('admin.partials.payment-deadline-field')
                         @if (optional(Auth::user()->branchStore)->member_discount_enabled)
                             <div class="col-xl-6">
                                 <div class="mb-3">
@@ -188,6 +180,15 @@
                                 </div>
                             </div>
                         @endif
+                        <div class="col-xl-6" id="first_payment">
+                            <div class="mb-3">
+                                <label class="form-label">First Payment</label>
+                                <input type="text" name="first_payment" value="{{ old('first_payment') }}"
+                                    class="form-control" placeholder="First Payment" required>
+                            </div>
+                        </div>
+                        @include('admin.partials.pos-received-amount-field')
+                        @include('admin.partials.payment-deadline-field')
                         @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
                             <div class="col-xl-6" id="fitness_consultant">
                                 <div class="mb-3">

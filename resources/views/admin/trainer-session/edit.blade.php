@@ -177,7 +177,8 @@
     @endif        
     <div class="card">
         <div class="card-body">
-            <table class="table-responsive-lg table display">
+            <div class="table-responsive">
+            <table class="table display mb-0">
                 <thead>
                     <tr>
                         <th>No</th>
@@ -186,7 +187,7 @@
                         <th>Method Payment</th>                             
                         <th>Note</th>       
                         <th>Staff</th>
-                        <th>Action</th>
+                        <th class="text-center" style="min-width: 120px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -198,22 +199,28 @@
                             <td>{{ data_get($trainerSessionPayment, 'methodPayment.name', 'Deleted method payment') }}</td>
                             <td>{{ $trainerSessionPayment->note }}</td>
                             <td>{{ data_get($trainerSessionPayment, 'user.full_name', 'Deleted user') }}</td>
-                            <td>
+                            <td style="min-width: 120px;">
+                                <div class="d-grid gap-1">
+                                @if (optional(Auth::user()->branchStore)->pos_inventory_enabled)
+                                    <a href="{{ route('payment-receipts.trainer', ['id' => $trainerSessionPayment->id, 'autoprint' => 1]) }}"
+                                        target="_blank" rel="noopener" class="btn light btn-primary btn-xs w-100">Cetak Struk</a>
+                                @endif
                                 @if (Auth::user()->isAdmin())
-                                    <form action="{{ route('trainer-session-payment.destroy', $trainerSessionPayment->id) }}"
-                                        method="POST">
+                                    <form action="{{ route('trainer-session-payment.destroy', $trainerSessionPayment->id) }}" method="POST" class="m-0">
                                         @method('delete')
                                         @csrf
                                         <button type="submit"
-                                            class="btn light btn-danger btn-xs btn-block mb-1"
+                                            class="btn light btn-danger btn-xs w-100"
                                             onclick="return confirm('Delete {{ $trainerSessionPayment->value }} payment ?')">Delete</button>
                                     </form>
-                                @endif    
+                                @endif
+                                </div>
                             </td>                                                                      
                         </tr>
                     @endforeach
                 </tbody>
-            </table>                                
+            </table>
+            </div>
         </div>
     </div>
 </div>
@@ -243,6 +250,7 @@
                                     autocomplete="off" required>
                             </div>
                         </div>
+                        @include('admin.partials.pos-received-amount-field', ['columnClass' => 'col-xl-12', 'fieldId' => 'payment_received_amount'])
                         <div class="col-xl-12">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Method Payment</label>

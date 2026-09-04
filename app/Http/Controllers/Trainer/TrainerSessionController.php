@@ -241,6 +241,7 @@ class TrainerSessionController extends Controller
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
+                'received_amount'       => 'nullable|string',
                 'payment_deadline'      => 'nullable|integer|min:0',
                 'discount_amount'       => 'nullable|string',
                 'user_id'               => 'nullable',
@@ -257,6 +258,7 @@ class TrainerSessionController extends Controller
                 'trainer_package_id'    => 'required|exists:trainer_packages,id',
                 'method_payment_id'     => 'required|exists:method_payments,id',
                 'first_payment'         => 'required|string',
+                'received_amount'       => 'nullable|string',
                 'payment_deadline'      => 'nullable|integer|min:0',
                 'discount_amount'       => 'nullable|string',
                 'fc_id'                 => 'nullable|exists:users,id',
@@ -305,6 +307,11 @@ class TrainerSessionController extends Controller
             $data['days'] = $package->days;
             $data['number_of_session'] = $package->number_of_session;
             $firstPayment = (int) str_replace(".", "", $data['first_payment']);
+            $receivedAmount = NormalizePosReceivedAmount(
+                $data['received_amount'] ?? null,
+                $firstPayment,
+                Auth::user()->branch_store_id
+            );
             $data['payment_deadline'] = NormalizePaymentDeadline(
                 $data['payment_deadline'] ?? 0,
                 $firstPayment,
@@ -312,19 +319,29 @@ class TrainerSessionController extends Controller
                 Auth::user()->branch_store_id
             );
             unset($data['first_payment']);
+            unset($data['received_amount']);
 
             $newTrainerSession = TrainerSession::create($data);
 
-            TrainerSessionPayment::create([
+            $createdPayment = TrainerSessionPayment::create(WithPosReceivedAmount([
                 "trainer_session_id" =>  $newTrainerSession->id,
                 "user_id" =>  Auth::user()->id,
                 "value" =>  $firstPayment,
                 "note" =>  "First Payment",
                 "method_payment_id" => $data['method_payment_id']
-            ]);
+            ], $receivedAmount));
 
             DB::commit();
-            return redirect()->back()->with('success', 'Trainer Session Added Successfully');
+            $redirect = redirect()->back()->with('success', 'Trainer Session Added Successfully');
+
+            if (optional(Auth::user()->branchStore)->pos_inventory_enabled) {
+                $redirect->with('payment_receipt_url', route('payment-receipts.trainer', [
+                    'id' => $createdPayment->id,
+                    'autoprint' => 1,
+                ]));
+            }
+
+            return $redirect;
         } catch (\Throwable $th) {
             DB::rollback();
             throw $th;

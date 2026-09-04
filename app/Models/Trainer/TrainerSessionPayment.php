@@ -14,6 +14,7 @@ class TrainerSessionPayment extends Model
         'trainer_session_id',
         'note',
         'value',
+        'received_amount',
         'method_payment_id',
         'user_id',
     ];
@@ -26,5 +27,10 @@ class TrainerSessionPayment extends Model
     public function methodPayment()
     {
         return $this->belongsTo(MethodPayment::class);
+    }
+
+    public function trainerSession()
+    {
+        return $this->belongsTo(TrainerSession::class);
     }
 }

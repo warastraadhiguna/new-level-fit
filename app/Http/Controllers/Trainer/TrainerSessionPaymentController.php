@@ -17,11 +17,21 @@ class TrainerSessionPaymentController extends Controller
         $data = $request->validate([
             'trainer_session_id'  => 'required|exists:trainer_sessions,id',
             'value'  => 'required|string',
+            'received_amount' => 'nullable|string',
             'note'  => 'required|string',
             'method_payment_id'  => 'required|exists:method_payments,id',
         ]);
         $data["user_id"] = Auth::user()->id;
         $data["value"] = (int) str_replace(".", "", $data["value"]);
+        $receivedAmount = NormalizePosReceivedAmount(
+            $data['received_amount'] ?? null,
+            $data['value'],
+            Auth::user()->branch_store_id
+        );
+        unset($data['received_amount']);
+        if ($receivedAmount !== null) {
+            $data['received_amount'] = $receivedAmount;
+        }
         $data["note"] = trim($data["note"]);
 
         if ($data["note"] === '') {
@@ -33,7 +43,7 @@ class TrainerSessionPaymentController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($data) {
+            $payment = DB::transaction(function () use ($data) {
                 $trainerSession = TrainerSession::query()
                     ->lockForUpdate()
                     ->findOrFail($data["trainer_session_id"]);
@@ -51,17 +61,29 @@ class TrainerSessionPaymentController extends Controller
                     throw new RuntimeException('The value is more than price should paid!!');
                 }
 
-                TrainerSessionPayment::create($data);
+                $payment = TrainerSessionPayment::create($data);
 
                 if ($paidAmount + $data["value"] >= $price) {
                     $trainerSession->update(['payment_deadline' => 0]);
                 }
+
+                return $payment;
             });
         } catch (RuntimeException $exception) {
             return redirect()->back()->with('errorr', $exception->getMessage());
         }
 
-        return redirect("trainer-session/". $data["trainer_session_id"] ."/edit")->with('message', 'Payment  Added Successfully');
+        $redirect = redirect("trainer-session/". $data["trainer_session_id"] ."/edit")
+            ->with('message', 'Payment Added Successfully');
+
+        if (optional(Auth::user()->branchStore)->pos_inventory_enabled) {
+            $redirect->with('payment_receipt_url', route('payment-receipts.trainer', [
+                'id' => $payment->id,
+                'autoprint' => 1,
+            ]));
+        }
+
+        return $redirect;
     }
     public function destroy($id)
     {

@@ -15,6 +15,7 @@ class MemberRegistrationPayment extends Model
         'note',
         'method_payment_id',
         'value',
+        'received_amount',
         'user_id',
     ];
 
@@ -26,5 +27,10 @@ class MemberRegistrationPayment extends Model
     public function methodPayment()
     {
         return $this->belongsTo(MethodPayment::class);
+    }
+
+    public function memberRegistration()
+    {
+        return $this->belongsTo(MemberRegistration::class);
     }
 }
