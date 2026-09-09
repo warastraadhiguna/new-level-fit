@@ -391,8 +391,8 @@ class TrainerSessionController extends Controller
                     'i.name as method_payment_name',
                 )
                 ->addSelect(
-                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                    DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
+                    DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
+                    DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
                     DB::raw('IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) as remaining_sessions'),
                     DB::raw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status')
                 )
@@ -403,6 +403,9 @@ class TrainerSessionController extends Controller
                 ->join('users as g', 'a.user_id', '=', 'g.id')
                 ->leftJoin('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
                 ->join('method_payments as i', 'a.method_payment_id', '=', 'i.id')
+                ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                    $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+                })
                 // ->whereRaw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) = 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
                 ->whereIn('a.member_id', function ($query) use ($id) {
                     $query->select('member_id')->from('trainer_sessions')->where('id', $id);
@@ -661,21 +664,44 @@ class TrainerSessionController extends Controller
 
     public function freeze(Request $request, string $id)
     {
-         $item = TrainerSession::find($id);
-        if (!$item) {
-            return redirect()->route('trainer-session.index')->with('errorr', 'Trainer Session not found');
-        }
-
-        $leaveDay = new PtLeaveDay([
-            'trainer_session_id'        => $item->id,
-            'submission_date'           => Carbon::now()->tz('Asia/Jakarta'),
-            'price'                     => $request->input('price'),
-            'days'                      => $request->input('expired_date'),
+        $data = $request->validate([
+            'expired_date' => ['required', 'integer', 'min:1'],
+            'price' => ['required'],
         ]);
-        $leaveDay->price = str_replace(',', '', $leaveDay['price']);
-        $leaveDay->save();
 
-        return redirect()->route('trainer-session.index')->with('success', 'Freeze PT Successfully Added');
+        return DB::transaction(function () use ($data, $id) {
+            $item = TrainerSession::lockForUpdate()->find($id);
+            if (!$item) {
+                return redirect()->route('trainer-session.index')->with('errorr', 'Trainer Session not found');
+            }
+
+            $lastFreeze = PtLeaveDay::where('trainer_session_id', $item->id)
+                ->lockForUpdate()
+                ->latest('id')
+                ->first();
+            $submissionDate = Carbon::now()->tz('Asia/Jakarta');
+
+            if ($lastFreeze) {
+                $lastFreezeEnd = Carbon::parse($lastFreeze->submission_date)
+                    ->addDays((int) $lastFreeze->days);
+                if ($submissionDate->lte($lastFreezeEnd)) {
+                    $submissionDate = $lastFreezeEnd;
+                }
+            }
+
+            $price = (int) str_replace([',', '.'], '', (string) $data['price']);
+            $days = (int) $data['expired_date'];
+
+            PtLeaveDay::firstOrCreate([
+                'trainer_session_id' => $item->id,
+                'submission_date' => $submissionDate,
+                'days' => $days,
+            ], [
+                'price' => $price,
+            ]);
+
+            return redirect()->route('trainer-session.index')->with('success', 'Freeze PT Successfully Added');
+        });
     }
 
     public function destroy(TrainerSession $trainerSession)
@@ -708,8 +734,8 @@ class TrainerSessionController extends Controller
                 'i.name as method_payment_name',
             )
             ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as expired_date_status')
+                DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
+                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over" ELSE "Running" END as expired_date_status')
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
@@ -718,6 +744,9 @@ class TrainerSessionController extends Controller
             ->leftJoin('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
             ->join('method_payments as i', 'a.method_payment_id', '=', 'i.id')
             ->leftJoin(DB::raw('(SELECT trainer_session_id, COUNT(id) as check_in_count FROM check_in_trainer_sessions GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
+            ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+            })
             ->addSelect(DB::raw('IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) as remaining_sessions'))
             ->addSelect(DB::raw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'))
             ->whereRaw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')

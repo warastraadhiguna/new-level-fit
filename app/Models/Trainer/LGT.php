@@ -80,7 +80,7 @@ class LGT extends Model
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
 	
         DATE_ADD(train_sess.start_date, INTERVAL COALESCE(leave_days_view.total_days_continue, 0) + train_sess.days DAY) AS expired_date,
-        DATE_ADD(leave_days_view.submission_date_continue, INTERVAL leave_days_view.total_days_continue DAY) AS expired_leave_days,
+        leave_days_view.expired_leave_days AS expired_leave_days,
 
         CASE WHEN mbr_reg_member_id IS NULL THEN 'No Leave Days' ELSE 'Freeze' END AS leave_day_status,
 
@@ -91,8 +91,8 @@ class LGT extends Model
         -- ELSE 'Not Started'
         -- END as STATUS,
 
-        CASE WHEN NOW() > DATE_ADD(train_sess.start_date, INTERVAL train_sess.days DAY) THEN 'Over'
-        WHEN NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL train_sess.days DAY) THEN 'Running'
+        CASE WHEN NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY) THEN 'Over'
+        WHEN NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY) THEN 'Running'
         ELSE 'Not Started'
         END as expired_date_status
     
@@ -119,17 +119,19 @@ class LGT extends Model
         AS max_check_in_view ON check_in_train_sess.id = max_check_in_view.max_check_in_id) 
         AS last_check_in_view ON train_sess.id = last_check_in_view.trainer_session_id
         
-        LEFT JOIN (SELECT mbr_reg.member_id AS mbr_reg_member_id, ld_continue_view.submission_date_continue, ld_continue_view.total_days_continue from
-        (SELECT ld.id, ld.member_registration_id as member_registration_id_continue, ld.submission_date as submission_date_continue, 
-        ld_view.total_days as total_days_continue FROM  leave_days ld 
-        INNER JOIN 
-        (SELECT leave_day_continue_id, sum(days) AS total_days 
-        FROM (SELECT id,ifnull(leave_day_continue_id, id) AS leave_day_continue_id,days FROM leave_days) AS view_1
-        GROUP BY leave_day_continue_id) AS ld_view ON ld.id=ld_view.leave_day_continue_id 
-        WHERE NOW() BETWEEN ld.submission_date AND DATE_ADD(ld.submission_date, INTERVAL (ifnull(total_days,0)) DAY))
-        AS ld_continue_view
-        INNER JOIN member_registrations AS mbr_reg ON mbr_reg.id = ld_continue_view.member_registration_id_continue)
-        AS leave_days_view ON mbr.id = leave_days_view.mbr_reg_member_id"
+        LEFT JOIN (
+            SELECT
+                pld.trainer_session_id,
+                MAX(CASE
+                    WHEN NOW() BETWEEN pld.submission_date
+                        AND DATE_ADD(pld.submission_date, INTERVAL pld.days DAY)
+                    THEN pld.trainer_session_id
+                END) AS mbr_reg_member_id,
+                SUM(pld.days) AS total_days_continue,
+                MAX(DATE_ADD(pld.submission_date, INTERVAL pld.days DAY)) AS expired_leave_days
+            FROM pt_leave_days AS pld
+            GROUP BY pld.trainer_session_id
+        ) AS leave_days_view ON train_sess.id = leave_days_view.trainer_session_id"
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . "
             order by cits_view.updated_at_check_in desc, train_sess.updated_at";
         $activeTrainerSessions = DB::select($sql);

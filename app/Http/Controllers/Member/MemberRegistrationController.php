@@ -1320,10 +1320,12 @@ class MemberRegistrationController extends Controller
                 'leave_day_continue_id' => $continueId,
             ]);
 
-            $totalLeaveDays = (int) LeaveDay::where('member_registration_id', $item->id)->sum('days');
-
             $trainerSessions = TrainerSession::where('member_id', $item->member_id)
-                ->whereRaw('NOW() BETWEEN start_date AND DATE_ADD(start_date, INTERVAL (days + ?) DAY)', [$totalLeaveDays])
+                ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                    $join->on('trainer_sessions.id', '=', 'pt_freeze_summary.trainer_session_id');
+                })
+                ->whereRaw('NOW() BETWEEN trainer_sessions.start_date AND DATE_ADD(trainer_sessions.start_date, INTERVAL (trainer_sessions.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
+                ->select('trainer_sessions.*')
                 ->lockForUpdate()
                 ->get();
 

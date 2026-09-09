@@ -39,19 +39,25 @@ class TrainerSessionExpiredExport implements FromView
         )
             ->from('members as a')
             ->join(DB::raw('(select a.id as id_max, b.id, trainer.full_name as trainer_full_name, b.start_date,
-                            b.days as ts_days, b.trainer_package_id, tp.package_name, max(DATE_ADD(b.start_date, INTERVAL b.days DAY))
+                            b.days as ts_days, b.trainer_package_id, tp.package_name,
+                            max(DATE_ADD(b.start_date, INTERVAL (b.days + COALESCE(pt_freeze.total_days, 0)) DAY))
                 as max_end_date, sum(b.package_price) as total_package_price,
-                DATE_ADD(b.start_date, INTERVAL b.days DAY) as expired_date_date,
+                DATE_ADD(b.start_date, INTERVAL (b.days + COALESCE(pt_freeze.total_days, 0)) DAY) as expired_date_date,
                 sum(b.admin_price) as total_admin_price from members a
                 inner join trainer_sessions b on a.id=b.member_id
                 LEFT JOIN personal_trainers trainer ON b.trainer_id = trainer.id
                 LEFT JOIN trainer_packages tp ON b.trainer_package_id = tp.id
-                where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now() group by a.id, b.id, b.days, b.start_date,
-                    trainer.full_name, b.trainer_package_id, tp.package_name) as b'), function ($join) {
+                LEFT JOIN (SELECT trainer_session_id, SUM(days) AS total_days FROM pt_leave_days GROUP BY trainer_session_id)
+                    AS pt_freeze ON pt_freeze.trainer_session_id = b.id
+                where DATE_ADD(b.start_date, INTERVAL (b.days + COALESCE(pt_freeze.total_days, 0)) DAY) < now()
+                group by a.id, b.id, b.days, b.start_date, trainer.full_name, b.trainer_package_id,
+                    tp.package_name, pt_freeze.total_days) as b'), function ($join) {
                 $join->on('a.id', '=', 'b.id_max');
             })
-            ->leftJoin(DB::raw('(select distinct member_id as registered_member_id from trainer_sessions
-                                    where DATE_ADD(start_date, INTERVAL days DAY) >= now()) as c'), function ($join) {
+            ->leftJoin(DB::raw('(select distinct ts.member_id as registered_member_id from trainer_sessions ts
+                                    LEFT JOIN (SELECT trainer_session_id, SUM(days) AS total_days FROM pt_leave_days GROUP BY trainer_session_id)
+                                        AS pt_freeze ON pt_freeze.trainer_session_id = ts.id
+                                    where DATE_ADD(ts.start_date, INTERVAL (ts.days + COALESCE(pt_freeze.total_days, 0)) DAY) >= now()) as c'), function ($join) {
                 $join->on('a.id', '=', 'c.registered_member_id');
             })
             // ->leftJoin('trainer_packages as tp', function ($join) {

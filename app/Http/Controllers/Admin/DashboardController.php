@@ -7,6 +7,7 @@ use App\Models\BranchStore;
 use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use App\Models\Staff\PersonalTrainer;
+use App\Models\Trainer\PtLeaveDay;
 use App\Models\Trainer\TrainerSession;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -108,11 +109,14 @@ class DashboardController extends Controller
                     'a.start_date',
                     'a.admin_price',
                     'a.id',
-                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                    DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
                     DB::raw('SUM(a.package_price) as total_price'),
                     DB::raw('SUM(a.admin_price) as admin_price')
                 )
                 ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
+                ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                    $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+                })
                 ->where('a.branch_store_id', $branchId)
                 ->whereNull('b.status')
                 ->whereBetween('a.created_at', [$startDate, $endDate])
@@ -133,11 +137,14 @@ class DashboardController extends Controller
                     'a.start_date',
                     'a.admin_price',
                     'a.id',
-                    DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                    DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
                     DB::raw('SUM(a.package_price) as total_price'),
                     DB::raw('SUM(a.admin_price) as admin_price')
                 )
                 ->join('trainer_packages as b', 'a.trainer_package_id', '=', 'b.id')
+                ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                    $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+                })
                 ->where('b.status', 'LGT')
                 ->where('a.branch_store_id', $branchId)
                 ->whereBetween('a.created_at', [$startDate, $endDate])
@@ -226,7 +233,7 @@ class DashboardController extends Controller
 
         $trainerSessionActive = DB::table('trainer_sessions as a')
             ->addSelect(
-                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
+                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
                 DB::raw('IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) as remaining_sessions'),
                 DB::raw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'),
@@ -239,15 +246,18 @@ class DashboardController extends Controller
                                     GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
             ->leftJoin(DB::raw("(select a.* from check_in_trainer_sessions a inner join (SELECT max(id) as id FROM check_in_trainer_sessions
                                     group by trainer_session_id) as b on a.id=b.id) as cits"), 'cits.trainer_session_id', '=', 'a.id')
+            ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+            })
             ->where('a.branch_store_id', $branchId)                                      
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
-            ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
             ->count();
 
         $trainerSessionExpired = DB::table('trainer_sessions as a')
             ->addSelect(
-                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
+                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over" ELSE "Running" END as expired_date_status'),
                 DB::raw('IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) as remaining_sessions'),
                 DB::raw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'),
@@ -257,10 +267,13 @@ class DashboardController extends Controller
                                     GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
             ->leftJoin(DB::raw("(select a.* from check_in_trainer_sessions a inner join (SELECT max(id) as id FROM check_in_trainer_sessions
                                     group by trainer_session_id) as b on a.id=b.id) as cits"), 'cits.trainer_session_id', '=', 'a.id')
+            ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+            })
             ->where('a.branch_store_id', $branchId)                                      
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
-            ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
             ->whereNull('c.status')
             ->count();
 
@@ -322,22 +335,25 @@ class DashboardController extends Controller
                 'c.status'
             )
             ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
                 DB::raw('CASE 
-                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" 
-                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Running" 
+                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over"
+                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Running"
                     ELSE "Not Started" 
                 END as status'),
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+            ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+            })
             ->join(
                 'users as f',
                 'a.user_id',
                 '=',
                 'f.id'
             )
-            ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
             ->where('a.branch_store_id', $branchId)                 
             ->where('c.status', 'LGT')
             ->count();
@@ -355,15 +371,18 @@ class DashboardController extends Controller
                 'c.status'
             )
             ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
+                DB::raw('DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) as expired_date'),
                 DB::raw('CASE 
-                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" 
-                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Running" 
+                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Over"
+                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY) THEN "Running"
                     ELSE "Not Started" 
                 END as status'),
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+            ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
+                $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
+            })
             ->join(
                 'users as f',
                 'a.user_id',
@@ -371,7 +390,7 @@ class DashboardController extends Controller
                 'f.id'
             )
             // ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
-            ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
             ->where('a.branch_store_id', $branchId)                 
             ->where('c.status', 'LGT')
             ->count();
