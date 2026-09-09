@@ -52,6 +52,9 @@
                         <li><a href="{{ route('member-pending') }}">Member Pending</a></li>
                         <li><a href="{{ route('member-expired.index') }}">Member Expired</a>
                         <li><a href="{{ route('member-unpaid') }}">Unpaid Member</a>
+                        @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->member_approval_enabled)
+                            <li><a href="{{ route('member-approval.index') }}">Member Approval</a></li>
+                        @endif
                         <li><a href="{{ route('history-member-registration') }}">History</a>
                         </li>
                     </ul>

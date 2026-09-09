@@ -106,6 +106,7 @@
                                 <th>Payment Strict</th>
                                 <th>Cicilan Membership</th>
                                 <th>Diskon</th>
+                                <th>Membership Approval</th>
                                 <th>POS & Inventory</th>
                                 <th>Booking Class</th>
                                 <th>Akses Keuangan Dashboard</th>
@@ -164,6 +165,11 @@
                                                 {{ $branchStore->trainer_discount_enabled ? 'Aktif' : 'Nonaktif' }}
                                             </span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ $branchStore->member_approval_enabled ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ $branchStore->member_approval_enabled ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
                                     </td>
                                     <td>
                                         <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">

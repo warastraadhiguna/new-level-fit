@@ -104,6 +104,7 @@
                                     </td>
                                     <td>
                                         <span class="badge badge-danger badge-lg">Expired</span>
+                                        @include('admin.member-registration.partials.approval-status', ['item' => $item])
                                     </td>
                                     <td>
                                         <div>

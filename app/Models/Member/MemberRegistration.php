@@ -34,6 +34,7 @@ class MemberRegistration extends Model
         'old_days',
         'method_payment_id',
         'description',
+        'is_approved',
         'fc_id',
         'user_id',
     ];
@@ -43,6 +44,7 @@ class MemberRegistration extends Model
         'is_installment_plan' => 'boolean',
         'installment_cancelled_at' => 'datetime',
         'discount_amount' => 'integer',
+        'is_approved' => 'boolean',
     ];
 
     protected $hidden = [];
@@ -94,7 +96,7 @@ class MemberRegistration extends Model
         //ini karena nando sudah ngaco. jadi aku juga mau pakai untuk yang belum bayar. tapi masalahnya ternyata ini untuk
         //yang aktif, padahal yang belum bayar juga mungkin pending. sehingga aku akali di tanggalnya
 
-        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.created_at as registration_created_at,
+        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.created_at as registration_created_at, mbr_reg.is_approved,
             mbr_reg.payment_deadline, mbr_reg.is_installment_plan, mbr_reg.installment_status,
             CASE WHEN mbr_reg.payment_deadline > 0
                 THEN DATE_ADD(mbr_reg.created_at, INTERVAL mbr_reg.payment_deadline DAY)
@@ -191,7 +193,7 @@ class MemberRegistration extends Model
         ];
         $sortColumn = $sortableColumns[$sort] ?? "updated_at_check_in";
 
-        $baseSql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days, mbr_reg.is_installment_plan, mbr_reg.installment_status,
+        $baseSql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days, mbr_reg.is_installment_plan, mbr_reg.installment_status, mbr_reg.is_approved,
             mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price, mbr_reg.discount_amount as mr_discount_amount, bs.id as branch_store_id, bs.name as branch_store_name,
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,
@@ -416,6 +418,7 @@ class MemberRegistration extends Model
                 'b.mr_admin_price',
                 'b.mr_discount_amount',
                 'b.payment_summary',
+                'b.is_approved',
                 'max_end_date',
                 'total_package_price',
                 'total_admin_price',
@@ -433,6 +436,7 @@ class MemberRegistration extends Model
                     b.package_price as mr_package_price,
                     b.admin_price as mr_admin_price,
                     b.discount_amount as mr_discount_amount,
+                    b.is_approved,
                     ifnull((select sum(value) from member_registration_payments mrp where mrp.member_registration_id = b.id), 0) as payment_summary,
                     max(DATE_ADD(b.start_date, INTERVAL b.days DAY)) as max_end_date,
                     sum(b.package_price) as total_package_price,
@@ -444,7 +448,7 @@ class MemberRegistration extends Model
                 inner join branch_stores bs on bs.id = a.branch_store_id
                 where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now()
                 group by a.id, b.id, b.days, b.start_date, mp.package_name, mp.is_all_club,
-                    bs.name, b.package_price, b.admin_price, b.discount_amount
+                    bs.name, b.package_price, b.admin_price, b.discount_amount, b.is_approved
             ) as b'), function ($join) {
                 $join->on('a.id', '=', 'b.id_max');
             })
@@ -463,7 +467,7 @@ class MemberRegistration extends Model
 
     public static function getPendingList($memberId = "")
     {
-        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
+        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days, mbr_reg.is_approved,
             mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price,
             mbr_reg.discount_amount as mr_discount_amount, mbr_reg.is_installment_plan, mbr_reg.installment_status, mbr_pkg.description,
             bs.id as branch_store_id, bs.name as branch_store_name,

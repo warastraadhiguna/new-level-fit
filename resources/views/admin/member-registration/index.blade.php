@@ -295,6 +295,8 @@
                                                 <span class="badge badge-primary badge-lg">Running</span>
                                             @endif
                                         @endif
+                                        @include('admin.member-registration.partials.approval-status', ['item' => $item])
+                                    </td>
                                     <td>
                                         <h6>{{ $item->staff_name }}</h6>
                                     </td>

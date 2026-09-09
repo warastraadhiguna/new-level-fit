@@ -48,6 +48,7 @@
                                     </td>
                                     <td>
                                         <span class="badge badge-warning badge-lg">PENDING</span>
+                                        @include('admin.member-registration.partials.approval-status', ['item' => $item])
                                     </td>
                                     <td>
                                         @if (Auth::user()->isAdmin())

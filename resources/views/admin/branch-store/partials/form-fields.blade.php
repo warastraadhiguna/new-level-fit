@@ -120,6 +120,17 @@
     </div>
     <div class="col-xl-4">
         <div class="mb-3">
+            <label class="form-label">Membership Approval</label>
+            @php $memberApprovalEnabled = old('member_approval_enabled', isset($branchStore) ? (int) $branchStore->member_approval_enabled : 0); @endphp
+            <select name="member_approval_enabled" class="form-control" required>
+                <option value="0" {{ (string) $memberApprovalEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $memberApprovalEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Jika aktif, ADMIN dan OWNER dapat menyetujui membership dengan memperbarui description.</small>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="mb-3">
             <label class="form-label">POS & Inventory</label>
             @php $posInventoryEnabled = old('pos_inventory_enabled', isset($branchStore) ? (int) $branchStore->pos_inventory_enabled : 0); @endphp
             <select name="pos_inventory_enabled" class="form-control" required>

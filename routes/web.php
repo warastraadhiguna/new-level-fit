@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Member\MemberCheckInController;
+use App\Http\Controllers\Member\MemberApprovalController;
 use App\Http\Controllers\Member\MemberController;
 use App\Http\Controllers\Member\MemberPackageController;
 use App\Http\Controllers\Member\MemberRegistrationController;
@@ -213,6 +214,12 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('mmember-expired-excel', [MemberRegistrationOverController::class, 'excel'])->name('member-expired-excel');
     Route::resource('member-expired', '\App\Http\Controllers\Member\MemberRegistrationOverController');
     Route::get('member-unpaid', [MemberRegistrationController::class, 'unpaid'])->name('member-unpaid');
+    Route::get('member-approval', [MemberApprovalController::class, 'index'])
+        ->middleware('admin.only')
+        ->name('member-approval.index');
+    Route::put('member-approval/{memberRegistration}', [MemberApprovalController::class, 'update'])
+        ->middleware('admin.only')
+        ->name('member-approval.update');
 
     Route::resource('members', '\App\Http\Controllers\Member\MemberController');
     Route::post('members/{id}/small-photo', [MemberController::class, 'updateSmallPhoto'])->name('members.small-photo.update');
