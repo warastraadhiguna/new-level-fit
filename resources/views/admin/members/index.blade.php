@@ -151,6 +151,14 @@
                                                     <a href="{{ route('members.show', $item->id) }}"
                                                         class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
                                                 </li>
+                                                <li>
+                                                    <a href="{{ route('members.membership-history', $item->id) }}"
+                                                        class="btn light btn-secondary btn-xs btn-block mb-1">Membership History</a>
+                                                </li>
+                                                <li>
+                                                    <a href="{{ route('members.pt-history', $item->id) }}"
+                                                        class="btn light btn-dark btn-xs btn-block mb-1">PT History</a>
+                                                </li>
                                                 @if (Auth::user()->isAdmin())
                                                     <li>
                                                         <a href="{{ route('members.create-membership', $item->id) }}"

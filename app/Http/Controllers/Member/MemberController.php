@@ -429,6 +429,159 @@ class MemberController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
+    public function membershipHistory(Member $member)
+    {
+        $paymentSummary = DB::table('member_registration_payments')
+            ->selectRaw('member_registration_id, SUM(value) as paid_amount')
+            ->groupBy('member_registration_id');
+        $freezeSummary = DB::table('leave_days')
+            ->selectRaw('member_registration_id, SUM(days) as freeze_days')
+            ->groupBy('member_registration_id');
+        $checkInSummary = DB::table('check_in_members')
+            ->selectRaw('member_registration_id, COUNT(*) as workout_count')
+            ->groupBy('member_registration_id');
+
+        $histories = DB::table('member_registrations as mr')
+            ->select(
+                'mr.id',
+                'mr.start_date',
+                'mr.days',
+                'mr.package_price',
+                'mr.admin_price',
+                'mr.discount_amount',
+                'mr.description',
+                'mr.created_at',
+                'mp.package_name',
+                'mp.is_all_club',
+                'bs.name as branch_store_name',
+                'methods.name as payment_method_name',
+                'users.full_name as staff_name',
+                DB::raw('COALESCE(payments.paid_amount, 0) as paid_amount'),
+                DB::raw('COALESCE(freezes.freeze_days, 0) as freeze_days'),
+                DB::raw('COALESCE(check_ins.workout_count, 0) as workout_count'),
+                DB::raw('DATE_ADD(mr.start_date, INTERVAL (mr.days + COALESCE(freezes.freeze_days, 0)) DAY) as expired_date'),
+                DB::raw("CASE
+                    WHEN NOW() < mr.start_date THEN 'Not Started'
+                    WHEN NOW() > DATE_ADD(mr.start_date, INTERVAL (mr.days + COALESCE(freezes.freeze_days, 0)) DAY) THEN 'Expired'
+                    ELSE 'Active'
+                END as membership_status")
+            )
+            ->leftJoin('member_packages as mp', 'mr.member_package_id', '=', 'mp.id')
+            ->leftJoin('branch_stores as bs', 'mp.branch_store_id', '=', 'bs.id')
+            ->leftJoin('method_payments as methods', 'mr.method_payment_id', '=', 'methods.id')
+            ->leftJoin('users', 'mr.user_id', '=', 'users.id')
+            ->leftJoinSub($paymentSummary, 'payments', function ($join) {
+                $join->on('mr.id', '=', 'payments.member_registration_id');
+            })
+            ->leftJoinSub($freezeSummary, 'freezes', function ($join) {
+                $join->on('mr.id', '=', 'freezes.member_registration_id');
+            })
+            ->leftJoinSub($checkInSummary, 'check_ins', function ($join) {
+                $join->on('mr.id', '=', 'check_ins.member_registration_id');
+            })
+            ->where('mr.member_id', $member->id)
+            ->where('mr.days', '>', 1)
+            ->orderByDesc('mr.start_date')
+            ->orderByDesc('mr.id')
+            ->paginate(10);
+
+        return view('admin.layouts.wrapper', [
+            'title' => 'Membership History',
+            'member' => $member->load('branchStore'),
+            'histories' => $histories,
+            'totalWorkouts' => (int) DB::table('check_in_members')
+                ->join('member_registrations', 'check_in_members.member_registration_id', '=', 'member_registrations.id')
+                ->where('member_registrations.member_id', $member->id)
+                ->where('member_registrations.days', '>', 1)
+                ->count(),
+            'content' => 'admin.members.membership-history',
+        ]);
+    }
+
+    public function ptHistory(Member $member)
+    {
+        $paymentSummary = DB::table('trainer_session_payments')
+            ->selectRaw('trainer_session_id, SUM(value) as paid_amount')
+            ->groupBy('trainer_session_id');
+        $freezeSummary = DB::table('pt_leave_days')
+            ->selectRaw('trainer_session_id, SUM(days) as freeze_days')
+            ->groupBy('trainer_session_id');
+        $checkInSummary = DB::table('check_in_trainer_sessions')
+            ->selectRaw('trainer_session_id, COUNT(*) as check_in_count, SUM(CASE WHEN check_out_time IS NOT NULL THEN 1 ELSE 0 END) as used_sessions')
+            ->groupBy('trainer_session_id');
+
+        $histories = DB::table('trainer_sessions as ts')
+            ->select(
+                'ts.id',
+                'ts.start_date',
+                'ts.days',
+                'ts.number_of_session',
+                'ts.package_price',
+                'ts.admin_price',
+                'ts.discount_amount',
+                'ts.description',
+                'ts.is_pt_free',
+                'ts.created_at',
+                'tp.package_name',
+                'trainers.full_name as trainer_name',
+                'bs.name as branch_store_name',
+                'methods.name as payment_method_name',
+                'users.full_name as staff_name',
+                DB::raw('COALESCE(payments.paid_amount, 0) as paid_amount'),
+                DB::raw('COALESCE(freezes.freeze_days, 0) as freeze_days'),
+                DB::raw('COALESCE(check_ins.used_sessions, 0) as used_sessions'),
+                DB::raw('COALESCE(check_ins.check_in_count, 0) as check_in_count'),
+                DB::raw('GREATEST(ts.number_of_session - COALESCE(check_ins.used_sessions, 0), 0) as unused_sessions'),
+                DB::raw('DATE_ADD(ts.start_date, INTERVAL (ts.days + COALESCE(freezes.freeze_days, 0)) DAY) as expired_date'),
+                DB::raw("CASE
+                    WHEN ts.start_date IS NULL OR ts.trainer_id IS NULL THEN 'Waiting'
+                    WHEN COALESCE(check_ins.used_sessions, 0) >= ts.number_of_session THEN 'Completed'
+                    WHEN NOW() < ts.start_date THEN 'Not Started'
+                    WHEN NOW() > DATE_ADD(ts.start_date, INTERVAL (ts.days + COALESCE(freezes.freeze_days, 0)) DAY) THEN 'Expired'
+                    ELSE 'Active'
+                END as pt_status")
+            )
+            ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->leftJoin('personal_trainers as trainers', 'ts.trainer_id', '=', 'trainers.id')
+            ->leftJoin('branch_stores as bs', 'ts.branch_store_id', '=', 'bs.id')
+            ->leftJoin('method_payments as methods', 'ts.method_payment_id', '=', 'methods.id')
+            ->leftJoin('users', 'ts.user_id', '=', 'users.id')
+            ->leftJoinSub($paymentSummary, 'payments', function ($join) {
+                $join->on('ts.id', '=', 'payments.trainer_session_id');
+            })
+            ->leftJoinSub($freezeSummary, 'freezes', function ($join) {
+                $join->on('ts.id', '=', 'freezes.trainer_session_id');
+            })
+            ->leftJoinSub($checkInSummary, 'check_ins', function ($join) {
+                $join->on('ts.id', '=', 'check_ins.trainer_session_id');
+            })
+            ->where('ts.member_id', $member->id)
+            ->whereNull('tp.status')
+            ->orderByDesc('ts.start_date')
+            ->orderByDesc('ts.id')
+            ->paginate(10);
+
+        $totals = DB::table('trainer_sessions as ts')
+            ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->leftJoinSub($checkInSummary, 'check_ins', function ($join) {
+                $join->on('ts.id', '=', 'check_ins.trainer_session_id');
+            })
+            ->where('ts.member_id', $member->id)
+            ->whereNull('tp.status')
+            ->selectRaw('COALESCE(SUM(COALESCE(check_ins.used_sessions, 0)), 0) as used_sessions')
+            ->selectRaw('COALESCE(SUM(GREATEST(ts.number_of_session - COALESCE(check_ins.used_sessions, 0), 0)), 0) as unused_sessions')
+            ->first();
+
+        return view('admin.layouts.wrapper', [
+            'title' => 'PT History',
+            'member' => $member->load('branchStore'),
+            'histories' => $histories,
+            'totalUsedSessions' => (int) $totals->used_sessions,
+            'totalUnusedSessions' => (int) $totals->unused_sessions,
+            'content' => 'admin.members.pt-history',
+        ]);
+    }
+
     public function destroy(Member $member)
     {
         try {

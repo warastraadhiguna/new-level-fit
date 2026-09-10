@@ -231,6 +231,10 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
         ->name('member-approval.update');
 
     Route::resource('members', '\App\Http\Controllers\Member\MemberController');
+    Route::get('members/{member}/membership-history', [MemberController::class, 'membershipHistory'])
+        ->name('members.membership-history');
+    Route::get('members/{member}/pt-history', [MemberController::class, 'ptHistory'])
+        ->name('members.pt-history');
     Route::post('members/{id}/small-photo', [MemberController::class, 'updateSmallPhoto'])->name('members.small-photo.update');
     Route::get('members/{id}/create-membership', [MemberRegistrationController::class, 'createMembership'])
         ->middleware('admin.only')
