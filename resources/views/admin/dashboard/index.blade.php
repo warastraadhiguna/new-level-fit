@@ -74,7 +74,7 @@
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th>Member &amp; Aksi</th>
+                                    <th>Member &amp; Action</th>
                                     <th>Package</th>
                                     <th>Tagihan</th>
                                     <th>Jatuh Tempo</th>

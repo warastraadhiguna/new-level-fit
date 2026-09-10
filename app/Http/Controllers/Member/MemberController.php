@@ -40,9 +40,6 @@ class MemberController extends Controller
             'full_name' => 'a.full_name',
             'member_code' => 'a.member_code',
             'branch' => 'branch_stores.name',
-            'phone_number' => 'a.phone_number',
-            'born' => 'a.born',
-            'created_at' => 'a.created_at',
         ];
         $sortColumn = $sortableColumns[$sort] ?? 'a.created_at';
 
@@ -211,6 +208,7 @@ class MemberController extends Controller
     public function secondUpdate(Request $request, $id)
     {
         $item = Member::find($id);
+        $oldSmallPhoto = null;
         $data = $request->validate([
             'full_name'             => 'nullable',
             'nickname'              => 'nullable',
@@ -231,6 +229,7 @@ class MemberController extends Controller
         $data['born'] = Carbon::parse($data['born'])->format('Y-m-d');
 
         if ($request->hasFile('photos')) {
+            $oldSmallPhoto = $item->small_photos;
 
             if ($item->photos != null) {
                 $realLocation = "storage/" . $item->photos;
@@ -243,12 +242,17 @@ class MemberController extends Controller
             $file_name = time() . '-' . $photos->getClientOriginalName();
 
             $data['photos'] = $request->file('photos')->store('assets/member', 'public');
+            $data['small_photos'] = null;
         } else {
             $data['photos'] = $item->photos;
         }
 
 
         $item->update($data);
+
+        if ($oldSmallPhoto) {
+            Storage::disk('public')->delete($oldSmallPhoto);
+        }
 
         return redirect()->route('members.index')->with('success', 'Member Updated Successfully');
     }
@@ -260,6 +264,7 @@ class MemberController extends Controller
         DB::beginTransaction();
         try {
             $member = Member::findOrFail($id);
+            $oldSmallPhoto = null;
 
             if ($fc->role == 'FC') {
                 $data = $request->validate([
@@ -350,6 +355,7 @@ class MemberController extends Controller
             }
 
             if ($request->hasFile('photos')) {
+                $oldSmallPhoto = $member->small_photos;
 
                 if ($request->photos != null) {
                     $realLocation = "storage/" . $request->photos;
@@ -362,6 +368,7 @@ class MemberController extends Controller
                 $file_name = time() . '-' . $photos->getClientOriginalName();
 
                 $data['photos'] = $request->file('photos')->store('assets/member', 'public');
+                $data['small_photos'] = null;
             } else {
                 $data['photos'] = $request->photos;
             }
@@ -384,7 +391,7 @@ class MemberController extends Controller
             // Perbarui data anggota
             $member->update(array_intersect_key($data, array_flip([
                 'full_name', 'phone_number', 'status', 'nickname',
-                'born', 'member_code', 'card_number', 'email', 'ig', 'emergency_contact', 'ec_name', 'gender', 'address', 'photos'
+                'born', 'member_code', 'card_number', 'email', 'ig', 'emergency_contact', 'ec_name', 'gender', 'address', 'photos', 'small_photos'
             ])));
 
             // Buat atau perbarui data pendaftaran anggota
@@ -399,6 +406,10 @@ class MemberController extends Controller
             }
 
             DB::commit();
+
+            if ($oldSmallPhoto) {
+                Storage::disk('public')->delete($oldSmallPhoto);
+            }
 
             return redirect()->route('members.index')->with('success', 'Member Missed Guest Updated Successfully');
         } catch (Exception $e) {

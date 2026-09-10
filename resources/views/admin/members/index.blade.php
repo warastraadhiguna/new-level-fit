@@ -73,21 +73,7 @@
                                         Member <i class="fa {{ $sortIcon('full_name') }}"></i>
                                     </a>
                                 </th>
-                                <th>
-                                    <a href="{{ $sortLink('phone_number') }}" class="text-primary">
-                                        Phone Number <i class="fa {{ $sortIcon('phone_number') }}"></i>
-                                    </a>
-                                </th>
-                                <th>
-                                    <a href="{{ $sortLink('born') }}" class="text-primary">
-                                        Date of Birth <i class="fa {{ $sortIcon('born') }}"></i>
-                                    </a>
-                                </th>
-                                <th>
-                                    <a href="{{ $sortLink('created_at') }}" class="text-primary">
-                                        Created At <i class="fa {{ $sortIcon('created_at') }}"></i>
-                                    </a>
-                                </th>
+                                <th>Info</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -143,70 +129,82 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->phone_number ?? 'No Data' }}</h6>
+                                        <small class="text-muted d-block">Phone Number</small>
+                                        <h6 class="mb-2">{{ $item->phone_number ?? 'No Data' }}</h6>
+                                        <small class="text-muted d-block">Date of Birth</small>
+                                        <h6 class="mb-2">{{ DateFormat($item->born, 'DD MMMM YYYY') ?? 'No Data' }}</h6>
+                                        <small class="text-muted d-block">Created At</small>
+                                        <h6 class="mb-0">{{ DateFormat($item->created_at, 'DD MMMM YYYY') ?? 'No Data' }}</h6>
                                     </td>
                                     <td>
-                                        <h6>{{ DateFormat($item->born, 'DD MMMM YYYY') ?? 'No Data' }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ DateFormat($item->created_at, 'DD MMMM YYYY') ?? 'No Data' }}</h6>
-                                    </td>
-                                    <td>
-                                        <div>
-                                            <a href="{{ route('edit-member-sell', $item->id) }}"
-                                                class="btn light btn-warning btn-xs btn-block mb-1">Edit
-                                                Member</a>
-                                            <a href="{{ route('members.show', $item->id) }}"
-                                                class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
-                                            @if (Auth::user()->isAdmin())
-                                                <a href="{{ route('members.create-membership', $item->id) }}"
-                                                    class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
-                                                @if ($ptFreeEnabled)
-                                                    <button type="button"
-                                                        class="btn light btn-success btn-xs btn-block mb-1 js-give-pt-free"
-                                                        data-bs-toggle="modal" data-bs-target="#ptFreeModal"
-                                                        data-member-id="{{ $item->id }}"
-                                                        data-member-name="{{ $item->full_name }}"
-                                                        data-store-url="{{ route('pt-free.store', $item->id) }}">
-                                                        Give PT Free
-                                                    </button>
+                                        <div class="btn-group dropstart" role="group">
+                                            <button type="button" class="btn btn-primary btn-xs dropdown-toggle"
+                                                style="width: 100px" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Action
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a href="{{ route('edit-member-sell', $item->id) }}"
+                                                        class="btn light btn-warning btn-xs btn-block mb-1">Edit Member</a>
+                                                </li>
+                                                <li>
+                                                    <a href="{{ route('members.show', $item->id) }}"
+                                                        class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
+                                                </li>
+                                                @if (Auth::user()->isAdmin())
+                                                    <li>
+                                                        <a href="{{ route('members.create-membership', $item->id) }}"
+                                                            class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
+                                                    </li>
+                                                    @if ($ptFreeEnabled)
+                                                        <li>
+                                                            <button type="button"
+                                                                class="btn light btn-success btn-xs btn-block mb-1 js-give-pt-free"
+                                                                data-bs-toggle="modal" data-bs-target="#ptFreeModal"
+                                                                data-member-id="{{ $item->id }}"
+                                                                data-member-name="{{ $item->full_name }}"
+                                                                data-store-url="{{ route('pt-free.store', $item->id) }}">
+                                                                Give PT Free
+                                                            </button>
+                                                        </li>
+                                                    @endif
                                                 @endif
-                                            @endif
-                                            {{-- @if ($item->lo_status == 'Running' && $item->lo_is_used == 0) --}}
-                                            @if (   $item->lo_is_used == 0)
-                                                <a href="{{ route('useLayoutOrientation', $item->id) }}"
-                                                    class="btn btn-dark btn-xs mb-1 btn-block">LO</a>
-                                            @else
-                                                @if (!$item->lo_end)
-                                                    <form action="{{ route("stopLayoutOrientation", $item->id) }}" method="POST">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-dark btn-xs mb-1 btn-block">Stop LO(Running)</button>
-                                                    </form>
-                                                @else
-                                                    <button type="button" class="btn btn-dark btn-xs mb-1 btn-block"
-                                                        data-bs-toggle="popover" data-bs-title="Check In tanpa kartu"
-                                                        data-bs-content="Member ini sudah menggunakan Layout Orientation">
-                                                        <span class="text-danger">X</span> LO is used<span
-                                                            class="text-danger">X</span>
-                                                    </button>
+                                                <li>
+                                                    @if ($item->lo_is_used == 0)
+                                                        <a href="{{ route('useLayoutOrientation', $item->id) }}"
+                                                            class="btn btn-dark btn-xs mb-1 btn-block">LO</a>
+                                                    @elseif (!$item->lo_end)
+                                                        <form action="{{ route('stopLayoutOrientation', $item->id) }}" method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-dark btn-xs mb-1 btn-block">Stop LO(Running)</button>
+                                                        </form>
+                                                    @else
+                                                        <button type="button" class="btn btn-dark btn-xs mb-1 btn-block"
+                                                            data-bs-toggle="popover" data-bs-title="Check In tanpa kartu"
+                                                            data-bs-content="Member ini sudah menggunakan Layout Orientation">
+                                                            <span class="text-danger">X</span> LO is used<span class="text-danger">X</span>
+                                                        </button>
+                                                    @endif
+                                                </li>
+                                                @if (Auth::user()->isAdmin())
+                                                    <li>
+                                                        <form action="{{ route('member.destroy', $item->id) }}"
+                                                            onsubmit="return confirm('Delete Data ?')" method="POST">
+                                                            @method('delete')
+                                                            @csrf
+                                                            <button type="submit"
+                                                                class="btn light btn-danger btn-xs btn-block mb-1">Delete</button>
+                                                        </form>
+                                                    </li>
                                                 @endif
-                                            @endif
-                                            @if (Auth::user()->isAdmin())
-                                                <form action="{{ route('member.destroy', $item->id) }}"
-                                                    onclick="return confirm('Delete Data ?')" method="POST">
-                                                    @method('delete')
-                                                    @csrf
-                                                    <button type="submit"
-                                                        class="btn light btn-danger btn-xs btn-block mb-1">Delete</button>
-                                                </form>
-                                            @endif
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>
                             @endforeach
                             @if ($members->count() == 0)
                                 <tr>
-                                    <td colspan="8" class="text-center">No data found</td>
+                                    <td colspan="6" class="text-center">No data found</td>
                                 </tr>
                             @endif
                         </tbody>

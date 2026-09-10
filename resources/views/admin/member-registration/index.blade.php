@@ -357,7 +357,7 @@
                                         <div class="btn-group dropstart" role="group">
                                             <button type="button" class="btn btn-primary btn-xs dropdown-toggle"
                                                 style="width: 100px" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Aksi
+                                                Action
                                             </button>
                                             <ul class="dropdown-menu">
                                                 <li>
