@@ -70,9 +70,6 @@
                     <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
                     @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
                         <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>
-                        @if (optional(Auth::user()->branchStore)->pt_free_enabled)
-                            <li><a href="{{ route('pt-free.check-in.index') }}">PT Free Check In/Out</a></li>
-                        @endif
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
                         <li><a href="{{ route('trainer-session-unpaid') }}">PT Unpaid</a></li>
@@ -84,6 +81,28 @@
                     @endif
                 </ul>
             </li>
+
+            @if (optional(Auth::user()->branchStore)->pt_free_enabled)
+                <li>
+                    <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                        <i class="material-symbols-outlined">group</i>
+                        <span class="nav-text">PT Free</span>
+                    </a>
+                    <ul aria-expanded="false">
+                        @if (Auth::user()->isAdmin())
+                            <li><a href="{{ route('pt-free.create') }}">PT Registration</a></li>
+                        @endif
+                        @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
+                            <li><a href="{{ route('pt-free.check-in.index') }}">Check In/Out</a></li>
+                            <li><a href="{{ route('pt-free.active') }}">PT Active</a></li>
+                            <li><a href="{{ route('pt-free.pending') }}">PT Pending</a></li>
+                            <li><a href="{{ route('pt-free.expired') }}">PT Expired</a></li>
+                            <li><a href="{{ route('pt-free.waiting-list') }}">PT Waiting List</a></li>
+                            <li><a href="{{ route('pt-free.history') }}">History</a></li>
+                        @endif
+                    </ul>
+                </li>
+            @endif
 
             @if (Auth::user()->isAdmin())
                 <li>

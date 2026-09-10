@@ -9,8 +9,6 @@ use App\Models\Member\MemberPackage;
 use App\Models\Member\MemberRegistration;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
-use App\Models\Staff\PersonalTrainer;
-use App\Models\Trainer\TrainerPackage;
 use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -105,13 +103,6 @@ class MemberController extends Controller
             'perPage'           => $perPage,
             'sort'              => $sort,
             'direction'         => $direction,
-            'ptFreeEnabled'     => (bool) optional(Auth::user()->branchStore)->pt_free_enabled,
-            'ptFreePackages'    => optional(Auth::user()->branchStore)->pt_free_enabled
-                ? TrainerPackage::where('branch_store_id', Auth::user()->branch_store_id)->free()->orderBy('package_name')->get()
-                : collect(),
-            'ptFreeTrainers'    => optional(Auth::user()->branchStore)->pt_free_enabled
-                ? PersonalTrainer::where('branch_store_id', Auth::user()->branch_store_id)->orderBy('full_name')->get()
-                : collect(),
             // 'users'             => User::get(),
             'content'           => 'admin/members/index'
         ];
