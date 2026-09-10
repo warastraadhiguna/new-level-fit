@@ -11,6 +11,7 @@ use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
 use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\TrainerPackage;
+use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -579,6 +580,102 @@ class MemberController extends Controller
             'totalUsedSessions' => (int) $totals->used_sessions,
             'totalUnusedSessions' => (int) $totals->unused_sessions,
             'content' => 'admin.members.pt-history',
+        ]);
+    }
+
+    public function membershipCheckInHistory(Member $member, MemberRegistration $memberRegistration)
+    {
+        abort_unless((int) $memberRegistration->member_id === (int) $member->id, 404);
+
+        $package = DB::table('member_registrations as mr')
+            ->select(
+                'mr.id',
+                'mr.start_date',
+                'mr.days',
+                'mp.package_name',
+                'bs.name as branch_store_name'
+            )
+            ->leftJoin('member_packages as mp', 'mr.member_package_id', '=', 'mp.id')
+            ->leftJoin('branch_stores as bs', 'mp.branch_store_id', '=', 'bs.id')
+            ->where('mr.id', $memberRegistration->id)
+            ->first();
+        abort_unless($package, 404);
+
+        $checkIns = DB::table('check_in_members as check_ins')
+            ->select(
+                'check_ins.id',
+                'check_ins.check_in_time',
+                'check_ins.check_out_time',
+                'branches.name as branch_store_name',
+                'users.full_name as staff_name',
+                DB::raw('NULL as trainer_name')
+            )
+            ->leftJoin('branch_stores as branches', 'check_ins.branch_store_id', '=', 'branches.id')
+            ->leftJoin('users', 'check_ins.user_id', '=', 'users.id')
+            ->where('check_ins.member_registration_id', $memberRegistration->id)
+            ->orderByDesc('check_ins.check_in_time')
+            ->orderByDesc('check_ins.id')
+            ->paginate(25);
+
+        return view('admin.layouts.wrapper', [
+            'title' => 'Membership Check In/Out History',
+            'member' => $member,
+            'package' => $package,
+            'checkIns' => $checkIns,
+            'historyType' => 'membership',
+            'backRoute' => route('members.membership-history', $member),
+            'content' => 'admin.members.check-in-history',
+        ]);
+    }
+
+    public function ptCheckInHistory(Member $member, TrainerSession $trainerSession)
+    {
+        abort_unless((int) $trainerSession->member_id === (int) $member->id, 404);
+
+        $package = DB::table('trainer_sessions as ts')
+            ->select(
+                'ts.id',
+                'ts.start_date',
+                'ts.days',
+                'ts.is_pt_free',
+                'tp.package_name',
+                'trainers.full_name as trainer_name',
+                'bs.name as branch_store_name'
+            )
+            ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->leftJoin('personal_trainers as trainers', 'ts.trainer_id', '=', 'trainers.id')
+            ->leftJoin('branch_stores as bs', 'ts.branch_store_id', '=', 'bs.id')
+            ->where('ts.id', $trainerSession->id)
+            ->first();
+        abort_unless($package, 404);
+
+        $checkIns = DB::table('check_in_trainer_sessions as check_ins')
+            ->select(
+                'check_ins.id',
+                'check_ins.check_in_time',
+                'check_ins.check_out_time',
+                'branches.name as branch_store_name',
+                'users.full_name as staff_name',
+                DB::raw("COALESCE(check_in_trainers.full_name, session_trainers.full_name, '-') as trainer_name")
+            )
+            ->join('trainer_sessions as ts', 'check_ins.trainer_session_id', '=', 'ts.id')
+            ->leftJoin('personal_trainers as check_in_trainers', 'check_ins.pt_id', '=', 'check_in_trainers.id')
+            ->leftJoin('personal_trainers as session_trainers', 'ts.trainer_id', '=', 'session_trainers.id')
+            ->leftJoin('branch_stores as branches', 'check_ins.branch_store_id', '=', 'branches.id')
+            ->leftJoin('users', 'check_ins.user_id', '=', 'users.id')
+            ->where('check_ins.trainer_session_id', $trainerSession->id)
+            ->orderByDesc('check_ins.check_in_time')
+            ->orderByDesc('check_ins.id')
+            ->paginate(25);
+
+        return view('admin.layouts.wrapper', [
+            'title' => 'PT Check In/Out History',
+            'member' => $member,
+            'package' => $package,
+            'checkIns' => $checkIns,
+            'historyType' => 'pt',
+            'backRoute' => route('members.pt-history', $member),
+            'content' => 'admin.members.check-in-history',
         ]);
     }
 

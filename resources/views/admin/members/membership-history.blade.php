@@ -62,6 +62,8 @@
                             <td>
                                 <h5 class="mb-0">{{ $item->workout_count }} times</h5>
                                 <small class="text-muted">Member check-in</small>
+                                <a href="{{ route('members.membership-check-in-history', [$member, $item->id]) }}"
+                                    class="btn light btn-info btn-xs d-block mt-2">Check In/Out Detail</a>
                             </td>
                             <td class="text-nowrap">
                                 <div>Package: {{ formatRupiah($item->package_price) }}</div>

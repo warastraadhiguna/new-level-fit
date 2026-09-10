@@ -75,6 +75,8 @@
                                 @if ((int) $item->check_in_count > (int) $item->used_sessions)
                                     <small class="text-info">There is an ongoing session</small>
                                 @endif
+                                <a href="{{ route('members.pt-check-in-history', [$member, $item->id]) }}"
+                                    class="btn light btn-info btn-xs d-block mt-2">Check In/Out Detail</a>
                             </td>
                             <td class="text-nowrap">
                                 @if ($item->is_pt_free)

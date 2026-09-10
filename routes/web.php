@@ -235,6 +235,10 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
         ->name('members.membership-history');
     Route::get('members/{member}/pt-history', [MemberController::class, 'ptHistory'])
         ->name('members.pt-history');
+    Route::get('members/{member}/membership-history/{memberRegistration}/check-ins', [MemberController::class, 'membershipCheckInHistory'])
+        ->name('members.membership-check-in-history');
+    Route::get('members/{member}/pt-history/{trainerSession}/check-ins', [MemberController::class, 'ptCheckInHistory'])
+        ->name('members.pt-check-in-history');
     Route::post('members/{id}/small-photo', [MemberController::class, 'updateSmallPhoto'])->name('members.small-photo.update');
     Route::get('members/{id}/create-membership', [MemberRegistrationController::class, 'createMembership'])
         ->middleware('admin.only')
