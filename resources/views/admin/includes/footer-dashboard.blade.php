@@ -197,6 +197,10 @@
 @endif
 
 
+<script src="{{ asset('admingym/sweetalert.min.js') }}"></script>
+@include('admin.includes.delete-confirmation')
+@include('admin.includes.form-submission-guard')
+
 </body>
 
 </html>

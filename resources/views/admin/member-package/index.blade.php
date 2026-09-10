@@ -17,16 +17,12 @@
                         <thead>
                             <tr>
                                 <th>Package Name</th>
-                                <th>Branch</th>                                
-                                <th>Number Of Days</th>
-                                <th>Package Price</th>
-                                <th>Admin Price</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Payment Plan</th>
-                                <th>Staff</th>
+                                <th data-orderable="false">Branch & Staff</th>
+                                <th data-orderable="false">Duration</th>
+                                <th data-orderable="false">Price</th>
+                                <th data-orderable="false" class="text-center">Access & Payment</th>
                                 @if (Auth::user()->isAdmin())
-                                    <th>Action</th>
+                                    <th data-orderable="false">Action</th>
                                 @endif
                             </tr>
                         </thead>
@@ -35,35 +31,33 @@
                                 <tr>
                                     <td>
                                         <h6>{{ $item->package_name }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ $item->branchStore->name }}</h6>
-                                    </td>                                    
-                                    <td>
-                                        <h6>{{ $item->days }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ formatRupiah($item->package_price) }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ formatRupiah($item->admin_price) }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ $item->description }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ $item->is_all_club == "1" ? "All Club" : "One Club"  }}</h6>
-                                    </td>
-                                    <td>
-                                        @if ($item->is_installment_plan)
-                                            <span class="badge badge-success">Cicilan 12 Bulan</span>
-                                            <small class="d-block">{{ formatRupiah($item->installment_monthly_amount) }}/bulan</small>
-                                        @else
-                                            <span class="badge badge-secondary">Biasa</span>
+                                        @if ($item->description)
+                                            <small class="text-muted d-block mt-1">{{ $item->description }}</small>
                                         @endif
                                     </td>
                                     <td>
-                                        <h6>{{ $item->users->full_name }}</h6>
+                                        <h6 class="mb-1">{{ $item->branchStore->name }}</h6>
+                                        <small class="text-muted">Staff: {{ $item->users->full_name }}</small>
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-0">{{ $item->days }} Days</h6>
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-1">Package: {{ formatRupiah($item->package_price) }}</h6>
+                                        <small class="text-muted">Admin: {{ formatRupiah($item->admin_price) }}</small>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex flex-column align-items-center">
+                                        <span class="badge {{ $item->is_all_club == '1' ? 'badge-primary' : 'badge-info' }} d-inline-block mb-1">
+                                            {{ $item->is_all_club == "1" ? "All Club" : "One Club" }}
+                                        </span>
+                                        @if ($item->is_installment_plan)
+                                            <span class="badge badge-success d-inline-block">Cicilan 12 Bulan</span>
+                                            <small class="d-block">{{ formatRupiah($item->installment_monthly_amount) }}/bulan</small>
+                                        @else
+                                            <span class="badge badge-secondary d-inline-block">Biasa</span>
+                                        @endif
+                                        </div>
                                     </td>
                                     @if (Auth::user()->isAdmin())
                                         <td>
@@ -75,6 +69,7 @@
                                                     Edit
                                                 </button>
                                                 <form action="{{ route('member-package.destroy', $item->id) }}"
+                                                    data-delete-detail="{{ $item->package_name }} | {{ $item->branchStore->name }} | {{ $item->days }} days | {{ formatRupiah($item->package_price) }}"
                                                     onclick="return confirm('Delete Member Package Data ? ')"
                                                     method="POST">
                                                     @method('delete')

@@ -79,5 +79,6 @@
             @yield('content')
         </main>
     </div>
+    @include('admin.includes.form-submission-guard')
 </body>
 </html>

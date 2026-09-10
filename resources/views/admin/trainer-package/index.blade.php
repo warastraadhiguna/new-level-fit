@@ -19,14 +19,11 @@
                         <thead>
                             <tr>
                                 <th>Package Name</th>
-                                <th>Branch</th>                                  
-                                <th>Session / Days</th>
-                                <th>Price / Admin</th>
-                                <th>Package Type</th>
-                                <th>Description</th>
-                                <th>Staff</th>
+                                <th data-orderable="false">Branch & Staff</th>
+                                <th data-orderable="false">Session & Duration</th>
+                                <th data-orderable="false">Price</th>
                                 @if (Auth::user()->isAdmin())
-                                    <th>Action</th>
+                                    <th data-orderable="false">Action</th>
                                 @endif
                             </tr>
                         </thead>
@@ -35,19 +32,6 @@
                                 <tr>
                                     <td>
                                         <h6>{{ $item->package_name }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6>{{ $item->branchStore->name }}</h6>
-                                    </td>                                       
-                                    <td>
-                                        <h6 class="mb-1">Session: {{ $item->number_of_session }}</h6>
-                                        <h6 class="mb-0">Days: {{ $item->days }}</h6>
-                                    </td>
-                                    <td>
-                                        <h6 class="mb-1">Package: {{ formatRupiah($item->package_price) }}</h6>
-                                        <h6 class="mb-0">Admin: {{ formatRupiah($item->admin_price) }}</h6>
-                                    </td>
-                                    <td>
                                         @if ($item->is_free)
                                             <span class="badge badge-success">PT Free</span>
                                         @elseif ($item->status == 'LGT')
@@ -55,12 +39,21 @@
                                         @else
                                             <span class="badge badge-primary">Non LGT</span>
                                         @endif
+                                        @if ($item->description)
+                                            <small class="text-muted d-block mt-1">{{ $item->description }}</small>
+                                        @endif
                                     </td>
                                     <td>
-                                        <h6>{{ $item->description }}</h6>
+                                        <h6 class="mb-1">{{ $item->branchStore->name }}</h6>
+                                        <small class="text-muted">Staff: {{ $item->users->full_name }}</small>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->users->full_name }}</h6>
+                                        <h6 class="mb-1">Session: {{ $item->number_of_session }}</h6>
+                                        <small class="text-muted">Days: {{ $item->days }}</small>
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-1">Package: {{ formatRupiah($item->package_price) }}</h6>
+                                        <small class="text-muted">Admin: {{ formatRupiah($item->admin_price) }}</small>
                                     </td>
                                     @if (Auth::user()->isAdmin())
                                         <td>
@@ -72,6 +65,7 @@
                                                     Edit
                                                 </button>
                                                 <form action="{{ route('trainer-package.destroy', $item->id) }}"
+                                                    data-delete-detail="{{ $item->package_name }} | {{ $item->branchStore->name }} | {{ $item->number_of_session }} sessions | {{ $item->days }} days"
                                                     onclick="return confirm('Delete Trainer Package Data ? ')"
                                                     method="POST">
                                                     @method('delete')

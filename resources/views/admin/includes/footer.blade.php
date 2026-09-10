@@ -421,6 +421,9 @@ if (window.location.pathname === '/add-data') {
 }
 </script>
 
+@include('admin.includes.delete-confirmation')
+@include('admin.includes.form-submission-guard')
+
 </body>
 
 </html>
