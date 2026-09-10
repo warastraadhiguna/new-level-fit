@@ -26,6 +26,7 @@ use App\Http\Controllers\Staff\FitnessConsultantController;
 use App\Http\Controllers\Staff\PersonalTrainerController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
+use App\Http\Controllers\Trainer\PtFreeController;
 use App\Http\Controllers\Trainer\TrainerPackageController;
 use App\Http\Controllers\Trainer\TrainerSessionCheckInController;
 use App\Http\Controllers\Trainer\TrainerSessionController;
@@ -78,6 +79,14 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('trainer-session-check-in', '\App\Http\Controllers\Trainer\TrainerSessionCheckInController'); 
     Route::get('member-check-in/by-registration/{memberRegistrationId}', [MemberCheckInController::class, 'toggleByRegistrationId'])->name('member-check-in.toggle-by-registration-id');
     Route::get('pt-check-in/{id}', [TrainerSessionCheckInController::class, 'secondStore'])->name('PTSecondCheckIn');
+    Route::middleware('pt-free.enabled')->group(function () {
+        Route::get('pt-free-check-in', [PtFreeController::class, 'checkInIndex'])->name('pt-free.check-in.index');
+        Route::post('pt-free-check-in', [PtFreeController::class, 'checkIn'])->name('pt-free.check-in');
+        Route::get('pt-free-report', [PtFreeController::class, 'report'])->name('pt-free.report');
+        Route::post('members/{member}/pt-free', [PtFreeController::class, 'store'])
+            ->middleware('admin.only')
+            ->name('pt-free.store');
+    });
     Route::post('lgt-check-in', [TrainerSessionCheckInController::class, 'lgtStore'])->name('LGTCheckIn');
     Route::get('lgt-second-check-in/{id}', [TrainerSessionCheckInController::class, 'lgtSecondStore'])->name('LGTSecondCheckIn');
     Route::get('history-member-registration', [MemberRegistrationController::class, 'history'])->name('history-member-registration');

@@ -80,6 +80,7 @@ class TrainerSessionActiveExport implements FromView
             ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
+            ->where('a.is_pt_free', false)
 
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')

@@ -45,6 +45,7 @@ class TrainerSessionCheckInController extends Controller
             ->leftJoin('personal_trainers as session_pt', 'ts.trainer_id', '=', 'session_pt.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where('ts.is_pt_free', false)
             ->where(function ($query) use ($today) {
                 $query->whereDate('cits.check_in_time', $today)
                     ->orWhereDate('cits.check_out_time', $today);

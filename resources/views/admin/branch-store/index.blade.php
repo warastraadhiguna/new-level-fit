@@ -100,17 +100,7 @@
                         <thead>
                             <tr>
                                 <th>Cabang</th>
-                                <th>Kota</th>
-                                <th>Kontak</th>
-                                <th>Type</th>
-                                <th>Payment Strict</th>
-                                <th>Cicilan Membership</th>
-                                <th>Diskon</th>
-                                <th>Membership Approval</th>
-                                <th>POS & Inventory</th>
-                                <th>Booking Class</th>
-                                <th>Akses Keuangan Dashboard</th>
-                                <th>Admin Logo</th>
+                                <th>Lokasi</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -118,87 +108,11 @@
                             @foreach ($branchStores as $branchStore)
                                 <tr>
                                     <td>
-                                        <h6 class="mb-1">{{ $branchStore->name }}</h6>
-                                        <small>{{ $branchStore->slug }}</small>
-                                        <div class="mt-1">{{ $branchStore->address }}</div>
-                                    </td>
-                                    <td>{{ $branchStore->city }}</td>
-                                    <td>
-                                        <div>{{ $branchStore->phone }}</div>
-                                        <div>{{ $branchStore->email }}</div>
+                                        <h6 class="mb-0">{{ $branchStore->name }}</h6>
                                     </td>
                                     <td>
-                                        @if ($branchStore->type === 'male')
-                                            <span class="badge badge-info">Male Only</span>
-                                        @elseif ($branchStore->type === 'female')
-                                            <span class="badge badge-danger">Female Only</span>
-                                        @else
-                                            <span class="badge badge-primary">Both</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($branchStore->is_payment_strict)
-                                            <span class="badge badge-success">Strict</span>
-                                        @else
-                                            <span class="badge badge-warning">Flexible</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($branchStore->member_installment_enabled)
-                                            <span class="badge badge-success">Aktif</span>
-                                            <small class="d-block">Pengingat H-{{ $branchStore->member_installment_reminder_days }}</small>
-                                            <small class="d-block">{{ $branchStore->member_installment_grace_days }} hari grace / {{ $branchStore->member_installment_cancel_days }} hari batal</small>
-                                        @else
-                                            <span class="badge badge-secondary">Nonaktif</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div>
-                                            Membership:
-                                            <span class="badge {{ $branchStore->member_discount_enabled ? 'badge-success' : 'badge-secondary' }}">
-                                                {{ $branchStore->member_discount_enabled ? 'Aktif' : 'Nonaktif' }}
-                                            </span>
-                                        </div>
-                                        <div class="mt-1">
-                                            PT:
-                                            <span class="badge {{ $branchStore->trainer_discount_enabled ? 'badge-success' : 'badge-secondary' }}">
-                                                {{ $branchStore->trainer_discount_enabled ? 'Aktif' : 'Nonaktif' }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $branchStore->member_approval_enabled ? 'badge-success' : 'badge-secondary' }}">
-                                            {{ $branchStore->member_approval_enabled ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $branchStore->pos_inventory_enabled ? 'badge-success' : 'badge-secondary' }}">
-                                            {{ $branchStore->pos_inventory_enabled ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-info">H-{{ (int) ($branchStore->class_booking_advance_days ?? 1) }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $financeRoles = $branchStore->dashboard_finance_visible_roles ?: [\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES];
-                                        @endphp
-                                        @if (in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $financeRoles, true))
-                                            <span class="badge badge-success">Semua Role</span>
-                                        @else
-                                            @foreach ($financeRoles as $financeRole)
-                                                <span class="badge badge-info mb-1">
-                                                    {{ \App\Models\BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS[$financeRole] ?? $financeRole }}
-                                                </span>
-                                            @endforeach
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($branchStore->admin_logo_url)
-                                            <img src="{{ $branchStore->admin_logo_url }}" alt="{{ $branchStore->name }}" style="max-width: 180px; max-height: 60px; object-fit: contain;">
-                                        @else
-                                            <span class="text-danger">Belum diisi</span>
-                                        @endif
+                                        <div>{{ $branchStore->address }}</div>
+                                        <small class="text-muted">{{ $branchStore->city }}</small>
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">

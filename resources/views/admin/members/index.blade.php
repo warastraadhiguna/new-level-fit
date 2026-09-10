@@ -161,6 +161,16 @@
                                             @if (Auth::user()->isAdmin())
                                                 <a href="{{ route('members.create-membership', $item->id) }}"
                                                     class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
+                                                @if ($ptFreeEnabled)
+                                                    <button type="button"
+                                                        class="btn light btn-success btn-xs btn-block mb-1 js-give-pt-free"
+                                                        data-bs-toggle="modal" data-bs-target="#ptFreeModal"
+                                                        data-member-id="{{ $item->id }}"
+                                                        data-member-name="{{ $item->full_name }}"
+                                                        data-store-url="{{ route('pt-free.store', $item->id) }}">
+                                                        Give PT Free
+                                                    </button>
+                                                @endif
                                             @endif
                                             {{-- @if ($item->lo_status == 'Running' && $item->lo_is_used == 0) --}}
                                             @if (   $item->lo_is_used == 0)
@@ -215,6 +225,108 @@
         </div>
     </div>
 </div>
+
+@if ($ptFreeEnabled && Auth::user()->isAdmin())
+    <div class="modal fade" id="ptFreeModal" tabindex="-1" aria-labelledby="ptFreeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" id="ptFreeForm"
+                    action="{{ old('pt_free_member_id') ? route('pt-free.store', old('pt_free_member_id')) : '#' }}">
+                    @csrf
+                    <input type="hidden" name="_submission_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
+                    <input type="hidden" name="pt_free_member_id" id="ptFreeMemberId" value="{{ old('pt_free_member_id') }}">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title" id="ptFreeModalLabel">Give PT Free</h5>
+                            <small class="text-muted" id="ptFreeMemberName"></small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if ($errors->any() && old('pt_free_member_id'))
+                            <div class="alert alert-danger">{{ $errors->first() }}</div>
+                        @endif
+                        @if ($ptFreePackages->isEmpty())
+                            <div class="alert alert-warning">
+                                Belum ada Trainer Package dengan harga paket dan admin Rp0 pada cabang ini.
+                            </div>
+                        @endif
+                        <div class="mb-3">
+                            <label class="form-label">PT Free Package</label>
+                            <select name="trainer_package_id" class="form-control" required
+                                {{ $ptFreePackages->isEmpty() ? 'disabled' : '' }}>
+                                <option value="">-- Choose Package --</option>
+                                @foreach ($ptFreePackages as $package)
+                                    <option value="{{ $package->id }}" {{ (string) old('trainer_package_id') === (string) $package->id ? 'selected' : '' }}>
+                                        {{ $package->package_name }} · {{ $package->number_of_session }} sesi · {{ $package->days }} hari
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Personal Trainer</label>
+                            <select name="trainer_id" class="form-control" required>
+                                <option value="">-- Choose Trainer --</option>
+                                @foreach ($ptFreeTrainers as $trainer)
+                                    <option value="{{ $trainer->id }}" {{ (string) old('trainer_id') === (string) $trainer->id ? 'selected' : '' }}>
+                                        {{ $trainer->full_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control"
+                                value="{{ old('start_date', now()->format('Y-m-d')) }}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Description / Gift Reason</label>
+                            <textarea name="description" rows="4" class="form-control" required>{{ old('description') }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-success" {{ $ptFreePackages->isEmpty() ? 'disabled' : '' }}>
+                            Give PT Free
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('ptFreeForm');
+            var memberId = document.getElementById('ptFreeMemberId');
+            var memberName = document.getElementById('ptFreeMemberName');
+
+            document.querySelectorAll('.js-give-pt-free').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    form.action = button.dataset.storeUrl;
+                    memberId.value = button.dataset.memberId;
+                    memberName.textContent = button.dataset.memberName;
+                });
+            });
+
+            form.addEventListener('submit', function () {
+                var submitButton = form.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Saving...';
+            });
+
+            @if ($errors->any() && old('pt_free_member_id'))
+                var previousButton = document.querySelector('.js-give-pt-free[data-member-id="{{ old('pt_free_member_id') }}"]');
+                if (previousButton) {
+                    memberName.textContent = previousButton.dataset.memberName;
+                }
+                if (window.bootstrap) {
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('ptFreeModal')).show();
+                }
+            @endif
+        });
+    </script>
+@endif
 
 <style>
     .small-photo-crop-stage {

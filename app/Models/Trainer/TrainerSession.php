@@ -23,6 +23,7 @@ class TrainerSession extends Model
         'trainer_id',
         'start_date',
         'trainer_package_id',
+        'is_pt_free',
         'days',
         'old_days',
         'package_price',
@@ -40,6 +41,7 @@ class TrainerSession extends Model
     protected $casts = [
         'payment_deadline' => 'integer',
         'discount_amount' => 'integer',
+        'is_pt_free' => 'boolean',
     ];
 
     protected $hidden = [];
@@ -139,7 +141,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
         INNER JOIN branch_stores as bs on train_sess.branch_store_id = bs.id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -210,7 +212,7 @@ class TrainerSession extends Model
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
         INNER JOIN branch_stores as bs on train_sess.branch_store_id = bs.id        
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -270,7 +272,7 @@ class TrainerSession extends Model
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
         INNER JOIN branch_stores on train_sess.branch_store_id = branch_stores.id        
-        INNER JOIN trainer_packages ON trainer_packages.id = train_sess.trainer_package_id AND trainer_packages.status IS NULL
+        INNER JOIN trainer_packages ON trainer_packages.id = train_sess.trainer_package_id AND trainer_packages.status IS NULL AND train_sess.is_pt_free = 0
         LEFT JOIN personal_trainers ON personal_trainers.id = train_sess.trainer_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
         INNER JOIN users ON users.id = train_sess.user_id
@@ -317,7 +319,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
         INNER JOIN branch_stores as bs on train_sess.branch_store_id = bs.id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND (train_pack.status IS NULL OR train_pack.status = 'LGT')
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND (train_pack.status IS NULL OR train_pack.status = 'LGT') AND train_sess.is_pt_free = 0
         LEFT JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
         INNER JOIN users ON users.id = train_sess.user_id
@@ -379,7 +381,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -582,7 +584,7 @@ class TrainerSession extends Model
 
                 FROM trainer_sessions AS train_sess
 
-                INNER JOIN (SELECT MAX(id) AS max_train_sess_id FROM trainer_sessions AS train_sess GROUP BY member_id)
+                INNER JOIN (SELECT MAX(id) AS max_train_sess_id FROM trainer_sessions AS train_sess WHERE is_pt_free = 0 GROUP BY member_id)
                 AS max_train_sess_view ON train_sess.id = max_train_sess_view.max_train_sess_id
 
                 INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id
@@ -600,7 +602,7 @@ class TrainerSession extends Model
                     GROUP BY trainer_session_id
                 ) AS leave_days_view ON train_sess.id = leave_days_view.trainer_session_id
 
-                WHERE train_pack.status IS NULL AND NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)
+                WHERE train_pack.status IS NULL AND train_sess.is_pt_free = 0 AND NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)
                 " . ($memberId ? " AND mbr.id='$memberId' " : '') . "
                 ORDER BY max_end_date";
 
@@ -707,7 +709,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -779,7 +781,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -854,7 +856,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -891,6 +893,7 @@ class TrainerSession extends Model
         ) AS leave_days_view ON train_sess.id = leave_days_view.trainer_session_id
         
         WHERE
+            train_sess.branch_store_id = ". Auth::user()->branch_store_id ." AND
             NOW() BETWEEN train_sess.start_date AND DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY) AND
             IFNULL(train_sess.number_of_session - count_check_in_view.check_in_count, train_sess.number_of_session) > 0"
             . ($card_number ? " and mbr.card_number='$card_number' " : '') . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '') . " 
@@ -1004,7 +1007,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -1071,7 +1074,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id
@@ -1139,7 +1142,7 @@ class TrainerSession extends Model
         FROM members AS mbr
         
         INNER JOIN trainer_sessions AS train_sess ON mbr.id = train_sess.member_id
-        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL
+        INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id AND train_pack.status IS NULL AND train_sess.is_pt_free = 0
         INNER JOIN personal_trainers AS pers_train ON pers_train.id = train_sess.trainer_id
         -- INNER JOIN fitness_consultants AS fit_cons ON fit_cons.id= train_sess.fc_id
         INNER JOIN method_payments AS met_pay ON met_pay.id = train_sess.method_payment_id

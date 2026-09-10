@@ -118,6 +118,7 @@ class DashboardController extends Controller
                     $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
                 })
                 ->where('a.branch_store_id', $branchId)
+                ->where('a.is_pt_free', false)
                 ->whereNull('b.status')
                 ->whereBetween('a.created_at', [$startDate, $endDate])
                 ->groupBy(
@@ -228,6 +229,7 @@ class DashboardController extends Controller
             ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
             ->join('users as e', 'a.user_id', '=', 'e.id')
             ->where('a.branch_store_id', $branchId)              
+            ->where('a.is_pt_free', false)
             ->whereNull('c.status')
             ->count();
 
@@ -250,6 +252,7 @@ class DashboardController extends Controller
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
             ->where('a.branch_store_id', $branchId)                                      
+            ->where('a.is_pt_free', false)
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
             ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')
@@ -271,6 +274,7 @@ class DashboardController extends Controller
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
             ->where('a.branch_store_id', $branchId)                                      
+            ->where('a.is_pt_free', false)
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
             ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL (a.days + COALESCE(pt_freeze_summary.total_days, 0)) DAY)')

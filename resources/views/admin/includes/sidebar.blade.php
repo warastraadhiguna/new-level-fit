@@ -69,7 +69,10 @@
                 <ul aria-expanded="false">
                     <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
                     @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
-                        <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>                          
+                        <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>
+                        @if (optional(Auth::user()->branchStore)->pt_free_enabled)
+                            <li><a href="{{ route('pt-free.check-in.index') }}">PT Free Check In/Out</a></li>
+                        @endif
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
                         <li><a href="{{ route('trainer-session-unpaid') }}">PT Unpaid</a></li>
@@ -126,7 +129,15 @@
                     <li><a href="{{ route('lo-report') }}">LO</a></li>
                     {{-- <li><a href="{{ route('one-visit-report') }}">1 Visit</a></li> --}}
                     <li><a href="{{ route('report-member-checkin') }}">Member Check In</a></li>
-                    <li><a href="{{ route('report-member-pt-checkin') }}">PT Check In</a></li>
+                    <li>
+                        <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">PT</a>
+                        <ul aria-expanded="false">
+                            <li style="margin-left: 10px"><a href="{{ route('report-member-pt-checkin') }}">Check In</a></li>
+                            @if (optional(Auth::user()->branchStore)->pt_free_enabled)
+                                <li style="margin-left: 10px"><a href="{{ route('pt-free.report') }}">Free Check In</a></li>
+                            @endif
+                        </ul>
+                    </li>
                     <li>
                         <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">Lead</a>
                         <ul aria-expanded="false">

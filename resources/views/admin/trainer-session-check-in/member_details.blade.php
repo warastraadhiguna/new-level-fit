@@ -173,7 +173,7 @@
         newWindow.document.write(contentHTML);
 
         setTimeout(function() {
-            window.location.href = "{{ route('trainer-session-check-in.index') }}";
+            window.location.href = @json($returnRoute ?? route('trainer-session-check-in.index'));
         }, 0);
     }
 

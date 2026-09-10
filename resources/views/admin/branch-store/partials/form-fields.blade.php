@@ -1,42 +1,42 @@
 <div class="row">
-    <div class="col-xl-6">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Nama Cabang</label>
             <input type="text" name="name" value="{{ old('name', $branchStore->name ?? '') }}" class="form-control" required>
         </div>
     </div>
-    <div class="col-xl-6">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Slug</label>
             <input type="text" name="slug" value="{{ old('slug', $branchStore->slug ?? '') }}" class="form-control">
             <small class="text-muted">Kosongkan jika ingin dibuat otomatis dari nama cabang.</small>
         </div>
     </div>
-    <div class="col-xl-12">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Alamat</label>
             <textarea name="address" class="form-control" rows="3" required>{{ old('address', $branchStore->address ?? '') }}</textarea>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Kota</label>
             <input type="text" name="city" value="{{ old('city', $branchStore->city ?? '') }}" class="form-control" required>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Phone</label>
             <input type="text" name="phone" value="{{ old('phone', $branchStore->phone ?? '') }}" class="form-control" required>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="email" name="email" value="{{ old('email', $branchStore->email ?? '') }}" class="form-control" required>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Payment Strict</label>
             <select name="is_payment_strict" class="form-control" required>
@@ -49,7 +49,7 @@
             <small class="text-muted">Berlaku untuk check-in membership dan PT di cabang ini.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Branch Type</label>
             <select name="type" class="form-control" required>
@@ -63,7 +63,7 @@
             <small class="text-muted">Dipakai untuk aturan akses cabang berdasarkan gender.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Cicilan Membership Tahunan</label>
             @php $installmentEnabled = old('member_installment_enabled', isset($branchStore) ? (int) $branchStore->member_installment_enabled : 0); @endphp
@@ -74,7 +74,7 @@
             <small class="text-muted">Hanya paket dari cabang ini yang dapat memakai skema bulan 1 + 12.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Pengingat Cicilan (H-berapa)</label>
             <input type="number" min="0" max="90" name="member_installment_reminder_days"
@@ -83,14 +83,14 @@
             <small class="text-muted">Gunakan 0 agar pengingat muncul tepat pada tanggal jatuh tempo.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Masa Tenggang Cicilan (hari)</label>
             <input type="number" min="0" max="30" name="member_installment_grace_days"
                 value="{{ old('member_installment_grace_days', $branchStore->member_installment_grace_days ?? 7) }}" class="form-control" required>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Pembatalan Setelah (hari)</label>
             <input type="number" min="1" max="365" name="member_installment_cancel_days"
@@ -98,7 +98,7 @@
             <small class="text-muted">Deposit bulan ke-12 hangus setelah kontrak dibatalkan.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Diskon Membership</label>
             @php $memberDiscountEnabled = old('member_discount_enabled', isset($branchStore) ? (int) $branchStore->member_discount_enabled : 0); @endphp
@@ -108,7 +108,7 @@
             </select>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Diskon PT</label>
             @php $trainerDiscountEnabled = old('trainer_discount_enabled', isset($branchStore) ? (int) $branchStore->trainer_discount_enabled : 0); @endphp
@@ -118,7 +118,7 @@
             </select>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Membership Approval</label>
             @php $memberApprovalEnabled = old('member_approval_enabled', isset($branchStore) ? (int) $branchStore->member_approval_enabled : 0); @endphp
@@ -129,7 +129,18 @@
             <small class="text-muted">Jika aktif, ADMIN dan OWNER dapat menyetujui membership dengan memperbarui description.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">PT Free</label>
+            @php $ptFreeEnabled = old('pt_free_enabled', isset($branchStore) ? (int) $branchStore->pt_free_enabled : 0); @endphp
+            <select name="pt_free_enabled" class="form-control" required>
+                <option value="0" {{ (string) $ptFreeEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $ptFreeEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Mengaktifkan pemberian paket, check-in/out, dan report PT Free pada cabang ini.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">POS & Inventory</label>
             @php $posInventoryEnabled = old('pos_inventory_enabled', isset($branchStore) ? (int) $branchStore->pos_inventory_enabled : 0); @endphp
@@ -140,7 +151,7 @@
             <small class="text-muted">Jika nonaktif, seluruh menu dan endpoint POS, produk, pembelian, serta stok tidak dapat diakses pada cabang ini. Data lama tetap tersimpan.</small>
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Booking Class Dibuka (H-N)</label>
             <input type="number" min="0" max="30" name="class_booking_advance_days"
@@ -149,7 +160,7 @@
             <small class="text-muted">Contoh: 1 berarti booking dibuka sejak H-1. Isi 0 jika hanya boleh booking pada hari class.</small>
         </div>
     </div>
-    <div class="col-xl-12">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label d-block">Akses Informasi Keuangan Dashboard</label>
             @php
@@ -195,7 +206,7 @@
             </small>
         </div>
     </div>
-    <div class="col-xl-12">
+    <div class="col-md-6">
         <div class="mb-3">
             <label class="form-label">Admin Logo</label>
             <input type="file" name="admin_logo" class="form-control" accept=".png,.jpg,.jpeg,.ico,.webp">

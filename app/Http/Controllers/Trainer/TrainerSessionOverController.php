@@ -67,6 +67,7 @@ class TrainerSessionOverController extends Controller
             ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
+            ->where('a.is_pt_free', false)
             ->groupBy('a.id', 'a.start_date', 'a.description', 'a.package_price', 'a.admin_price', 'a.days', 'b.full_name', 'b.member_code', 'c.package_name', 'c.number_of_session', 'd.full_name', 'e.full_name', 'ci.check_in_count', 'pt_freeze_summary.total_days')
             ->addSelect(DB::raw('IFNULL(c.number_of_session - ci.check_in_count, c.number_of_session) as remaining_sessions'))
             ->addSelect(DB::raw('CASE WHEN IFNULL(c.number_of_session - ci.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - ci.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'))

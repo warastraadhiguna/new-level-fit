@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\IsAdmin::class,
         'admin.only' => \App\Http\Middleware\IsAdminOnly::class,
         'pos.enabled' => \App\Http\Middleware\EnsurePosInventoryEnabled::class,
+        'pt-free.enabled' => \App\Http\Middleware\EnsurePtFreeEnabled::class,
     ];
 }

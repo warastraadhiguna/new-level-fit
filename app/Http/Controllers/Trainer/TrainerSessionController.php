@@ -219,7 +219,7 @@ class TrainerSessionController extends Controller
             'trainerSession'    => TrainerSession::all(),
             'members'           => GetAccessibleNonExpiredMembersForBranch($branchId),
             'personalTrainers'  => PersonalTrainer::where("branch_store_id", $branchId)->get(),
-            'trainerPackages'   => TrainerPackage::where("branch_store_id", $branchId)->get(),
+            'trainerPackages'   => TrainerPackage::where("branch_store_id", $branchId)->paid()->get(),
             'methodPayment'     => MethodPayment::get(),
             'users'             => User::get(),         
             'fitnessConsultant' => User::where('role', 'FC')->get(),
@@ -283,7 +283,9 @@ class TrainerSessionController extends Controller
                 return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($membership->member_name, 'create PT'));
             }
 
-            $package = TrainerPackage::findOrFail($data['trainer_package_id']);
+            $package = TrainerPackage::where('branch_store_id', Auth::user()->branch_store_id)
+                ->paid()
+                ->findOrFail($data['trainer_package_id']);
 
             $data['user_id'] = Auth::user()->id;
             $data['branch_store_id'] = Auth::user()->branch_store_id;            
@@ -352,6 +354,7 @@ class TrainerSessionController extends Controller
     {
         // dd($id);
         $ts = TrainerSession::find($id);
+        abort_if(!$ts || $ts->is_pt_free, 404);
         $status = $ts->members;
         $memberId = $ts->members->id;
 
@@ -455,6 +458,8 @@ class TrainerSessionController extends Controller
             'fitnessConsultants',
             'methodPayment',
         ])->findOrFail($id);
+
+        abort_if($trainerSession->is_pt_free, 404);
                 
         $data = [
             'title'                 => 'Edit Trainer Session',
@@ -462,7 +467,7 @@ class TrainerSessionController extends Controller
             'trainerSessionPayments' => TrainerSessionPayment::with("user", "methodPayment")->where("trainer_session_id", $id)->get(),
             'members'               => GetAccessibleNonExpiredMembersForBranch($branchId),
             'personalTrainers'      => PersonalTrainer::where("branch_store_id", $branchId)->get(),
-            'trainerPackages'       => TrainerPackage::where("branch_store_id", $branchId)->get(),
+            'trainerPackages'       => TrainerPackage::where("branch_store_id", $branchId)->paid()->get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'methodPayment'         => MethodPayment::get(),          
             'content'               => 'admin/trainer-session/edit',
@@ -483,10 +488,13 @@ class TrainerSessionController extends Controller
             'branchStore',
         ])->findOrFail($id);
 
+        abort_if($trainerSession->is_pt_free, 404);
+
         $membership = GetLatestNonExpiredMembershipAccess($trainerSession->member_id);
 
         $allTargetTrainerPackages = TrainerPackage::with('branchStore')
             ->whereNull('status')
+            ->paid()
             ->where('branch_store_id', '!=', $trainerSession->branch_store_id)
             ->orderBy('branch_store_id')
             ->orderBy('package_name')
@@ -525,6 +533,7 @@ class TrainerSessionController extends Controller
     public function update(Request $request, string $id)
     {
         $item = TrainerSession::findOrFail($id);
+        abort_if($item->is_pt_free, 404);
         $data = $request->validate([
             'start_date'            => 'nullable',
             'expired_date'          => 'nullable',
@@ -539,7 +548,9 @@ class TrainerSessionController extends Controller
         $data['user_id'] = Auth::user()->id;
         $data['branch_store_id'] = Auth::user()->branch_store_id;       
 
-        $selectedPackage = TrainerPackage::findOrFail($data["trainer_package_id"]);
+        $selectedPackage = TrainerPackage::where('branch_store_id', Auth::user()->branch_store_id)
+            ->paid()
+            ->findOrFail($data["trainer_package_id"]);
         $currentPackage = TrainerPackage::find($item->trainer_package_id);
         if (BranchStoreDiscountIsEnabled('trainer', Auth::user()->branch_store_id)) {
             $data['discount_amount'] = NormalizeSalesDiscount(
@@ -611,7 +622,8 @@ class TrainerSessionController extends Controller
                 $trainerSession = TrainerSession::with(['branchStore', 'trainerPackages'])
                     ->lockForUpdate()
                     ->findOrFail($id);
-                $trainerPackage = TrainerPackage::with('branchStore')->findOrFail($data['trainer_package_id']);
+                abort_if($trainerSession->is_pt_free, 404);
+                $trainerPackage = TrainerPackage::with('branchStore')->paid()->findOrFail($data['trainer_package_id']);
 
                 if ($trainerPackage->status !== null) {
                     throw new RuntimeException('Only regular PT packages can be used to move this PT registration.');
@@ -706,6 +718,8 @@ class TrainerSessionController extends Controller
 
     public function destroy(TrainerSession $trainerSession)
     {
+        abort_if($trainerSession->is_pt_free, 404);
+
         try {
             $trainerSession->delete();
             return redirect()->back()->with('success', 'Trainer Session Deleted Successfully');
@@ -747,6 +761,7 @@ class TrainerSessionController extends Controller
             ->leftJoinSub(PtLeaveDay::summaryQuery(), 'pt_freeze_summary', function ($join) {
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
+            ->where('a.is_pt_free', false)
             ->addSelect(DB::raw('IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) as remaining_sessions'))
             ->addSelect(DB::raw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'))
             ->whereRaw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')

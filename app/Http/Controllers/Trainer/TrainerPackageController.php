@@ -60,7 +60,9 @@ class TrainerPackageController extends Controller
                 $data = $request->validated();
                 unset($data['_submission_token']);
                 $data['user_id'] = Auth::id();
-                $data['status'] = $request->has('status') ? 'LGT' : null;
+                $data['status'] = (int) $data['package_price'] === 0 && (int) $data['admin_price'] === 0
+                    ? null
+                    : ($request->has('status') ? 'LGT' : null);
 
                 TrainerPackage::create($data);
             });
@@ -97,7 +99,9 @@ class TrainerPackageController extends Controller
                 $item = TrainerPackage::findOrFail($id);
                 $data = $request->validated();
                 unset($data['_submission_token']);
-                $data['status'] = $request->has('status') ? 'LGT' : null;
+                $data['status'] = (int) $data['package_price'] === 0 && (int) $data['admin_price'] === 0
+                    ? null
+                    : ($request->has('status') ? 'LGT' : null);
                 $data['user_id'] = Auth::id();
 
                 $item->update($data);

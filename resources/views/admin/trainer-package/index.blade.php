@@ -48,7 +48,13 @@
                                         <h6 class="mb-0">Admin: {{ formatRupiah($item->admin_price) }}</h6>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}</h6>
+                                        @if ($item->is_free)
+                                            <span class="badge badge-success">PT Free</span>
+                                        @elseif ($item->status == 'LGT')
+                                            <span class="badge badge-info">LGT</span>
+                                        @else
+                                            <span class="badge badge-primary">Non LGT</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <h6>{{ $item->description }}</h6>

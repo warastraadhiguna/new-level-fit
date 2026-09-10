@@ -45,4 +45,24 @@ class TrainerPackage extends Model
                 'name' => '-',
             ]);
     }        
+
+    public function scopePaid($query)
+    {
+        return $query->where(function ($packageQuery) {
+            $packageQuery->where('package_price', '>', 0)
+                ->orWhere('admin_price', '>', 0);
+        });
+    }
+
+    public function scopeFree($query)
+    {
+        return $query->where('package_price', 0)
+            ->where('admin_price', 0);
+    }
+
+    public function getIsFreeAttribute(): bool
+    {
+        return (int) $this->package_price === 0
+            && (int) $this->admin_price === 0;
+    }
 }

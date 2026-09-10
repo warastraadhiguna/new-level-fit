@@ -31,6 +31,7 @@ class DetailSellingPTReportExport implements FromView
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
+                ->where('ts.is_pt_free', false)
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->whereDate('ts.created_at', '>=', $fromDate)
@@ -42,6 +43,7 @@ class DetailSellingPTReportExport implements FromView
         } else {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
+                ->where('ts.is_pt_free', false)
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->whereDate('ts.created_at', '>=', $fromDate)

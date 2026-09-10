@@ -31,6 +31,7 @@ class ReportMemberPTCheckInExport implements FromView
                 )
                 ->join('trainer_sessions as ts', 'ts.member_id', '=', 'members.id')
                 ->join('check_in_trainer_sessions as cits', 'cits.trainer_session_id', '=', 'ts.id')
+                ->where('ts.is_pt_free', false)
                 ->whereDate('cits.check_in_time', '>=', $fromDate)
                 ->whereDate('cits.check_in_time', '<=', $toDate)
                 ->get();

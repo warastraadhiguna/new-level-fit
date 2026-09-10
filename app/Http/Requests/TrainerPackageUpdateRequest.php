@@ -29,8 +29,8 @@ class TrainerPackageUpdateRequest extends FormRequest
             'package_name'          => 'string',
             'number_of_session'     => 'required',
             'days'                  => 'required',
-            'package_price'         => 'numeric',
-            'admin_price'           => 'numeric',
+            'package_price'         => 'numeric|min:0',
+            'admin_price'           => 'numeric|min:0',
             'description'           => 'nullable',
             'status'                => 'nullable',
         ];
