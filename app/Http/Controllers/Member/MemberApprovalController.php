@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member\CheckInMember;
+use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,12 +20,30 @@ class MemberApprovalController extends Controller
 
         $search = trim((string) $request->input('search', ''));
         $perPage = (int) $request->input('per_page', 10);
+        $sort = (string) $request->input('sort', 'created_at');
+        $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
         if (!in_array($perPage, [10, 25, 50, 100], true)) {
             $perPage = 10;
         }
 
-        $memberRegistrations = MemberRegistration::query()
-            ->with(['members:id,full_name,member_code,branch_store_id', 'memberPackage:id,package_name'])
+        $query = MemberRegistration::query()
+            ->with([
+                'members:id,full_name,member_code,branch_store_id',
+                'members.branchStore:id,name',
+                'memberPackage:id,package_name,is_all_club',
+                'methodPayment:id,name',
+                'users:id,full_name',
+                'latestCheckIn',
+                'leaveDays:id,member_registration_id,submission_date,days,leave_day_continue_id',
+            ])
+            ->withSum('payments as payment_summary', 'value')
+            ->addSelect([
+                'latest_check_in_at' => CheckInMember::query()
+                    ->select('check_in_time')
+                    ->whereColumn('member_registration_id', 'member_registrations.id')
+                    ->latest('id')
+                    ->limit(1),
+            ])
             ->whereHas('members', function ($query) {
                 $query->where('branch_store_id', Auth::user()->branch_store_id);
             })
@@ -38,21 +59,57 @@ class MemberApprovalController extends Controller
                         })
                         ->orWhereHas('memberPackage', function ($packageQuery) use ($search) {
                             $packageQuery->where('package_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('users', function ($staffQuery) use ($search) {
+                            $staffQuery->where('full_name', 'like', "%{$search}%");
                         });
                 });
-            })
-            ->latest('updated_at')
+            });
+
+        switch ($sort) {
+            case 'member_name':
+                $query->orderBy(
+                    Member::query()
+                        ->select('full_name')
+                        ->whereColumn('members.id', 'member_registrations.member_id'),
+                    $direction
+                );
+                break;
+            case 'check_in_time':
+                $query->orderBy('latest_check_in_at', $direction);
+                break;
+            case 'start_date':
+                $query->orderBy('member_registrations.start_date', $direction);
+                break;
+            case 'payment_summary':
+                $query->orderByRaw('COALESCE(payment_summary, 0) ' . $direction);
+                break;
+            case 'staff_name':
+                $query->orderBy(
+                    User::query()
+                        ->select('full_name')
+                        ->whereColumn('users.id', 'member_registrations.user_id'),
+                    $direction
+                );
+                break;
+            default:
+                $sort = 'created_at';
+                $query->orderBy('member_registrations.created_at', $direction);
+                break;
+        }
+
+        $memberRegistrations = $query
+            ->orderByDesc('member_registrations.id')
             ->paginate($perPage)
-            ->appends([
-                'search' => $search,
-                'per_page' => $perPage,
-            ]);
+            ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
 
         return view('admin.layouts.wrapper', [
             'title' => 'Member Approval',
             'memberRegistrations' => $memberRegistrations,
             'search' => $search,
             'perPage' => $perPage,
+            'sort' => $sort,
+            'direction' => $direction,
             'content' => 'admin/member-approval/index',
         ]);
     }

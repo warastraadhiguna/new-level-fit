@@ -1,10 +1,32 @@
 <div class="row">
+    @php
+        $sortLink = function ($column) use ($sort, $direction, $search, $perPage) {
+            $nextDirection = $sort === $column && $direction === 'asc' ? 'desc' : 'asc';
+
+            return route('member-approval.index', array_filter([
+                'search' => $search,
+                'per_page' => $perPage,
+                'sort' => $column,
+                'direction' => $nextDirection,
+            ], fn ($value) => $value !== null && $value !== ''));
+        };
+
+        $sortIcon = function ($column) use ($sort, $direction) {
+            if ($sort !== $column) {
+                return 'fa-sort';
+            }
+
+            return $direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+        };
+    @endphp
     <div class="col-xl-12">
         <div class="row">
             <div class="col-xl-12">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <form method="GET" action="{{ route('member-approval.index') }}" id="memberApprovalSearchForm">
+                            <input type="hidden" name="sort" value="{{ $sort }}">
+                            <input type="hidden" name="direction" value="{{ $direction }}">
                             <div class="d-flex justify-content-end align-items-center mb-4">
                                 @if ($search)
                                     <a href="{{ route('member-approval.index') }}" class="btn btn-danger light">
@@ -43,9 +65,37 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Member</th>
-                                <th>Package</th>
-                                <th>Periode</th>
+                                <th>
+                                    <a href="{{ $sortLink('member_name') }}" class="text-primary">
+                                        Member Data <i class="fa {{ $sortIcon('member_name') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('check_in_time') }}" class="text-primary">
+                                        Last Check In <i class="fa {{ $sortIcon('check_in_time') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('start_date') }}" class="text-primary">
+                                        Date <i class="fa {{ $sortIcon('start_date') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('payment_summary') }}" class="text-primary">
+                                        Payment <i class="fa {{ $sortIcon('payment_summary') }}"></i>
+                                    </a>
+                                </th>
+                                <th>Status</th>
+                                <th>
+                                    <a href="{{ $sortLink('staff_name') }}" class="text-primary">
+                                        Staff <i class="fa {{ $sortIcon('staff_name') }}"></i>
+                                    </a>
+                                </th>
+                                <th>
+                                    <a href="{{ $sortLink('created_at') }}" class="text-primary">
+                                        Created At <i class="fa {{ $sortIcon('created_at') }}"></i>
+                                    </a>
+                                </th>
                                 <th style="min-width: 190px">Action</th>
                             </tr>
                         </thead>
@@ -56,11 +106,80 @@
                                     <td>
                                         <h6>{{ optional($item->members)->full_name }}</h6>
                                         <h6>{{ optional($item->members)->member_code }}</h6>
+                                        <h6>{{ optional($item->memberPackage)->package_name }}</h6>
+                                        @php
+                                            $isAllClub = (bool) optional($item->memberPackage)->is_all_club;
+                                        @endphp
+                                        <span class="badge {{ $isAllClub ? 'badge-primary' : 'badge-secondary' }} badge-sm">
+                                            {{ $isAllClub ? 'All Club' : 'One Club' }}
+                                        </span>
+                                        <br>
+                                        <h6>{{ optional(optional($item->members)->branchStore)->name }}</h6>
                                     </td>
-                                    <td>{{ optional($item->memberPackage)->package_name }}</td>
+                                    @php
+                                        $latestCheckIn = $item->latestCheckIn;
+                                        $totalFreezeDays = (int) $item->leaveDays->sum('days');
+                                        $expiredDate = \Carbon\Carbon::parse($item->start_date)
+                                            ->addDays((int) $item->days + $totalFreezeDays);
+                                        $now = \Carbon\Carbon::now();
+                                        $isFrozen = $item->leaveDays->contains(function ($leaveDay) use ($now) {
+                                            if (!$leaveDay->submission_date) {
+                                                return false;
+                                            }
+
+                                            $freezeStart = \Carbon\Carbon::parse($leaveDay->submission_date);
+                                            $freezeEnd = $freezeStart->copy()->addDays((int) $leaveDay->days);
+
+                                            return $now->between($freezeStart, $freezeEnd);
+                                        });
+                                        $paymentSummary = (int) ($item->payment_summary ?? 0);
+                                        $totalPayable = max(
+                                            0,
+                                            (int) $item->package_price + (int) $item->admin_price - (int) $item->discount_amount
+                                        );
+                                    @endphp
+                                    <td>
+                                        @if (!$latestCheckIn)
+                                            <span class="badge badge-info badge-lg">Not Yet</span>
+                                        @elseif (!$latestCheckIn->check_out_time)
+                                            <span class="badge badge-primary badge-lg">Running</span>
+                                        @else
+                                            <span class="badge badge-info badge-lg">
+                                                {{ DateDiff($latestCheckIn->check_out_time, \Carbon\Carbon::now(), true) }} day ago
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="text-nowrap">
-                                        {{ DateFormat($item->start_date, 'DD MMM YYYY') }}<br>
+                                        <h6>
+                                            {{ DateFormat($item->start_date, 'DD MMMM YYYY') }}-<br>
+                                            {{ DateFormat($expiredDate, 'DD MMMM YYYY') }}
+                                        </h6>
                                         <small>{{ (int) $item->days }} hari</small>
+                                    </td>
+                                    <td>
+                                        @if ($paymentSummary >= $totalPayable)
+                                            <span class="badge badge-primary badge-lg">Paid</span>
+                                        @else
+                                            <span class="badge badge-danger badge-lg">
+                                                {{ formatRupiah($totalPayable - $paymentSummary) }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($isFrozen)
+                                            <span class="badge badge-secondary badge-lg">Freeze</span>
+                                        @elseif ($latestCheckIn && !$latestCheckIn->check_out_time)
+                                            <span class="badge badge-primary badge-lg">Running</span>
+                                        @else
+                                            <span class="badge badge-info badge-lg">Not Start</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <h6>{{ optional($item->users)->full_name ?: '-' }}</h6>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <h6>{{ DateFormat($item->created_at, 'DD MMMM YYYY') }}</h6>
+                                        <small>{{ DateFormat($item->created_at, 'HH:mm') }}</small>
                                     </td>
                                     <td>
                                         <div class="d-flex flex-wrap gap-2">
@@ -75,7 +194,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center">Tidak ada membership yang perlu disetujui.</td>
+                                    <td colspan="9" class="text-center">Tidak ada membership yang perlu disetujui.</td>
                                 </tr>
                             @endforelse
                         </tbody>

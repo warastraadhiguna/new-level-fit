@@ -85,6 +85,11 @@ class MemberRegistration extends Model
         return $this->hasMany(CheckInMember::class);
     }
 
+    public function latestCheckIn()
+    {
+        return $this->hasOne(CheckInMember::class)->latestOfMany();
+    }
+
     public function leaveDays()
     {
         return $this->hasMany(LeaveDay::class);
