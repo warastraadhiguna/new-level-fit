@@ -65,6 +65,11 @@ class MemberRegistration extends Model
         return $this->belongsTo(MemberPackage::class, 'member_package_id', 'id');
     }
 
+    public function memberPackageWithTrashed()
+    {
+        return $this->belongsTo(MemberPackage::class, 'member_package_id', 'id')->withTrashed();
+    }
+
     public function methodPayment()
     {
         return $this->belongsTo(MethodPayment::class, 'method_payment_id', 'id');

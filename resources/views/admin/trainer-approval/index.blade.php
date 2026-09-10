@@ -3,7 +3,7 @@
         $sortLink = function ($column) use ($sort, $direction, $search, $perPage) {
             $nextDirection = $sort === $column && $direction === 'asc' ? 'desc' : 'asc';
 
-            return route('member-approval.index', array_filter([
+            return route('trainer-approval.index', array_filter([
                 'search' => $search,
                 'per_page' => $perPage,
                 'sort' => $column,
@@ -24,12 +24,12 @@
             <div class="col-xl-12">
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
-                        <form method="GET" action="{{ route('member-approval.index') }}" id="memberApprovalSearchForm">
+                        <form method="GET" action="{{ route('trainer-approval.index') }}" id="trainerApprovalSearchForm">
                             <input type="hidden" name="sort" value="{{ $sort }}">
                             <input type="hidden" name="direction" value="{{ $direction }}">
                             <div class="d-flex justify-content-end align-items-center mb-4">
                                 @if ($search)
-                                    <a href="{{ route('member-approval.index') }}" class="btn btn-danger light">
+                                    <a href="{{ route('trainer-approval.index') }}" class="btn btn-danger light">
                                         Reset Search
                                     </a>
                                 @endif
@@ -61,7 +61,7 @@
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
                     <table class="table-responsive-lg table display dataTablesCard student-tab dataTable no-footer"
-                        id="memberApprovalTable">
+                        id="trainerApprovalTable">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -80,12 +80,18 @@
                                         Date <i class="fa {{ $sortIcon('start_date') }}"></i>
                                     </a>
                                 </th>
+                                <th>Session</th>
                                 <th>
                                     <a href="{{ $sortLink('payment_summary') }}" class="text-primary">
                                         Payment <i class="fa {{ $sortIcon('payment_summary') }}"></i>
                                     </a>
                                 </th>
                                 <th>Status</th>
+                                <th>
+                                    <a href="{{ $sortLink('trainer_name') }}" class="text-primary">
+                                        Trainer <i class="fa {{ $sortIcon('trainer_name') }}"></i>
+                                    </a>
+                                </th>
                                 <th>
                                     <a href="{{ $sortLink('staff_name') }}" class="text-primary">
                                         Staff <i class="fa {{ $sortIcon('staff_name') }}"></i>
@@ -100,48 +106,45 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($memberRegistrations as $item)
+                            @forelse ($trainerSessions as $item)
+                                @php
+                                    $latestCheckIn = $item->latestCheckIn;
+                                    $totalFreezeDays = (int) $item->leaveDays->sum('days');
+                                    $expiredDate = $item->start_date
+                                        ? \Carbon\Carbon::parse($item->start_date)->addDays((int) $item->days + $totalFreezeDays)
+                                        : null;
+                                    $now = \Carbon\Carbon::now();
+                                    $isFrozen = $item->leaveDays->contains(function ($leaveDay) use ($now) {
+                                        if (!$leaveDay->submission_date) {
+                                            return false;
+                                        }
+
+                                        $freezeStart = \Carbon\Carbon::parse($leaveDay->submission_date);
+                                        $freezeEnd = $freezeStart->copy()->addDays((int) $leaveDay->days);
+
+                                        return $now->between($freezeStart, $freezeEnd);
+                                    });
+                                    $paymentSummary = (int) ($item->payment_summary ?? 0);
+                                    $totalPayable = max(
+                                        0,
+                                        (int) $item->package_price + (int) $item->admin_price - (int) $item->discount_amount
+                                    );
+                                    $trainerPackage = $item->trainerPackageWithTrashed;
+                                    $trainerPackageLabel = $trainerPackage
+                                        ? $trainerPackage->package_name . ($trainerPackage->trashed() ? ' (Deleted)' : '')
+                                        : 'Package Not Available (Deleted)';
+                                    $totalSessions = (int) ($item->number_of_session ?: optional($trainerPackage)->number_of_session);
+                                    $remainingSessions = max(0, $totalSessions - (int) $item->used_session_count);
+                                @endphp
                                 <tr>
-                                    <td>{{ $memberRegistrations->firstItem() + $loop->index }}</td>
+                                    <td>{{ $trainerSessions->firstItem() + $loop->index }}</td>
                                     <td>
-                                        @php
-                                            $memberPackage = $item->memberPackageWithTrashed;
-                                            $memberPackageLabel = $memberPackage
-                                                ? $memberPackage->package_name . ($memberPackage->trashed() ? ' (Deleted)' : '')
-                                                : 'Package Not Available (Deleted)';
-                                            $isAllClub = (bool) optional($memberPackage)->is_all_club;
-                                        @endphp
                                         <h6>{{ optional($item->members)->full_name }}</h6>
                                         <h6>{{ optional($item->members)->member_code }}</h6>
-                                        <h6>{{ $memberPackageLabel }}</h6>
-                                        <span class="badge {{ $isAllClub ? 'badge-primary' : 'badge-secondary' }} badge-sm">
-                                            {{ $isAllClub ? 'All Club' : 'One Club' }}
-                                        </span>
+                                        <h6>{{ $trainerPackageLabel }}</h6>
                                         <br>
-                                        <h6>{{ optional(optional($item->members)->branchStore)->name }}</h6>
+                                        <h6>{{ optional($item->branchStore)->name }}</h6>
                                     </td>
-                                    @php
-                                        $latestCheckIn = $item->latestCheckIn;
-                                        $totalFreezeDays = (int) $item->leaveDays->sum('days');
-                                        $expiredDate = \Carbon\Carbon::parse($item->start_date)
-                                            ->addDays((int) $item->days + $totalFreezeDays);
-                                        $now = \Carbon\Carbon::now();
-                                        $isFrozen = $item->leaveDays->contains(function ($leaveDay) use ($now) {
-                                            if (!$leaveDay->submission_date) {
-                                                return false;
-                                            }
-
-                                            $freezeStart = \Carbon\Carbon::parse($leaveDay->submission_date);
-                                            $freezeEnd = $freezeStart->copy()->addDays((int) $leaveDay->days);
-
-                                            return $now->between($freezeStart, $freezeEnd);
-                                        });
-                                        $paymentSummary = (int) ($item->payment_summary ?? 0);
-                                        $totalPayable = max(
-                                            0,
-                                            (int) $item->package_price + (int) $item->admin_price - (int) $item->discount_amount
-                                        );
-                                    @endphp
                                     <td>
                                         @if (!$latestCheckIn)
                                             <span class="badge badge-info badge-lg">Not Yet</span>
@@ -155,10 +158,17 @@
                                     </td>
                                     <td class="text-nowrap">
                                         <h6>
-                                            {{ DateFormat($item->start_date, 'DD MMMM YYYY') }}-<br>
-                                            {{ DateFormat($expiredDate, 'DD MMMM YYYY') }}
+                                            {{ $item->start_date ? DateFormat($item->start_date, 'DD MMMM YYYY') : '-' }}-<br>
+                                            {{ $expiredDate ? DateFormat($expiredDate, 'DD MMMM YYYY') : '-' }}
                                         </h6>
                                         <small>{{ (int) $item->days }} hari</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-primary d-inline-block">
+                                            {{ $trainerPackageLabel }}
+                                        </span>
+                                        <h6>Session Total : {{ $totalSessions }}</h6>
+                                        <h6>Remaining Session : {{ $remainingSessions }}</h6>
                                     </td>
                                     <td>
                                         @if ($paymentSummary >= $totalPayable)
@@ -178,9 +188,8 @@
                                             <span class="badge badge-info badge-lg">Not Start</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        <h6>{{ optional($item->users)->full_name ?: '-' }}</h6>
-                                    </td>
+                                    <td><h6>{{ optional($item->personalTrainers)->full_name ?: '-' }}</h6></td>
+                                    <td><h6>{{ optional($item->users)->full_name ?: '-' }}</h6></td>
                                     <td class="text-nowrap">
                                         <h6>{{ DateFormat($item->created_at, 'DD MMMM YYYY') }}</h6>
                                         <small>{{ DateFormat($item->created_at, 'HH:mm') }}</small>
@@ -188,41 +197,41 @@
                                     <td>
                                         <div class="d-flex flex-wrap gap-2">
                                             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#approvalModal{{ $item->id }}">
+                                                data-bs-target="#trainerApprovalModal{{ $item->id }}">
                                                 Approval
                                             </button>
-                                            <a href="{{ route('member-active.edit', $item->id) }}"
-                                                class="btn btn-light btn-sm">Edit Member</a>
+                                            <a href="{{ route('trainer-session.edit', $item->id) }}"
+                                                class="btn btn-light btn-sm">Edit PT</a>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center">Tidak ada membership yang perlu disetujui.</td>
+                                    <td colspan="11" class="text-center">Tidak ada PT yang perlu disetujui.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                @foreach ($memberRegistrations as $item)
+                @foreach ($trainerSessions as $item)
                     @php
-                        $hasApprovalError = (string) old('member_registration_id') === (string) $item->id
+                        $hasApprovalError = (string) old('trainer_session_id') === (string) $item->id
                             && $errors->any();
                     @endphp
-                    <div class="modal fade" id="approvalModal{{ $item->id }}" tabindex="-1"
-                        aria-labelledby="approvalModalLabel{{ $item->id }}" aria-hidden="true">
+                    <div class="modal fade" id="trainerApprovalModal{{ $item->id }}" tabindex="-1"
+                        aria-labelledby="trainerApprovalModalLabel{{ $item->id }}" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
-                                <form action="{{ route('member-approval.update', $item->id) }}" method="POST">
+                                <form action="{{ route('trainer-approval.update', $item->id) }}" method="POST">
                                     @csrf
                                     @method('PUT')
-                                    <input type="hidden" name="member_registration_id" value="{{ $item->id }}">
+                                    <input type="hidden" name="trainer_session_id" value="{{ $item->id }}">
                                     <input type="hidden" name="is_approved" value="1">
 
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="approvalModalLabel{{ $item->id }}">
-                                            Approval Membership
+                                        <h5 class="modal-title" id="trainerApprovalModalLabel{{ $item->id }}">
+                                            Approval PT
                                         </h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"
                                             aria-label="Close"></button>
@@ -237,23 +246,24 @@
                                             <span class="d-block text-muted">
                                                 {{ optional($item->members)->member_code }} ·
                                                 @php
-                                                    $memberPackage = $item->memberPackageWithTrashed;
+                                                    $trainerPackage = $item->trainerPackageWithTrashed;
                                                 @endphp
-                                                {{ $memberPackage
-                                                    ? $memberPackage->package_name . ($memberPackage->trashed() ? ' (Deleted)' : '')
-                                                    : 'Package Not Available (Deleted)' }}
+                                                {{ $trainerPackage
+                                                    ? $trainerPackage->package_name . ($trainerPackage->trashed() ? ' (Deleted)' : '')
+                                                    : 'Package Not Available (Deleted)' }} ·
+                                                {{ optional($item->personalTrainers)->full_name ?: 'Trainer belum dipilih' }}
                                             </span>
                                         </div>
                                         <div>
                                             <label class="form-label">Description</label>
                                             <textarea name="description" rows="5" class="form-control" required
                                                 placeholder="Description wajib diubah">{{ $hasApprovalError ? old('description') : $item->description }}</textarea>
-                                            <small class="text-muted">Description wajib diubah sebelum membership disetujui.</small>
+                                            <small class="text-muted">Description wajib diubah sebelum PT disetujui.</small>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary">Approve Membership</button>
+                                        <button type="submit" class="btn btn-primary">Approve PT</button>
                                     </div>
                                 </form>
                             </div>
@@ -263,12 +273,12 @@
 
                 <div class="mt-3 d-flex flex-wrap justify-content-between align-items-center">
                     <div class="text-muted mb-2">
-                        Showing {{ $memberRegistrations->firstItem() ?? 0 }} to
-                        {{ $memberRegistrations->lastItem() ?? 0 }} of
-                        {{ $memberRegistrations->total() }} data
+                        Showing {{ $trainerSessions->firstItem() ?? 0 }} to
+                        {{ $trainerSessions->lastItem() ?? 0 }} of
+                        {{ $trainerSessions->total() }} data
                     </div>
                     <div class="mb-2">
-                        {{ $memberRegistrations->links('pagination::bootstrap-4') }}
+                        {{ $trainerSessions->links('pagination::bootstrap-4') }}
                     </div>
                 </div>
             </div>
@@ -276,10 +286,10 @@
     </div>
 </div>
 
-@if (old('member_registration_id') && $errors->any())
+@if (old('trainer_session_id') && $errors->any())
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var approvalModal = document.getElementById(@json('approvalModal' . old('member_registration_id')));
+            var approvalModal = document.getElementById(@json('trainerApprovalModal' . old('trainer_session_id')));
             if (approvalModal && window.bootstrap) {
                 new bootstrap.Modal(approvalModal).show();
             }

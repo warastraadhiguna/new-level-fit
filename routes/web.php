@@ -26,6 +26,7 @@ use App\Http\Controllers\Staff\FitnessConsultantController;
 use App\Http\Controllers\Staff\PersonalTrainerController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Trainer\LGTController;
+use App\Http\Controllers\Trainer\TrainerApprovalController;
 use App\Http\Controllers\Trainer\PtFreeController;
 use App\Http\Controllers\Trainer\TrainerPackageController;
 use App\Http\Controllers\Trainer\TrainerSessionCheckInController;
@@ -213,6 +214,12 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::get('session-pending', [TrainerSessionController::class, 'pending'])->name('trainer-session-pending');
     Route::get('session-waiting-list', [TrainerSessionController::class, 'waitingList'])->name('trainer-session-waiting-list');
     Route::get('trainer-session-unpaid', [TrainerSessionController::class, 'unpaid'])->name('trainer-session-unpaid');
+    Route::get('trainer-approval', [TrainerApprovalController::class, 'index'])
+        ->middleware('admin.only')
+        ->name('trainer-approval.index');
+    Route::put('trainer-approval/{trainerSession}', [TrainerApprovalController::class, 'update'])
+        ->middleware('admin.only')
+        ->name('trainer-approval.update');
 
 
     Route::resource('buddy-referral', '\App\Http\Controllers\Admin\BuddyReferralController');

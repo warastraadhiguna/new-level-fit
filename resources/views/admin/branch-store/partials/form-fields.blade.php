@@ -131,6 +131,17 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
+            <label class="form-label">PT Approval</label>
+            @php $trainerApprovalEnabled = old('trainer_approval_enabled', isset($branchStore) ? (int) $branchStore->trainer_approval_enabled : 0); @endphp
+            <select name="trainer_approval_enabled" class="form-control" required>
+                <option value="0" {{ (string) $trainerApprovalEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $trainerApprovalEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Jika aktif, ADMIN dan OWNER dapat menyetujui PT dengan memperbarui description.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
             <label class="form-label">PT Free</label>
             @php $ptFreeEnabled = old('pt_free_enabled', isset($branchStore) ? (int) $branchStore->pt_free_enabled : 0); @endphp
             <select name="pt_free_enabled" class="form-control" required>

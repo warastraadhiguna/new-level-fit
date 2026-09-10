@@ -76,8 +76,10 @@
                         <li><a href="{{ route('trainer-session-over.index') }}">PT Expired</a></li>
                         <li><a href="{{ route('trainer-session-waiting-list') }}">PT Waiting List</a></li>
                         <li><a href="{{ route('lgt') }}">LGT</a></li>
-                        <li><a href="{{ route('pt-history') }}">History</a>
-                        </li>
+                        @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->trainer_approval_enabled)
+                            <li><a href="{{ route('trainer-approval.index') }}">PT Approval</a></li>
+                        @endif
+                        <li><a href="{{ route('pt-history') }}">History</a></li>
                     @endif
                 </ul>
             </li>

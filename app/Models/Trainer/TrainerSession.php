@@ -32,6 +32,7 @@ class TrainerSession extends Model
         'payment_deadline',
         'number_of_session',
         'description',
+        'is_approved',
         'method_payment_id',
         'fc_id',
         'user_id',
@@ -42,6 +43,7 @@ class TrainerSession extends Model
         'payment_deadline' => 'integer',
         'discount_amount' => 'integer',
         'is_pt_free' => 'boolean',
+        'is_approved' => 'boolean',
     ];
 
     protected $hidden = [];
@@ -66,6 +68,11 @@ class TrainerSession extends Model
         return $this->belongsTo(TrainerPackage::class, 'trainer_package_id', 'id');
     }
 
+    public function trainerPackageWithTrashed()
+    {
+        return $this->belongsTo(TrainerPackage::class, 'trainer_package_id', 'id')->withTrashed();
+    }
+
     public function users()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
@@ -79,6 +86,21 @@ class TrainerSession extends Model
     public function trainerSessionCheckIn()
     {
         return $this->hasMany(CheckInTrainerSession::class);
+    }
+
+    public function latestCheckIn()
+    {
+        return $this->hasOne(CheckInTrainerSession::class)->latestOfMany();
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(TrainerSessionPayment::class);
+    }
+
+    public function leaveDays()
+    {
+        return $this->hasMany(PtLeaveDay::class);
     }
 
     public function methodPayment()
@@ -121,7 +143,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, train_sess.branch_store_id, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.trainer_package_id, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
+        train_sess.id, train_sess.start_date, train_sess.trainer_package_id, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description, train_sess.is_approved,
         train_pack.package_name,
         pers_train.full_name AS trainer_name, pers_train.id AS trainer_id,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -191,7 +213,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.full_name AS member_name, mbr.nickname, mbr.phone_number, mbr.gender, mbr.born, mbr.member_code, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name, train_sess.package_price AS ts_package_price, train_sess.admin_price AS ts_admin_price, train_sess.discount_amount AS ts_discount_amount, bs.name as branch_store_name,
         mbr.card_number, mbr.id_code_count, mbr.photos, mbr.status, mbr.address, mbr.id AS member_id,
-        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description,
+        train_sess.id, train_sess.start_date, train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.description, train_sess.is_approved,
         train_pack.package_name,
         pers_train.full_name AS trainer_name,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
@@ -299,8 +321,8 @@ class TrainerSession extends Model
             THEN DATE_ADD(train_sess.created_at, INTERVAL train_sess.payment_deadline DAY)
             ELSE NULL
         END AS payment_deadline_date,
-        train_sess.number_of_session AS ts_number_of_session, train_sess.days,
-        train_pack.package_name,
+        train_sess.number_of_session AS ts_number_of_session, train_sess.days, train_sess.is_approved,
+        train_pack.package_name, train_pack.status AS trainer_package_status,
         COALESCE(pers_train.full_name, '-') AS trainer_name, pers_train.id AS trainer_id,
         cits_view.current_check_in_trainer_sessions_id, cits_view.check_in_time, cits_view.check_out_time, cits_view.updated_at_check_in,
 
@@ -576,7 +598,7 @@ class TrainerSession extends Model
     {
         $sql = "SELECT mbr.id, mbr.full_name AS member_name, mbr.photos, mbr.member_code,
                 train_sess.start_date, train_sess.id AS ts_id, train_sess.days AS ts_days, train_sess.days AS ts_number_of_days, train_sess.package_price AS ts_package_price, train_sess.member_id AS registered_member_id,
-                pers_train.full_name AS trainer_full_name, train_sess.description,
+                pers_train.full_name AS trainer_full_name, train_sess.description, train_sess.is_approved,
                 train_pack.package_name, met_pay.name AS method_payment_name,
 
                 DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY) AS expired_date,

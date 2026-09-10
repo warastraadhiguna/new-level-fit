@@ -261,6 +261,7 @@
                                                 <span class="badge badge-info badge-lg">Running</span>
                                             @endif
                                         @endif
+                                        @include('admin.trainer-session.partials.approval-status', ['item' => $item])
                                     </td>
                                     <td>
                                         <h6>{{ $item->trainer_name }}</h6>

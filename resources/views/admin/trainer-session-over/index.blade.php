@@ -49,6 +49,7 @@
                                     </td>
                                     <td>
                                         <span class="badge badge-danger badge-lg">Expired</span>
+                                        @include('admin.trainer-session.partials.approval-status', ['item' => $item])
                                     </td>
                                     <td>
                                         <h6>{{ DateFormat($item->start_date, 'DD MMMM YYYY') }}-{{ DateFormat($item->expired_date, 'DD MMMM YYYY') }}

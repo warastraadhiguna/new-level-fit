@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Member;
+namespace App\Http\Controllers\Trainer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Member\CheckInMember;
 use App\Models\Member\Member;
-use App\Models\Member\MemberRegistration;
+use App\Models\Staff\PersonalTrainer;
+use App\Models\Trainer\CheckInTrainerSession;
+use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
-class MemberApprovalController extends Controller
+class TrainerApprovalController extends Controller
 {
     public function index(Request $request)
     {
@@ -27,39 +28,51 @@ class MemberApprovalController extends Controller
             $perPage = 10;
         }
 
-        $query = MemberRegistration::query()
+        $query = TrainerSession::query()
             ->with([
-                'members:id,full_name,member_code,branch_store_id',
-                'members.branchStore:id,name',
-                'memberPackageWithTrashed:id,package_name,is_all_club,deleted_at',
-                'methodPayment:id,name',
+                'members:id,full_name,member_code',
+                'trainerPackageWithTrashed:id,package_name,number_of_session,status,deleted_at',
+                'personalTrainers:id,full_name',
+                'branchStore:id,name',
                 'users:id,full_name',
                 'latestCheckIn',
-                'leaveDays:id,member_registration_id,submission_date,days,leave_day_continue_id',
+                'leaveDays:id,trainer_session_id,submission_date,days',
             ])
             ->withSum('payments as payment_summary', 'value')
+            ->withCount([
+                'trainerSessionCheckIn as used_session_count' => function ($query) {
+                    $query->whereNotNull('check_out_time');
+                },
+            ])
             ->addSelect([
-                'latest_check_in_at' => CheckInMember::query()
+                'latest_check_in_at' => CheckInTrainerSession::query()
                     ->select('check_in_time')
-                    ->whereColumn('member_registration_id', 'member_registrations.id')
+                    ->whereColumn('trainer_session_id', 'trainer_sessions.id')
                     ->latest('id')
                     ->limit(1),
             ])
-            ->whereHas('members', function ($query) use ($branchId) {
-                $query->where('branch_store_id', $branchId);
-            })
-            ->where('days', '>', 1)
+            ->where('branch_store_id', $branchId)
+            ->where('is_pt_free', false)
             ->where('is_approved', false)
+            ->where(function ($query) {
+                $query->whereDoesntHave('trainerPackageWithTrashed')
+                    ->orWhereHas('trainerPackageWithTrashed', function ($packageQuery) {
+                        $packageQuery->whereNull('status');
+                    });
+            })
             ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($registrationQuery) use ($search) {
-                    $registrationQuery
+                $query->where(function ($sessionQuery) use ($search) {
+                    $sessionQuery
                         ->where('description', 'like', "%{$search}%")
                         ->orWhereHas('members', function ($memberQuery) use ($search) {
                             $memberQuery->where('full_name', 'like', "%{$search}%")
                                 ->orWhere('member_code', 'like', "%{$search}%");
                         })
-                        ->orWhereHas('memberPackageWithTrashed', function ($packageQuery) use ($search) {
+                        ->orWhereHas('trainerPackageWithTrashed', function ($packageQuery) use ($search) {
                             $packageQuery->where('package_name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('personalTrainers', function ($trainerQuery) use ($search) {
+                            $trainerQuery->where('full_name', 'like', "%{$search}%");
                         })
                         ->orWhereHas('users', function ($staffQuery) use ($search) {
                             $staffQuery->where('full_name', 'like', "%{$search}%");
@@ -72,7 +85,7 @@ class MemberApprovalController extends Controller
                 $query->orderBy(
                     Member::query()
                         ->select('full_name')
-                        ->whereColumn('members.id', 'member_registrations.member_id'),
+                        ->whereColumn('members.id', 'trainer_sessions.member_id'),
                     $direction
                 );
                 break;
@@ -80,45 +93,53 @@ class MemberApprovalController extends Controller
                 $query->orderBy('latest_check_in_at', $direction);
                 break;
             case 'start_date':
-                $query->orderBy('member_registrations.start_date', $direction);
+                $query->orderBy('trainer_sessions.start_date', $direction);
                 break;
             case 'payment_summary':
                 $query->orderByRaw('COALESCE(payment_summary, 0) ' . $direction);
+                break;
+            case 'trainer_name':
+                $query->orderBy(
+                    PersonalTrainer::query()
+                        ->select('full_name')
+                        ->whereColumn('personal_trainers.id', 'trainer_sessions.trainer_id'),
+                    $direction
+                );
                 break;
             case 'staff_name':
                 $query->orderBy(
                     User::query()
                         ->select('full_name')
-                        ->whereColumn('users.id', 'member_registrations.user_id'),
+                        ->whereColumn('users.id', 'trainer_sessions.user_id'),
                     $direction
                 );
                 break;
             default:
                 $sort = 'created_at';
-                $query->orderBy('member_registrations.created_at', $direction);
+                $query->orderBy('trainer_sessions.created_at', $direction);
                 break;
         }
 
-        $memberRegistrations = $query
-            ->orderByDesc('member_registrations.id')
+        $trainerSessions = $query
+            ->orderByDesc('trainer_sessions.id')
             ->paginate($perPage)
             ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
 
         return view('admin.layouts.wrapper', [
-            'title' => 'Member Approval',
-            'memberRegistrations' => $memberRegistrations,
+            'title' => 'PT Approval',
+            'trainerSessions' => $trainerSessions,
             'search' => $search,
             'perPage' => $perPage,
             'sort' => $sort,
             'direction' => $direction,
-            'content' => 'admin/member-approval/index',
+            'content' => 'admin/trainer-approval/index',
         ]);
     }
 
-    public function update(Request $request, MemberRegistration $memberRegistration)
+    public function update(Request $request, TrainerSession $trainerSession)
     {
         $this->ensureFeatureEnabled();
-        $this->ensureRegistrationBelongsToActiveBranch($memberRegistration);
+        $this->ensureSessionBelongsToActiveBranch($trainerSession);
 
         $data = $request->validate([
             'is_approved' => ['required', Rule::in(['0', '1', 0, 1])],
@@ -128,15 +149,15 @@ class MemberApprovalController extends Controller
         ]);
 
         $description = trim($data['description']);
-        if ($description === trim((string) $memberRegistration->description)) {
+        if ($description === trim((string) $trainerSession->description)) {
             return back()
                 ->withErrors(['description' => 'Description wajib diubah sebelum status approval disimpan.'])
                 ->withInput();
         }
 
-        DB::transaction(function () use ($memberRegistration, $data, $description) {
-            $lockedRegistration = MemberRegistration::lockForUpdate()->findOrFail($memberRegistration->id);
-            $lockedRegistration->update([
+        DB::transaction(function () use ($trainerSession, $data, $description) {
+            $lockedSession = TrainerSession::lockForUpdate()->findOrFail($trainerSession->id);
+            $lockedSession->update([
                 'is_approved' => (bool) $data['is_approved'],
                 'description' => $description,
             ]);
@@ -145,22 +166,23 @@ class MemberApprovalController extends Controller
         return back()->with(
             'success',
             (bool) $data['is_approved']
-                ? 'Membership berhasil disetujui.'
-                : 'Approval membership berhasil dibatalkan.'
+                ? 'PT berhasil disetujui.'
+                : 'Approval PT berhasil dibatalkan.'
         );
     }
 
     private function ensureFeatureEnabled(): void
     {
-        abort_unless((bool) optional(Auth::user()->branchStore)->member_approval_enabled, 404);
+        abort_unless((bool) optional(Auth::user()->branchStore)->trainer_approval_enabled, 404);
     }
 
-    private function ensureRegistrationBelongsToActiveBranch(MemberRegistration $memberRegistration): void
+    private function ensureSessionBelongsToActiveBranch(TrainerSession $trainerSession): void
     {
-        $belongsToBranch = $memberRegistration->members()
-            ->where('branch_store_id', Auth::user()->branch_store_id)
-            ->exists();
+        $trainerPackage = $trainerSession->trainerPackageWithTrashed()->first();
+        $isEligible = (int) $trainerSession->branch_store_id === (int) Auth::user()->branch_store_id
+            && !$trainerSession->is_pt_free
+            && (!$trainerPackage || $trainerPackage->status === null);
 
-        abort_unless($belongsToBranch, 404);
+        abort_unless($isEligible, 404);
     }
 }
