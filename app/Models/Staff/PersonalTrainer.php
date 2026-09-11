@@ -16,6 +16,7 @@ class PersonalTrainer extends Model
     protected $fillable = [
         'branch_store_id',
         'full_name',
+        'email',
         'gender',
         'role',
         'phone_number',

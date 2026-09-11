@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Staff\PersonalTrainer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class PersonalTrainerController extends Controller
 {
@@ -24,11 +25,13 @@ class PersonalTrainerController extends Controller
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name'     => 'required|string|max:200',
+            'email'         => 'required|email|max:255|unique:personal_trainers,email',
             'phone_number'  => '',
             'gender'        => 'required',
             'address'       => '',
             'description'   => '',
         ]);
+        $data['email'] = strtolower($data['email']);
         $data['user_id'] = Auth::user()->id;
 
         PersonalTrainer::create($data);
@@ -46,11 +49,13 @@ class PersonalTrainerController extends Controller
         $data = $request->validate([
             'branch_store_id'    => 'required|exists:branch_stores,id',
             'full_name'     => 'string|max:200',
+            'email'         => ['required', 'email', 'max:255', Rule::unique('personal_trainers', 'email')->ignore($item->id)],
             'phone_number'  => 'nullable',
             'gender'        => 'nullable',
             'address'       => 'nullable',
             'description'   => 'nullable',
         ]);
+        $data['email'] = strtolower($data['email']);
         $data['user_id'] = Auth::user()->id;
 
         $item->update($data);

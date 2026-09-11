@@ -9,6 +9,7 @@ use App\Models\Member\MemberPackage;
 use App\Models\Member\MemberRegistration;
 use App\Models\MethodPayment;
 use App\Models\Staff\FitnessConsultant;
+use App\Models\Staff\PersonalTrainer;
 use App\Models\Trainer\TrainerSession;
 use App\Models\User;
 use Illuminate\Http\Request;

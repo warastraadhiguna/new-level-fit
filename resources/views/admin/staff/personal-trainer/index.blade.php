@@ -51,6 +51,14 @@
                         </div>
                         <div class="col-xl-6">
                             <div class="mb-3">
+                                <label class="form-label">Google Account Email</label>
+                                <input type="email" name="email" value="{{ old('email') }}"
+                                    class="form-control" autocomplete="email" required>
+                                <small class="text-muted">Email ini digunakan coach untuk masuk ke Personal Trainer Page.</small>
+                            </div>
+                        </div>
+                        <div class="col-xl-6">
+                            <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Phone Number</label>
                                 <input type="text" name="phone_number" value="{{ old('phone_number') }}"
                                     class="form-control" id="exampleFormControlInput1" autocomplete="off" required>
@@ -140,6 +148,14 @@
                             </div>
                             <div class="col-xl-6">
                                 <div class="mb-3">
+                                    <label class="form-label">Google Account Email</label>
+                                    <input type="email" name="email" value="{{ old('email', $item->email) }}"
+                                        class="form-control" autocomplete="email" required>
+                                    <small class="text-muted">Email ini digunakan coach untuk masuk ke Personal Trainer Page.</small>
+                                </div>
+                            </div>
+                            <div class="col-xl-6">
+                                <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Phone Number</label>
                                     <input type="text" name="phone_number"
                                         value="{{ old('phone_number', $item->phone_number) }}" class="form-control"
@@ -213,6 +229,7 @@
                                     <th>No</th>
                                     <th>Branch</th>                                         
                                     <th>Full Name</th>
+                                    <th>Email</th>
                                     <th>Phone Number</th>
                                     <th>Gender</th>
                                     <th>Role</th>
@@ -235,6 +252,9 @@
                                         </td>                                          
                                         <td>
                                             <h6>{{ $item->full_name }}</h6>
+                                        </td>
+                                        <td>
+                                            <h6>{{ $item->email ?: '-' }}</h6>
                                         </td>
                                         <td>
                                             <h6>{{ $item->phone_number }}</h6>
