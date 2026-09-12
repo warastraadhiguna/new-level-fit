@@ -716,6 +716,59 @@ class TrainerSessionController extends Controller
         });
     }
 
+    public function unfreeze(string $id)
+    {
+        return DB::transaction(function () use ($id) {
+            $trainerSession = TrainerSession::lockForUpdate()->find($id);
+            if (! $trainerSession) {
+                return redirect()->back()->with('errorr', 'Trainer Session not found');
+            }
+
+            $now = Carbon::now()->tz('Asia/Jakarta');
+            $activeFreeze = PtLeaveDay::where('trainer_session_id', $trainerSession->id)
+                ->where('submission_date', '<=', $now)
+                ->lockForUpdate()
+                ->get()
+                ->filter(function (PtLeaveDay $leaveDay) use ($now) {
+                    return Carbon::parse($leaveDay->submission_date)
+                        ->addDays((int) $leaveDay->days)
+                        ->gte($now);
+                })
+                ->sortByDesc('submission_date')
+                ->first();
+
+            if (! $activeFreeze) {
+                return redirect()->back()->with('errorr', 'Freeze PT aktif tidak ditemukan');
+            }
+
+            if ($activeFreeze->member_leave_day_id) {
+                return redirect()->back()->with(
+                    'errorr',
+                    'Freeze PT ini berasal dari freeze membership. Hentikan freeze melalui Membership agar status membership dan seluruh PT tetap sinkron.'
+                );
+            }
+
+            $elapsedDays = DateDiff($activeFreeze->submission_date, $now);
+            if ($elapsedDays === 0) {
+                return redirect()->back()->with(
+                    'errorr',
+                    'Freeze PT yang baru dibuat hari ini tidak dapat dihentikan. Hapus data freeze jika terjadi kesalahan input.'
+                );
+            }
+
+            $activeFreeze->update([
+                'days' => $elapsedDays - 1,
+            ]);
+
+            PtLeaveDay::where('trainer_session_id', $trainerSession->id)
+                ->whereNull('member_leave_day_id')
+                ->where('submission_date', '>', $now)
+                ->delete();
+
+            return redirect()->back()->with('success', 'Freeze PT berhasil dihentikan!');
+        });
+    }
+
     public function destroy(TrainerSession $trainerSession)
     {
         abort_if($trainerSession->is_pt_free, 404);

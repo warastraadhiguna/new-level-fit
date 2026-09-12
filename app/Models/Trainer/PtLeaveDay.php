@@ -2,9 +2,10 @@
 
 namespace App\Models\Trainer;
 
+use App\Models\Member\LeaveDay;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class PtLeaveDay extends Model
 {
@@ -13,6 +14,7 @@ class PtLeaveDay extends Model
 
     protected $fillable = [
         'trainer_session_id',
+        'member_leave_day_id',
         'submission_date',
         'price',
         'days'
@@ -21,6 +23,11 @@ class PtLeaveDay extends Model
     public function memberRegistrations()
     {
         return $this->belongsTo(TrainerSession::class, 'trainer_session_id', 'id');
+    }
+
+    public function memberLeaveDay()
+    {
+        return $this->belongsTo(LeaveDay::class, 'member_leave_day_id', 'id');
     }
 
     public static function summaryQuery(): Builder

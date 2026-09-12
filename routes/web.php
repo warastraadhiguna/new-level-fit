@@ -200,6 +200,9 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin'])->group(fun
     Route::resource('trainer-session-over', '\App\Http\Controllers\Trainer\TrainerSessionOverController');
     Route::get('trainer-session-over-pdf', [TrainerSessionOverController::class, 'pdfReport'])->name('trainer-session-over-pdf');
     Route::put('trainer-session-freeze/{id}/freeze', [TrainerSessionController::class, 'freeze'])->name('trainer-session-freeze');
+    Route::put('trainer-session/{id}/unfreeze', [TrainerSessionController::class, 'unfreeze'])
+        ->middleware('admin.only')
+        ->name('trainer-session-unfreeze');
     Route::resource('running-session', '\App\Http\Controllers\Trainer\RunningSessionController');
     Route::get('cutiTrainerSession/{id}', [TrainerSessionController::class, 'cuti'])->name('cutiTrainerSession');
     Route::get('leave-days-lgt/{id}', [LGTController::class, 'cuti'])->name('cutiLGT');

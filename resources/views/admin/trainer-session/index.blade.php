@@ -323,6 +323,18 @@
                                                         <a href="{{ route('cutiTrainerSession', $item->id) }}" target="_blank"
                                                             class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a>
                                                     </li>
+                                                    @if (Auth::user()->isAdmin())
+                                                        <li>
+                                                            <form action="{{ route('trainer-session-unfreeze', $item->id) }}"
+                                                                method="POST"
+                                                                onsubmit="return confirm('Hentikan freeze PT ini sampai hari ini? Tanggal selesai freeze saat ini: {{ DateFormat($item->expired_leave_days, 'DD MMMM YYYY') }}.')">
+                                                                @method('put')
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    class="btn light btn-outline-secondary btn-xs mb-1 btn-block">Unfreeze PT</button>
+                                                            </form>
+                                                        </li>
+                                                    @endif
                                                 @endif
 
                                                 <li>

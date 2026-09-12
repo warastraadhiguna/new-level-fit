@@ -1312,7 +1312,7 @@ class MemberRegistrationController extends Controller
                     ->with('success', 'Freeze sudah tercatat (request duplikat diabaikan).');
             }
 
-            LeaveDay::create([
+            $memberLeaveDay = LeaveDay::create([
                 'member_registration_id' => $item->id,
                 'submission_date' => $submissionDate,
                 'price' => $price,
@@ -1330,17 +1330,31 @@ class MemberRegistrationController extends Controller
                 ->get();
 
             foreach ($trainerSessions as $trainerSession) {
-                $ptLeaveDayExists = PtLeaveDay::where('trainer_session_id', $trainerSession->id)
+                $existingMembershipPtLeaveDay = PtLeaveDay::where('trainer_session_id', $trainerSession->id)
                     ->where('submission_date', $submissionDate)
                     ->where('days', (int) $request->input('expired_date'))
-                    ->exists();
+                    ->where(function ($query) use ($memberLeaveDay) {
+                        $query->where('member_leave_day_id', $memberLeaveDay->id)
+                            ->orWhere(function ($legacyQuery) {
+                                $legacyQuery->whereNull('member_leave_day_id')
+                                    ->where('price', 0);
+                            });
+                    })
+                    ->first();
 
-                if ($ptLeaveDayExists) {
+                if ($existingMembershipPtLeaveDay) {
+                    if (! $existingMembershipPtLeaveDay->member_leave_day_id) {
+                        $existingMembershipPtLeaveDay->update([
+                            'member_leave_day_id' => $memberLeaveDay->id,
+                        ]);
+                    }
+
                     continue;
                 }
 
                 PtLeaveDay::create([
                     'trainer_session_id' => $trainerSession->id,
+                    'member_leave_day_id' => $memberLeaveDay->id,
                     'submission_date' => $submissionDate,
                     'price' => 0,
                     'days' => (int) $request->input('expired_date'),
@@ -1527,36 +1541,89 @@ class MemberRegistrationController extends Controller
     public function stopLeaveDays()
     {
         try {
-            //code...
             $member_registration_id = Request()->input("member_registration_id");
             $now = (DateFormat(Carbon::now()->tz('Asia/Jakarta'), "YYYY-MM-DD HH:mm:ss"));
             DB::beginTransaction();
-            $currentLeaveDay = LeaveDay::where([
-                ["member_registration_id", $member_registration_id],
-                ["submission_date", "<=", $now],
-                [DB::raw("DATE_ADD(submission_date, INTERVAL days DAY)"), ">=", $now],
-            ])->first();
-            $lessLeaveDays = LeaveDay::where([["id", ">", $currentLeaveDay->id], ["member_registration_id", $member_registration_id]]);
-            //  hitung total uang lalu tampilkan
+            $memberRegistration = MemberRegistration::lockForUpdate()->find($member_registration_id);
+            if (! $memberRegistration) {
+                DB::rollback();
+
+                return redirect()->route('member-active.index')->with('errorr', 'Member Registration not found');
+            }
+
+            $currentLeaveDay = LeaveDay::where('member_registration_id', $member_registration_id)
+                ->where('submission_date', '<=', $now)
+                ->lockForUpdate()
+                ->get()
+                ->first(function ($leaveDay) use ($now) {
+                    return Carbon::parse($leaveDay->submission_date)
+                        ->addDays((int) $leaveDay->days)
+                        ->gte(Carbon::parse($now));
+                });
+            if (! $currentLeaveDay) {
+                DB::rollback();
+
+                return redirect()->route('member-active.index')->with('errorr', 'Freeze aktif tidak ditemukan');
+            }
+
+            $futureLeaveDays = LeaveDay::where('id', '>', $currentLeaveDay->id)
+                ->where('member_registration_id', $member_registration_id)
+                ->lockForUpdate()
+                ->get();
             $newDay = DateDiff($currentLeaveDay->submission_date, $now);
-            // dd($currentLeaveDay->price);
             if ($newDay == 0) {
                 DB::rollback();
                 return redirect()->route('member-active.index')->with('errorr', "Freeze yang baru saja dibuat tidak bisa dihentikan (hapus data)!");
             }
 
+            $newFreezeDays = $newDay - 1;
+            $trainerSessionIds = TrainerSession::where('member_id', $memberRegistration->member_id)
+                ->pluck('id');
+
+            if ($trainerSessionIds->isNotEmpty()) {
+                PtLeaveDay::whereIn('trainer_session_id', $trainerSessionIds)
+                    ->where(function ($query) use ($currentLeaveDay) {
+                        $query->where('member_leave_day_id', $currentLeaveDay->id)
+                            ->orWhere(function ($legacyQuery) use ($currentLeaveDay) {
+                                $legacyQuery->whereNull('member_leave_day_id')
+                                    ->where('price', 0)
+                                    ->where('submission_date', $currentLeaveDay->submission_date)
+                                    ->where('days', $currentLeaveDay->days);
+                            });
+                    })
+                    ->lockForUpdate()
+                    ->update([
+                        'days' => $newFreezeDays,
+                        'member_leave_day_id' => $currentLeaveDay->id,
+                    ]);
+
+                foreach ($futureLeaveDays as $futureLeaveDay) {
+                    PtLeaveDay::whereIn('trainer_session_id', $trainerSessionIds)
+                        ->where(function ($query) use ($futureLeaveDay) {
+                            $query->where('member_leave_day_id', $futureLeaveDay->id)
+                                ->orWhere(function ($legacyQuery) use ($futureLeaveDay) {
+                                    $legacyQuery->whereNull('member_leave_day_id')
+                                        ->where('price', 0)
+                                        ->where('submission_date', $futureLeaveDay->submission_date)
+                                        ->where('days', $futureLeaveDay->days);
+                                });
+                        })
+                        ->delete();
+                }
+            }
+
             $currentLeaveDay->update([
-                'days' => $newDay - 1
+                'days' => $newFreezeDays,
             ]);
 
-            if (sizeof($lessLeaveDays->get()) > 0) {
-                $lessLeaveDays->delete();
+            if ($futureLeaveDays->isNotEmpty()) {
+                LeaveDay::whereIn('id', $futureLeaveDays->pluck('id'))->delete();
             }
             DB::commit();
-            return redirect()->route('member-active.index')->with('success', 'Leave days successfully stop!');
+            return redirect()->route('member-active.index')->with('success', 'Freeze membership dan PT berhasil dihentikan!');
         } catch (\Throwable $th) {
             DB::rollback();
-            return redirect()->route('member-active.index')->with('error', $th->getMessage());
+            return redirect()->route('member-active.index')->with('errorr', $th->getMessage());
         }
     }
 
