@@ -1,6 +1,11 @@
+@php
+    $isPtReadOnly = Auth::user()->isPt();
+@endphp
+
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
+            @if (!$isPtReadOnly)
             <div class="col-xl-12">
                 <div class="page-title flex-wrap">
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
@@ -8,6 +13,7 @@
                     </button>
                 </div>
             </div>
+            @endif
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
@@ -22,7 +28,9 @@
                                 <th>last Check In</th>
                                 <th>Date</th>
                                 <th>Status</th>
-                                <th>Action</th>
+                                @if (!$isPtReadOnly)
+                                    <th>Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -58,6 +66,7 @@
                                     <td>
                                         <span class="badge badge-danger badge-lg">Expired</span>
                                     </td>
+                                    @if (!$isPtReadOnly)
                                     <td class="btn-group-vertical">
                                         @if (Auth::user()->isAdmin())
                                             <a href="{{ route('trainer-session.edit', $item->ts_id) }}"
@@ -66,6 +75,7 @@
                                         <a href="{{ route('trainer-session.show', $item->ts_id) }}"
                                             class="btn light btn-info btn-xs mb-1">Detail</a>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

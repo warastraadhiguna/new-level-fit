@@ -46,12 +46,16 @@
     }
 </style>
 
+@php
+    $isPtReadOnly = Auth::user()->isPt();
+@endphp
+
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    @if (empty($isUnpaidPage))
+                    @if (empty($isUnpaidPage) && !$isPtReadOnly)
                         <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                             Download Excel
                         </button>
@@ -59,6 +63,7 @@
                 </div>
             </div>
 
+            @if (!$isPtReadOnly)
             @foreach ($birthdayMessages as $key => $messages)
                 @if (!empty($messages))
                     @foreach ($messages as $memberId => $memberName)
@@ -119,6 +124,7 @@
                     @endforeach
                 @endif
             @endforeach
+            @endif
 
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
@@ -136,7 +142,9 @@
                                 <th>{{ !empty($isUnpaidPage) ? 'Payment Info' : 'Payment' }}</th>
                                 <th>Status</th>
                                 <th>Trainer</th>
-                                <th>Action</th>
+                                @if (!$isPtReadOnly)
+                                    <th>Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -266,6 +274,7 @@
                                     <td>
                                         <h6>{{ $item->trainer_name }}</h6>
                                     </td>
+                                    @if (!$isPtReadOnly)
                                     <td>
                                         @php
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
@@ -357,6 +366,7 @@
                                             </ul>
                                         </div>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

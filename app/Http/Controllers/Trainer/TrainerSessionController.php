@@ -31,6 +31,7 @@ class TrainerSessionController extends Controller
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
+            abort_if(Auth::user()->isPt(), 403, 'Akun PT hanya memiliki akses lihat.');
             return Excel::download(new TrainerSessionActiveExport(), 'trainer-session-active, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 
@@ -85,6 +86,7 @@ class TrainerSessionController extends Controller
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
+            abort_if(Auth::user()->isPt(), 403, 'Akun PT hanya memiliki akses lihat.');
             return Excel::download(new TrainerSessionActiveExport(), 'trainer-session-active, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 

@@ -8,6 +8,7 @@ use App\Models\Member\Member;
 use App\Models\Trainer\PtLeaveDay;
 use App\Models\Trainer\TrainerSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,6 +22,7 @@ class TrainerSessionOverController extends Controller
 
         $excel = Request()->input('excel');
         if ($excel && $excel == "1") {
+            abort_if(Auth::user()->isPt(), 403, 'Akun PT hanya memiliki akses lihat.');
             return Excel::download(new TrainerSessionExpiredExport(), 'trainer-session-expired, ' . $fromDate . ' to ' . $toDate . '.xlsx');
         }
 

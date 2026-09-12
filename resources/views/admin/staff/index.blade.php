@@ -2,9 +2,9 @@
     <div class="page-title flex-wrap justify-content-end">
         {{-- <a href="{{ route('ptReportExcel') }}" class="btn btn-info">Download Excel</a> --}}
         @if ($pageType == "new")
-            <a href="{{ route('old-staff', ['page' => 'cs']) }}" class="btn btn-secondary ms-3">Old Data</a>  
+            <a href="{{ route('old-staff', ['page' => $page ?: 'cs']) }}" class="btn btn-secondary ms-3">Old Data</a>  
         @else
-            <a href="{{ route('staff.index', ['page' => 'cs']) }}" class="btn btn-primary ms-3">Current Data</a>              
+            <a href="{{ route('staff.index', ['page' => $page ?: 'cs']) }}" class="btn btn-primary ms-3">Current Data</a>              
         @endif
                 
     </div>
@@ -34,6 +34,14 @@
                             Personal Trainer
                         </a>
                     </li>
+                    @if (Auth::user()->isAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link {{ $page == 'pt-user' ? 'show active' : '' }}" data-bs-toggle="tab"
+                                href="#ptUser">
+                                PT User
+                            </a>
+                        </li>
+                    @endif
                     {{-- <li class="nav-item">
                         <a class="nav-link {{ $page == 'ci' ? 'show active' : '' }}" data-bs-toggle="tab"
                             href="#classInstructor">
@@ -53,6 +61,7 @@
                     @include('admin.staff.customer-service.index')
                     @include('admin.staff.fitness-consultant.index')
                     @include('admin.staff.personal-trainer.index')
+                    @include('admin.staff.pt-user.index')
                     @include('admin.staff.administrator.index')
                     @include('admin.staff.class-instructor.index')                    
                 </div>

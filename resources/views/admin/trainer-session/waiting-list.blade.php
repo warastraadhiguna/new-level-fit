@@ -46,9 +46,14 @@
     }
 </style>
 
+@php
+    $isPtReadOnly = Auth::user()->isPt();
+@endphp
+
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
+            @if (!$isPtReadOnly)
             @foreach ($birthdayMessages as $key => $messages)
                 @if (!empty($messages))
                     @foreach ($messages as $memberId => $memberName)
@@ -109,6 +114,7 @@
                     @endforeach
                 @endif
             @endforeach
+            @endif
 
             <!--column-->
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
@@ -123,7 +129,9 @@
                                 <th>Session</th>
                                 <th>Payment</th>     
                                 <th>Trainer</th>
-                                <th>Action</th>
+                                @if (!$isPtReadOnly)
+                                    <th>Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -160,6 +168,7 @@
                                     <td>
                                         <h6>{{ $item->trainer_name }}</h6>
                                     </td>
+                                    @if (!$isPtReadOnly)
                                     <td>
                                         @php
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
@@ -180,6 +189,7 @@
                                             </form>
                                         @endif
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

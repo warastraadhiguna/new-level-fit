@@ -15,6 +15,10 @@
     }
 </style>
 
+@php
+    $isPtReadOnly = Auth::user()->isPt();
+@endphp
+
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
@@ -28,12 +32,15 @@
                             <button type="button" onclick="filterPtFreeHistory()" class="btn btn-info mx-1">Filter</button>
                         </div>
                     @endif
-                    <button type="button" class="btn btn-info mb-2" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">
-                        Download Excel
-                    </button>
+                    @if (!$isPtReadOnly)
+                        <button type="button" class="btn btn-info mb-2" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">
+                            Download Excel
+                        </button>
+                    @endif
                 </div>
             </div>
 
+            @if (!$isPtReadOnly)
             @foreach ($birthdayMessages as $key => $messages)
                 @foreach ($messages as $memberId => $memberName)
                     @php
@@ -56,6 +63,7 @@
                     </div>
                 @endforeach
             @endforeach
+            @endif
 
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
@@ -70,7 +78,9 @@
                                 <th>Payment</th>
                                 <th>Status</th>
                                 <th>Trainer</th>
-                                <th>Action</th>
+                                @if (!$isPtReadOnly)
+                                    <th>Action</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -125,6 +135,7 @@
                                         @endif
                                     </td>
                                     <td><h6>{{ $item->trainer_name ?: '-' }}</h6></td>
+                                    @if (!$isPtReadOnly)
                                     <td>
                                         <div class="btn-group dropstart" role="group">
                                             <button type="button" class="btn btn-primary btn-xs dropdown-toggle"
@@ -153,6 +164,7 @@
                                             </ul>
                                         </div>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

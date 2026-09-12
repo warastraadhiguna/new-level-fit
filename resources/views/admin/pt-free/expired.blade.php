@@ -1,16 +1,25 @@
+@php
+    $isPtReadOnly = Auth::user()->isPt();
+@endphp
+
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
+            @if (!$isPtReadOnly)
             <div class="col-xl-12">
                 <div class="page-title flex-wrap">
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">Download Excel</button>
                 </div>
             </div>
+            @endif
             <div class="col-xl-12 wow fadeInUp" data-wow-delay="1.5s">
                 <div class="table-responsive full-data">
                     <table class="table-responsive-lg table display dataTablesCard student-tab dataTable no-footer" id="myTable">
                         <thead>
-                            <tr><th>No</th><th>Member's Data</th><th>Trainer Name</th><th>Last Check In</th><th>Date</th><th>Status</th><th>Action</th></tr>
+                            <tr>
+                                <th>No</th><th>Member's Data</th><th>Trainer Name</th><th>Last Check In</th><th>Date</th><th>Status</th>
+                                @if (!$isPtReadOnly)<th>Action</th>@endif
+                            </tr>
                         </thead>
                         <tbody>
                             @foreach ($trainerSessions as $item)
@@ -21,6 +30,7 @@
                                     <td><span class="badge badge-danger badge-lg">Expired</span></td>
                                     <td><h6>{{ DateFormat($item->start_date, 'DD MMMM YYYY') }}-{{ DateFormat($item->expired_date, 'DD MMMM YYYY') }}</h6></td>
                                     <td><span class="badge badge-danger badge-lg">Expired</span></td>
+                                    @if (!$isPtReadOnly)
                                     <td>
                                         <div class="btn-group dropstart" role="group">
                                             <button type="button" class="btn btn-primary btn-xs dropdown-toggle" style="width: 100px" data-bs-toggle="dropdown">Action</button>
@@ -32,6 +42,7 @@
                                             </ul>
                                         </div>
                                     </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

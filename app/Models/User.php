@@ -71,6 +71,11 @@ class User extends Authenticatable
         return in_array(strtoupper((string) $this->role), ['ADMIN', 'OWNER'], true);
     }
 
+    public function isPt(): bool
+    {
+        return strtoupper((string) $this->role) === 'PT';
+    }
+
     public function hasApplicationAccess($applicationCode)
     {
         if ($this->isOwner()) {

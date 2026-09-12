@@ -4,7 +4,7 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
-            @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
+            @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC' || Auth::user()->isPt())
                 <li>
                     <a href="{{ route('dashboard') }}" aria-expanded="false">
                         <i class="material-symbols-outlined">home</i>
@@ -13,17 +13,18 @@
                 </li>
             @endif
 
-            <li>
-                <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-                    <i class="material-icons">article</i>
-                    <span class="nav-text">Lead</span>
-                </a>
-                <ul aria-expanded="false">
-                    <li><a href="{{ route('add-data') }}">General Lead</a></li>
-                    <li><a href="{{ route('one-day-visit-lead') }}">1 Day Visit Lead</a></li>
-
-                </ul>
-            </li>
+            @if (!Auth::user()->isPt())
+                <li>
+                    <a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
+                        <i class="material-icons">article</i>
+                        <span class="nav-text">Lead</span>
+                    </a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('add-data') }}">General Lead</a></li>
+                        <li><a href="{{ route('one-day-visit-lead') }}">1 Day Visit Lead</a></li>
+                    </ul>
+                </li>
+            @endif
 
             @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC')
                 <li>
@@ -67,19 +68,25 @@
                     <span class="nav-text">PT</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
-                    @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
-                        <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>
+                    @if (!Auth::user()->isPt())
+                        <li><a href="{{ route('trainer-session.create') }}">PT Registration</a></li>
+                    @endif
+                    @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->isPt())
+                        @if (!Auth::user()->isPt())
+                            <li><a href="{{ route('trainer-session-check-in.index') }}">Check In/Out</a></li>
+                        @endif
                         <li><a href="{{ route('trainer-session.index') }}">PT Active</a></li>
                         <li><a href="{{ route('trainer-session-pending') }}">PT Pending</a></li>
                         <li><a href="{{ route('trainer-session-unpaid') }}">PT Unpaid</a></li>
                         <li><a href="{{ route('trainer-session-over.index') }}">PT Expired</a></li>
                         <li><a href="{{ route('trainer-session-waiting-list') }}">PT Waiting List</a></li>
-                        <li><a href="{{ route('lgt') }}">LGT</a></li>
-                        @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->trainer_approval_enabled)
-                            <li><a href="{{ route('trainer-approval.index') }}">PT Approval</a></li>
+                        @if (!Auth::user()->isPt())
+                            <li><a href="{{ route('lgt') }}">LGT</a></li>
+                            @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->trainer_approval_enabled)
+                                <li><a href="{{ route('trainer-approval.index') }}">PT Approval</a></li>
+                            @endif
+                            <li><a href="{{ route('pt-history') }}">History</a></li>
                         @endif
-                        <li><a href="{{ route('pt-history') }}">History</a></li>
                     @endif
                 </ul>
             </li>
@@ -94,13 +101,17 @@
                         @if (Auth::user()->isAdmin())
                             <li><a href="{{ route('pt-free.create') }}">PT Registration</a></li>
                         @endif
-                        @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS')
-                            <li><a href="{{ route('pt-free.check-in.index') }}">Check In/Out</a></li>
+                        @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->isPt())
+                            @if (!Auth::user()->isPt())
+                                <li><a href="{{ route('pt-free.check-in.index') }}">Check In/Out</a></li>
+                            @endif
                             <li><a href="{{ route('pt-free.active') }}">PT Active</a></li>
                             <li><a href="{{ route('pt-free.pending') }}">PT Pending</a></li>
                             <li><a href="{{ route('pt-free.expired') }}">PT Expired</a></li>
                             <li><a href="{{ route('pt-free.waiting-list') }}">PT Waiting List</a></li>
-                            <li><a href="{{ route('pt-free.history') }}">History</a></li>
+                            @if (!Auth::user()->isPt())
+                                <li><a href="{{ route('pt-free.history') }}">History</a></li>
+                            @endif
                         @endif
                     </ul>
                 </li>
@@ -134,11 +145,12 @@
                 </li>
             @endif
 
-            <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
-                    <i class="material-icons"> app_registration </i>
-                    <span class="nav-text">Report</span>
-                </a>
-                <ul aria-expanded="false">
+            @if (!Auth::user()->isPt())
+                <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
+                        <i class="material-icons"> app_registration </i>
+                        <span class="nav-text">Report</span>
+                    </a>
+                    <ul aria-expanded="false">
                     {{-- <li><a class="has-arrow" href="javascript:void(0);" aria-expanded="false">PT</a>
                         <ul aria-expanded="false">
                             <li style="margin-left: 10px"><a href="{{ route('pt-total-report') }}">PT Total</a>
@@ -182,8 +194,9 @@
                             </li>
                         </ul>
                     </li>
-                </ul>
-            </li>
+                    </ul>
+                </li>
+            @endif
 
             @if (Auth::user()->isAdmin())
                 {{-- <li>

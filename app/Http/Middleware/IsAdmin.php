@@ -37,7 +37,7 @@ class IsAdmin
             ]);
         }
 
-        if (in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC'], true)) {
+        if (in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC', 'PT'], true)) {
             return $next($request);
         }
 

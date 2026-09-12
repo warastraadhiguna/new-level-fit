@@ -578,6 +578,8 @@ class PtFreeController extends Controller
         }
 
         if ($request->input('excel') === '1') {
+            abort_if(Auth::user()->isPt(), 403, 'Akun PT hanya memiliki akses lihat.');
+
             if ($scope !== 'history') {
                 $query->whereDate('ts.created_at', '>=', $fromDate)
                     ->whereDate('ts.created_at', '<=', $toDate);
