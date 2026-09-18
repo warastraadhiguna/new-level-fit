@@ -174,7 +174,7 @@ class MemberController extends Controller
             'title'                 => 'Edit Missed Guest',
             'members'               => Member::find($id),
             'memberLastCode'        => Member::latest('id')->first(),
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::visibleToUser(Auth::user())->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'content'               => 'admin/members/edit',
@@ -189,7 +189,7 @@ class MemberController extends Controller
             'title'                 => 'Edit Member',
             'members'               => Member::find($id),
             'memberLastCode'        => Member::latest('id')->first(),
-            'memberPackage'         => MemberPackage::get(),
+            'memberPackage'         => MemberPackage::visibleToUser(Auth::user())->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => FitnessConsultant::get(),
             'content'               => 'admin/members/second-edit',
@@ -368,7 +368,8 @@ class MemberController extends Controller
 
             $data['born'] = Carbon::parse($data['born'])->format('Y-m-d');
 
-            $package = MemberPackage::findOrFail($data['member_package_id']);
+            $package = MemberPackage::findOrFail($data['member_package_id'])
+                ->ensureAssignableBy(Auth::user());
             $data['package_price'] = $package->package_price;
 
             $data['user_id'] = Auth::user()->id;

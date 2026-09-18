@@ -5,9 +5,11 @@ namespace App\Models\Member;
 use App\Models\BranchStore;
 use App\Models\User;
 use App\Traits\HasFormatRupiah;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 class MemberPackage extends Model
 {
@@ -59,5 +61,37 @@ class MemberPackage extends Model
             ->withDefault([
                 'name' => '-',
             ]);
-    }    
+    }
+
+    /**
+     * Paket gratis operasional hanya boleh dilihat/diberikan oleh user selain CS.
+     */
+    public function scopeVisibleToUser(Builder $query, ?User $user): Builder
+    {
+        if ($user && strtoupper((string) $user->role) === 'CS') {
+            $query->where(function (Builder $query) {
+                $query->where('package_price', '!=', 0)
+                    ->orWhere('admin_price', '!=', 0);
+            });
+        }
+
+        return $query;
+    }
+
+    public function isFreePackage(): bool
+    {
+        return (float) $this->package_price === 0.0
+            && (float) $this->admin_price === 0.0;
+    }
+
+    public function ensureAssignableBy(?User $user): self
+    {
+        if ($user && strtoupper((string) $user->role) === 'CS' && $this->isFreePackage()) {
+            throw ValidationException::withMessages([
+                'member_package_id' => 'Customer Service tidak diperbolehkan memberikan paket membership dengan harga paket dan harga admin Rp. 0.',
+            ]);
+        }
+
+        return $this;
+    }
 }

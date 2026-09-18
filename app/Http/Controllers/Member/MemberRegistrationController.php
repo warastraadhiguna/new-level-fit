@@ -186,7 +186,9 @@ class MemberRegistrationController extends Controller
             'title'                 => 'Create Member Registration',
             'memberRegistration'    => MemberRegistration::get(),
             'members'               => Member::get(),
-            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)
+                ->visibleToUser(Auth::user())
+                ->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => FitnessConsultant::get(),
             'content'               => 'admin/member-registration/create-page',
@@ -324,7 +326,8 @@ class MemberRegistrationController extends Controller
 
                 $data['born'] = Carbon::parse($data['born'])->format('Y-m-d');
 
-                $package = MemberPackage::findOrFail($data['member_package_id']);
+                $package = MemberPackage::findOrFail($data['member_package_id'])
+                    ->ensureAssignableBy(Auth::user());
                 $data['package_price'] = $package->package_price;
 
                 $data['user_id'] = Auth::user()->id;
@@ -407,7 +410,8 @@ class MemberRegistrationController extends Controller
                     'method_payment_id'     => 'required|exists:method_payments,id',
                 ]);
 
-                $package = MemberPackage::findOrFail($data['member_package_id']);
+                $package = MemberPackage::findOrFail($data['member_package_id'])
+                    ->ensureAssignableBy(Auth::user());
                 $data['package_price'] = $package->package_price;
 
                 $data['user_id'] = Auth::user()->id;
@@ -471,7 +475,8 @@ class MemberRegistrationController extends Controller
                     $newMemberRegistrationId = $newMemberRegistration->id;
                 }
 
-                $package = MemberPackage::findOrFail($data['member_package_id']);
+                $package = MemberPackage::findOrFail($data['member_package_id'])
+                    ->ensureAssignableBy(Auth::user());
 
                 $paymentAmount = (int) $package->package_price + (int) $package->admin_price - (int) $data['discount_amount'];
                 $receivedAmount = NormalizePosReceivedAmount(
@@ -748,7 +753,9 @@ class MemberRegistrationController extends Controller
             // 'memberRegistrations'   => $memberActive->first(),
             'memberRegistrationPayments' => $memberRegistrationPayments,
             'memberRegistrations'   => $memberActive,
-            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)
+                ->visibleToUser(Auth::user())
+                ->get(),
             'methodPayment'         => MethodPayment::get(),
             'users'                 => User::where('role', 'FC')->get(),
             'content'               => 'admin/member-registration/edit-page',
@@ -846,7 +853,8 @@ class MemberRegistrationController extends Controller
 
         $data['user_id'] = Auth::user()->id;
 
-        $selectedPackage = MemberPackage::withTrashed()->find($data["member_package_id"]);
+        $selectedPackage = MemberPackage::withTrashed()->findOrFail($data["member_package_id"])
+            ->ensureAssignableBy(Auth::user());
         $currentPackage = MemberPackage::withTrashed()->find($item->member_package_id);
         if (BranchStoreDiscountIsEnabled('member', Auth::user()->branch_store_id)) {
             $data['discount_amount'] = NormalizeSalesDiscount(
@@ -908,7 +916,9 @@ class MemberRegistrationController extends Controller
             'memberRegistration'    => MemberRegistration::find($id),
             'members'               => Member::get(),
             'memberLastCode'        => Member::latest('id')->first(),
-            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)
+                ->visibleToUser(Auth::user())
+                ->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
             'content'               => 'admin/member-registration/renewal',
@@ -924,7 +934,9 @@ class MemberRegistrationController extends Controller
         $data = [
             'title'             => 'Create Membership',
             'member'            => Member::findOrFail($id),
-            'memberPackage'     => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'memberPackage'     => MemberPackage::where("branch_store_id", $branchId)
+                ->visibleToUser(Auth::user())
+                ->get(),
             'methodPayment'     => MethodPayment::get(),
             'fitnessConsultant' => User::where('role', 'FC')->get(),
             'content'           => 'admin/member-registration/create-membership',
@@ -966,7 +978,8 @@ class MemberRegistrationController extends Controller
                 ]);
             }
 
-            $package = MemberPackage::findOrFail($data['member_package_id']);
+            $package = MemberPackage::findOrFail($data['member_package_id'])
+                ->ensureAssignableBy(Auth::user());
             $firstPayment = (int) str_replace(".", "", $data['first_payment']);
             $receivedAmount = NormalizePosReceivedAmount(
                 $data['received_amount'] ?? null,
@@ -1077,7 +1090,8 @@ class MemberRegistrationController extends Controller
                     ],
                 ]);
 
-                $package = MemberPackage::findOrFail($data['member_package_id']);
+                $package = MemberPackage::findOrFail($data['member_package_id'])
+                    ->ensureAssignableBy(Auth::user());
                 $data['package_price'] = $package->package_price;
                 $data['user_id'] = Auth::user()->id;
                 $startTime = date('H:i:s', strtotime('00:00:00'));
@@ -1203,7 +1217,8 @@ class MemberRegistrationController extends Controller
                 //     'description'       => 'nullable',
                 // ]);
 
-                $package = MemberPackage::findOrFail($data['member_package_id']);
+                $package = MemberPackage::findOrFail($data['member_package_id'])
+                    ->ensureAssignableBy(Auth::user());
                 $data['package_price'] = $package->package_price;
 
                 $data['user_id'] = Auth::user()->id;

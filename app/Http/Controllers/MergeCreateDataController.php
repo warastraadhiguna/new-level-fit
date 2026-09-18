@@ -16,7 +16,9 @@ class MergeCreateDataController extends Controller
         
         $data = [
             'title'             => 'Lead',
-            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)->get(),
+            'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)
+                ->visibleToUser(Auth::user())
+                ->get(),
             'methodPayment'         => MethodPayment::get(),
             'fitnessConsultant'     => User::where('role', 'FC')->get(),
 
@@ -28,7 +30,9 @@ class MergeCreateDataController extends Controller
 
     public function create()
     {
-        $memberPackage = MemberPackage::where('days', '1')->get();
+        $memberPackage = MemberPackage::where('days', '1')
+            ->visibleToUser(Auth::user())
+            ->get();
         
         $data = [
             'title'             => '1 Day Visit Lead',

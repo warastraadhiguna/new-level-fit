@@ -20,7 +20,9 @@ class MemberPackageController extends Controller
     {
         $data = [
             'title'                     => 'Member Package List',
-            'memberPackage'             => MemberPackage::with(['branchStore', 'users'])->get(),
+            'memberPackage'             => MemberPackage::with(['branchStore', 'users'])
+                ->visibleToUser(Auth::user())
+                ->get(),
             'memberPackageType'         => MemberPackageType::get(),
             'memberPackageCategories'   => MemberPackageCategory::get(),
             'users'                     => User::get(),
