@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Member\Member;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
 
@@ -52,6 +53,10 @@ class OneVisitExport implements FromView
             ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
             ->join('users as f', 'a.user_id', '=', 'f.id')
             ->where('b.status', 'one_day_visit')
+            ->where(function ($query) {
+                $query->where('b.branch_store_id', Auth::user()->branch_store_id)
+                    ->orWhere('c.is_all_club', 1);
+            })
             ->orderBy('a.created_at', 'desc')
             ->get();
 

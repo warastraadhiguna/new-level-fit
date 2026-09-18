@@ -45,8 +45,12 @@ class MemberApprovalController extends Controller
                     ->latest('id')
                     ->limit(1),
             ])
-            ->whereHas('members', function ($query) use ($branchId) {
-                $query->where('branch_store_id', $branchId);
+            ->where(function ($query) use ($branchId) {
+                $query->whereHas('members', function ($memberQuery) use ($branchId) {
+                    $memberQuery->where('branch_store_id', $branchId);
+                })->orWhereHas('memberPackageWithTrashed', function ($packageQuery) {
+                    $packageQuery->where('is_all_club', 1);
+                });
             })
             ->where('days', '>', 1)
             ->where('is_approved', false)
@@ -161,6 +165,10 @@ class MemberApprovalController extends Controller
             ->where('branch_store_id', Auth::user()->branch_store_id)
             ->exists();
 
-        abort_unless($belongsToBranch, 404);
+        $isAllClub = $memberRegistration->memberPackageWithTrashed()
+            ->where('is_all_club', 1)
+            ->exists();
+
+        abort_unless($belongsToBranch || $isAllClub, 404);
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class MemberRegistrationOverController extends Controller
@@ -19,7 +20,10 @@ class MemberRegistrationOverController extends Controller
             return Excel::download(new MemberExpiredExport(), 'member-expired.xlsx');
         }
 
-        $memberRegistrationsOver = MemberRegistration::expiredRegistrations()->get();
+        $memberRegistrationsOver = MemberRegistration::expiredRegistrations(
+            '',
+            Auth::user()->branch_store_id
+        )->get();
 
         $data = [
             'title'                     => 'Member Expired List',
@@ -98,6 +102,10 @@ class MemberRegistrationOverController extends Controller
             ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
             ->join('users as f', 'a.user_id', '=', 'f.id')
             ->whereRaw('NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY)')
+            ->where(function ($query) {
+                $query->where('b.branch_store_id', Auth::user()->branch_store_id)
+                    ->orWhere('c.is_all_club', 1);
+            })
             ->groupBy(
                 'a.id',
                 'a.start_date',

@@ -170,7 +170,7 @@ class MemberRegistration extends Model
 
             . ($card_number ? " and mbr.card_number='$card_number' " : '')
             . ($member_id ? " and mbr.id='$member_id' " : '')
-            . ($branchStoreId ? " and mbr.branch_store_id=" . (int) $branchStoreId . " " : '') .  "
+            . ($branchStoreId ? " and (mbr.branch_store_id=" . (int) $branchStoreId . " or mbr_pkg.is_all_club=1) " : '') .  "
             order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);
 
@@ -250,7 +250,7 @@ class MemberRegistration extends Model
             AND mbr_reg.days > 1
             AND ((mbr_reg.is_installment_plan = 1 AND mbr_reg.installment_status IN ('active','completed'))
                 OR (mbr_reg.is_installment_plan = 0 AND IFNULL((SELECT SUM(value) FROM member_registration_payments mrp WHERE mbr_reg.id = mrp.member_registration_id), 0) >= (mbr_reg.package_price + mbr_reg.admin_price - IFNULL(mbr_reg.discount_amount, 0))))"
-            . ($branchStoreId ? " and mbr.branch_store_id=" . (int) $branchStoreId . " " : '');
+            . ($branchStoreId ? " and (mbr.branch_store_id=" . (int) $branchStoreId . " or mbr_pkg.is_all_club=1) " : '');
 
         $query = DB::query()->fromSub($baseSql, "active_members");
 
@@ -409,7 +409,7 @@ class MemberRegistration extends Model
         return $activeMemberRegistrations;
     }
 
-    public function scopeExpiredRegistrations(Builder $query, $cardNumber = "")
+    public function scopeExpiredRegistrations(Builder $query, $cardNumber = "", $branchStoreId = "")
     {
         $result = $query
             ->from('members as a')
@@ -470,12 +470,18 @@ class MemberRegistration extends Model
                 $join->on('a.id', '=', 'c.registered_member_id');
             })
             ->whereNull('c.registered_member_id')
-            ->where('b.days', '>', 1);
+            ->where('b.days', '>', 1)
+            ->when($branchStoreId, function (Builder $query) use ($branchStoreId) {
+                $query->where(function (Builder $branchQuery) use ($branchStoreId) {
+                    $branchQuery->where('a.branch_store_id', (int) $branchStoreId)
+                        ->orWhere('b.is_all_club', 1);
+                });
+            });
         return $cardNumber? $result->where('a.card_number', $cardNumber) : $result;
     }
 
 
-    public static function getPendingList($memberId = "")
+    public static function getPendingList($memberId = "", $branchStoreId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days, mbr_reg.is_approved,
             mbr_reg.package_price as mr_package_price, mbr_reg.admin_price as mr_admin_price,
@@ -531,6 +537,7 @@ class MemberRegistration extends Model
             on mbr_reg.id = lds_continue_view.member_registration_id_continue
 
             where NOW() < (mbr_reg.start_date)" . ($memberId ? " and mbr.id=$memberId " : "")
+            . ($branchStoreId ? " and (mbr.branch_store_id=" . (int) $branchStoreId . " or mbr_pkg.is_all_club=1) " : "")
             .  "order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);
 
@@ -701,7 +708,7 @@ class MemberRegistration extends Model
         return $activeMemberRegistrations;
     }
 
-    public static function history($card_number = "", $member_id = "", $fromDate, $toDate)
+    public static function history($card_number = "", $member_id = "", $fromDate, $toDate, $branchStoreId = "")
     {
         $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price,
@@ -755,7 +762,8 @@ class MemberRegistration extends Model
             on mbr_reg.id = lds_continue_view.member_registration_id_continue
             where mbr_reg.start_date >= '$fromDate' AND mbr_reg.start_date <= '$toDate'
             "
-             . ($member_id ? " and mbr.id='$member_id' " : '') .  "
+             . ($member_id ? " and mbr.id='$member_id' " : '')
+             . ($branchStoreId ? " and (mbr.branch_store_id=" . (int) $branchStoreId . " or mbr_pkg.is_all_club=1) " : '') .  "
             order by cim_view.updated_at_check_in desc";
         $activeMemberRegistrations = DB::select($sql);
 

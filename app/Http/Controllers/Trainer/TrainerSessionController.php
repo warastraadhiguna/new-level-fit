@@ -355,7 +355,7 @@ class TrainerSessionController extends Controller
     public function show($id)
     {
         // dd($id);
-        $ts = TrainerSession::find($id);
+        $ts = TrainerSession::where('branch_store_id', Auth::user()->branch_store_id)->find($id);
         abort_if(!$ts || $ts->is_pt_free, 404);
         $status = $ts->members;
         $memberId = $ts->members->id;
@@ -415,6 +415,7 @@ class TrainerSessionController extends Controller
                 ->whereIn('a.member_id', function ($query) use ($id) {
                     $query->select('member_id')->from('trainer_sessions')->where('id', $id);
                 })
+                ->where('a.branch_store_id', Auth::user()->branch_store_id)
                 ->get();
         } else {
             $activePt = TrainerSession::getActivePTListById($id);
@@ -424,7 +425,7 @@ class TrainerSessionController extends Controller
             // dd($expiredTrainerSession);
         }
 
-        $trainerSessions = TrainerSession::find($id);
+        $trainerSessions = $ts;
 
         $totalSessions = $trainerSessions->trainerPackages->number_of_session;
 
@@ -817,6 +818,7 @@ class TrainerSessionController extends Controller
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
             ->where('a.is_pt_free', false)
+            ->where('a.branch_store_id', Auth::user()->branch_store_id)
             ->addSelect(DB::raw('IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) as remaining_sessions'))
             ->addSelect(DB::raw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END AS session_status'))
             ->whereRaw('CASE WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) > 0 THEN "Running" WHEN IFNULL(c.number_of_session - e.check_in_count, c.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
@@ -899,13 +901,15 @@ class TrainerSessionController extends Controller
 
     public function historyDetail($id)
     {
-        $ts = TrainerSession::find($id);
+        $ts = TrainerSession::where('branch_store_id', Auth::user()->branch_store_id)
+            ->where('is_pt_free', false)
+            ->findOrFail($id);
         $status = $ts->members;
         $memberId = $ts->members->id;
 
         $activePt = TrainerSession::historyById($id);
 
-        $trainerSessions = TrainerSession::find($id);
+        $trainerSessions = $ts;
 
         $totalSessions = $trainerSessions->trainerPackages->number_of_session;
 

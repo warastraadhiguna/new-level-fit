@@ -29,6 +29,7 @@ class MemberController extends Controller
 {
     public function index(Request $request)
     {
+        $branchId  = Auth::user()->branch_store_id;
         $fromDate   = Request()->input('fromDate');
         $toDate     = Request()->input('toDate');
         $search     = trim((string) $request->input('search', ''));
@@ -80,8 +81,9 @@ class MemberController extends Controller
                 'branch_stores.name as branch_store_name',
                 DB::raw("CASE WHEN NOW() < DATE_ADD(a.created_at, INTERVAL a.lo_days DAY) THEN 'Running' ELSE 'Over' END as lo_status")
             )
-            ->join("branch_stores", "branch_store_id", "=", "branch_stores.id")
+            ->join("branch_stores", "a.branch_store_id", "=", "branch_stores.id")
             ->where('a.status', '=', 'sell')
+            ->where('a.branch_store_id', $branchId)
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('a.full_name', 'like', "%{$search}%")

@@ -606,7 +606,10 @@ class TrainerSession extends Model
 
                 FROM trainer_sessions AS train_sess
 
-                INNER JOIN (SELECT MAX(id) AS max_train_sess_id FROM trainer_sessions AS train_sess WHERE is_pt_free = 0 GROUP BY member_id)
+                INNER JOIN (SELECT MAX(id) AS max_train_sess_id FROM trainer_sessions AS train_sess
+                    WHERE is_pt_free = 0
+                    AND branch_store_id = " . (int) Auth::user()->branch_store_id . "
+                    GROUP BY member_id)
                 AS max_train_sess_view ON train_sess.id = max_train_sess_view.max_train_sess_id
 
                 INNER JOIN trainer_packages AS train_pack ON train_pack.id = train_sess.trainer_package_id
@@ -624,7 +627,10 @@ class TrainerSession extends Model
                     GROUP BY trainer_session_id
                 ) AS leave_days_view ON train_sess.id = leave_days_view.trainer_session_id
 
-                WHERE train_pack.status IS NULL AND train_sess.is_pt_free = 0 AND NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)
+                WHERE train_pack.status IS NULL
+                AND train_sess.is_pt_free = 0
+                AND train_sess.branch_store_id = " . (int) Auth::user()->branch_store_id . "
+                AND NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)
                 " . ($memberId ? " AND mbr.id='$memberId' " : '') . "
                 ORDER BY max_end_date";
 
@@ -770,7 +776,8 @@ class TrainerSession extends Model
         WHERE
             -- IFNULL(train_sess.number_of_session - count_check_in_view.check_in_count, train_sess.number_of_session) = 0
         -- AND NOW() < DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY)
-        NOW() < train_sess.start_date"
+        train_sess.branch_store_id = " . (int) Auth::user()->branch_store_id . "
+        AND NOW() < train_sess.start_date"
              . ($memberId ? " and mbr.id='$memberId' " : '') . "
             order by cits_view.updated_at_check_in desc";
         $pendingTrainerSessions = DB::select($sql);
@@ -842,7 +849,8 @@ class TrainerSession extends Model
         WHERE
             -- IFNULL(train_sess.number_of_session - count_check_in_view.check_in_count, train_sess.number_of_session) = 0
         -- AND NOW() < DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue,0)) DAY)
-        NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)"
+        train_sess.branch_store_id = " . (int) Auth::user()->branch_store_id . "
+        AND NOW() > DATE_ADD(train_sess.start_date, INTERVAL (train_sess.days + IFNULL(leave_days_view.total_days_continue, 0)) DAY)"
              . ($memberId ? " and mbr.id='$memberId' " : '') . "
             order by cits_view.updated_at_check_in desc";
         $pendingTrainerSessions = DB::select($sql);
@@ -1132,7 +1140,8 @@ class TrainerSession extends Model
             GROUP BY pld.trainer_session_id
         ) AS leave_days_view ON train_sess.id = leave_days_view.trainer_session_id
         
-        where train_sess.start_date >= '$fromDate' AND train_sess.start_date <= '$toDate'
+        where train_sess.branch_store_id = " . (int) Auth::user()->branch_store_id . "
+        AND train_sess.start_date >= '$fromDate' AND train_sess.start_date <= '$toDate'
         "
             . ($trainner_session_id ? " and train_sess.id='$trainner_session_id' " : '');
         $activeTrainerSessions = DB::select($sql);

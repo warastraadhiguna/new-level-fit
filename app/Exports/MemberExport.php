@@ -6,6 +6,7 @@ use App\Models\Member\Member;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromView;
 
 class MemberExport implements FromView
@@ -40,6 +41,7 @@ class MemberExport implements FromView
                 'a.created_at'
             )
             ->where('a.status', '=', 'sell')
+            ->where('a.branch_store_id', Auth::user()->branch_store_id)
             ->where('a.created_at', '>=', $fromDate)
             ->where('a.created_at', '<=', $toDate)
             ->orderBy('created_at', 'desc')

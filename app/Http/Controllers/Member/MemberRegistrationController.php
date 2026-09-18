@@ -41,7 +41,13 @@ class MemberRegistrationController extends Controller
             return Excel::download(new MemberActiveExport(), 'member-active.xlsx');
         }
 
-        $memberRegistrations = MemberRegistration::getActiveListPaginated($search, $perPage, $sort, $direction)
+        $memberRegistrations = MemberRegistration::getActiveListPaginated(
+            $search,
+            $perPage,
+            $sort,
+            $direction,
+            Auth::user()->branch_store_id
+        )
             ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
         $birthdayMemberRegistrations = MemberRegistration::getActiveList("", "", "no", Auth::user()->branch_store_id);
 
@@ -112,7 +118,7 @@ class MemberRegistrationController extends Controller
             return Excel::download(new MemberPendingExport(), 'member-pending.xlsx');
         }
 
-        $memberRegistrations = MemberRegistration::getPendingList();
+        $memberRegistrations = MemberRegistration::getPendingList('', Auth::user()->branch_store_id);
 
         $data = [
             'title'                 => 'Member Pending',
@@ -166,6 +172,10 @@ class MemberRegistrationController extends Controller
             ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
             ->join('users as f', 'a.user_id', '=', 'f.id')
             ->where('b.status', 'one_day_visit')
+            ->where(function ($query) {
+                $query->where('b.branch_store_id', Auth::user()->branch_store_id)
+                    ->orWhere('c.is_all_club', 1);
+            })
             ->orderBy('a.created_at', 'desc')
             ->get();
 
@@ -1650,7 +1660,13 @@ class MemberRegistrationController extends Controller
         $toDate     = Request()->input('toDate');
         $toDate = $toDate ? DateFormat($toDate) : NowDate();
 
-        $memberRegistrations = MemberRegistration::history("", "", $fromDate, $toDate);
+        $memberRegistrations = MemberRegistration::history(
+            "",
+            "",
+            $fromDate,
+            $toDate,
+            Auth::user()->branch_store_id
+        );
         // dd($memberRegistrations);
 
         $idCodeMaxCount = env("ID_CODE_MAX_COUNT", 3);

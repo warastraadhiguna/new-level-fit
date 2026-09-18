@@ -6,6 +6,7 @@ use App\Models\Member\Member;
 use App\Models\Member\MemberRegistration;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
 
@@ -13,6 +14,7 @@ class TrainerSessionExpiredExport implements FromView
 {
     public function view(): View
     {
+        $branchStoreId = (int) Auth::user()->branch_store_id;
         $nowTime = Carbon::now()->tz('Asia/Jakarta');
         $nowTimeString = DateFormat($nowTime, "Y-MM-DD");
         $fromDate   = Request()->input('fromDate');
@@ -38,7 +40,7 @@ class TrainerSessionExpiredExport implements FromView
             'total_admin_price',
         )
             ->from('members as a')
-            ->join(DB::raw('(select a.id as id_max, b.id, trainer.full_name as trainer_full_name, b.start_date,
+            ->join(DB::raw('(select a.id as id_max, b.id, b.branch_store_id, trainer.full_name as trainer_full_name, b.start_date,
                             b.days as ts_days, b.trainer_package_id, tp.package_name,
                             max(DATE_ADD(b.start_date, INTERVAL (b.days + COALESCE(pt_freeze.total_days, 0)) DAY))
                 as max_end_date, sum(b.package_price) as total_package_price,
@@ -50,14 +52,16 @@ class TrainerSessionExpiredExport implements FromView
                 LEFT JOIN (SELECT trainer_session_id, SUM(days) AS total_days FROM pt_leave_days GROUP BY trainer_session_id)
                     AS pt_freeze ON pt_freeze.trainer_session_id = b.id
                 where DATE_ADD(b.start_date, INTERVAL (b.days + COALESCE(pt_freeze.total_days, 0)) DAY) < now()
-                group by a.id, b.id, b.days, b.start_date, trainer.full_name, b.trainer_package_id,
+                group by a.id, b.id, b.branch_store_id, b.days, b.start_date, trainer.full_name, b.trainer_package_id,
                     tp.package_name, pt_freeze.total_days) as b'), function ($join) {
                 $join->on('a.id', '=', 'b.id_max');
             })
             ->leftJoin(DB::raw('(select distinct ts.member_id as registered_member_id from trainer_sessions ts
                                     LEFT JOIN (SELECT trainer_session_id, SUM(days) AS total_days FROM pt_leave_days GROUP BY trainer_session_id)
                                         AS pt_freeze ON pt_freeze.trainer_session_id = ts.id
-                                    where DATE_ADD(ts.start_date, INTERVAL (ts.days + COALESCE(pt_freeze.total_days, 0)) DAY) >= now()) as c'), function ($join) {
+                                    where ts.branch_store_id = ' . $branchStoreId . '
+                                    AND ts.is_pt_free = 0
+                                    AND DATE_ADD(ts.start_date, INTERVAL (ts.days + COALESCE(pt_freeze.total_days, 0)) DAY) >= now()) as c'), function ($join) {
                 $join->on('a.id', '=', 'c.registered_member_id');
             })
             // ->leftJoin('trainer_packages as tp', function ($join) {
@@ -67,6 +71,7 @@ class TrainerSessionExpiredExport implements FromView
             ->leftJoin('trainer_packages as tp', 'tp.id', '=', 'b.trainer_package_id')
             ->where('a.created_at', '>=', $fromDate)
             ->where('a.created_at', '<=', $toDate)
+            ->where('b.branch_store_id', $branchStoreId)
             ->whereNull('tp.status')
             ->whereNull('c.registered_member_id')
             ->get();

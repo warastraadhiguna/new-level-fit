@@ -6,6 +6,7 @@ use App\Models\Member\MemberRegistration;
 use App\Models\Trainer\PtLeaveDay;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
 
@@ -81,6 +82,7 @@ class TrainerSessionActiveExport implements FromView
                 $join->on('a.id', '=', 'pt_freeze_summary.trainer_session_id');
             })
             ->where('a.is_pt_free', false)
+            ->where('a.branch_store_id', Auth::user()->branch_store_id)
 
             ->whereRaw('CASE WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) > 0 THEN "Running"
                         WHEN IFNULL(a.number_of_session - e.check_in_count, a.number_of_session) < 0 THEN "kelebihan" ELSE "over" END = "Running"')
