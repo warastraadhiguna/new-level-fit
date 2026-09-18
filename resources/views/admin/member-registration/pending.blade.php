@@ -3,9 +3,11 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    <a href="{{ route('member-pending', ['excel' => 1]) }}" class="btn btn-info">
-                        Download Excel
-                    </a>
+                    @if (Auth::user()->isOwner())
+                        <a href="{{ route('member-pending', ['excel' => 1]) }}" class="btn btn-info">
+                            Download Excel
+                        </a>
+                    @endif
                 </div>
             </div>
             <!--column-->

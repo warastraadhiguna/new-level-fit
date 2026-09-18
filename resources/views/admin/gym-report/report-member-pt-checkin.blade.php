@@ -38,11 +38,13 @@
                 </button>
             </div>
 
-            <div class="col-auto">
-                <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info">
-                    Download Excel
-                </button>
-            </div>
+            @if (Auth::user()->isOwner())
+                <div class="col-auto">
+                    <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info">
+                        Download Excel
+                    </button>
+                </div>
+            @endif
 
         </div>
 

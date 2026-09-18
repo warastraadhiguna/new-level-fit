@@ -77,9 +77,11 @@
                             <input type="hidden" name="sort" value="{{ $sort }}">
                             <input type="hidden" name="direction" value="{{ $direction }}">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <a href="{{ route('member-active.index', ['excel' => 1]) }}" class="btn btn-info">
-                                    Download Excel
-                                </a>
+                                @if (Auth::user()->isOwner())
+                                    <a href="{{ route('member-active.index', ['excel' => 1]) }}" class="btn btn-info">
+                                        Download Excel
+                                    </a>
+                                @endif
                                 @if ($search)
                                     <a href="{{ route('member-active.index') }}" class="btn btn-danger light">
                                         Reset Search

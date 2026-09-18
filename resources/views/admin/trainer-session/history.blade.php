@@ -145,7 +145,7 @@
         var fromDate = document.getElementById("fromDate").value;
         var toDate = document.getElementById("toDate").value;
 
-        window.open(window.location.href + '?excel=1&fromDate=' + fromDate + '&toDate=' + toDate, '_self');
+        window.open(window.location.pathname + '?fromDate=' + fromDate + '&toDate=' + toDate, '_self');
     }
 
     function updateTableWithFilteredData(data) {

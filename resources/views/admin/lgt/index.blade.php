@@ -53,9 +53,11 @@
                 <div class="page-title flex-wrap justify-content-between">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#checkIn2"
                         id="checkInButton" onclick="manipulateView()">Input Member Code</button>
-                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                        Download Excel
-                    </button>
+                    @if (Auth::user()->isOwner())
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Download Excel
+                        </button>
+                    @endif
                 </div>
             </div>
 

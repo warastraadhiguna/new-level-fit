@@ -8,9 +8,11 @@
             @if (!$isPtReadOnly)
             <div class="col-xl-12">
                 <div class="page-title flex-wrap">
-                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                        Download Excel
-                    </button>
+                    @if (Auth::user()->isOwner())
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Download Excel
+                        </button>
+                    @endif
                 </div>
             </div>
             @endif

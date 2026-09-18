@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'pt.readonly' => \App\Http\Middleware\EnsurePtReadOnlyAccess::class,
         'pos.enabled' => \App\Http\Middleware\EnsurePosInventoryEnabled::class,
         'pt-free.enabled' => \App\Http\Middleware\EnsurePtFreeEnabled::class,
+        'excel.owner' => \App\Http\Middleware\EnsureOwnerForExcelDownloads::class,
     ];
 }

@@ -55,7 +55,7 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    @if (empty($isUnpaidPage) && !$isPtReadOnly)
+                    @if (empty($isUnpaidPage) && Auth::user()->isOwner())
                         <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
                             Download Excel
                         </button>

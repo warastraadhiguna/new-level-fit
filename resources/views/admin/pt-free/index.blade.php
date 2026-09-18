@@ -32,7 +32,7 @@
                             <button type="button" onclick="filterPtFreeHistory()" class="btn btn-info mx-1">Filter</button>
                         </div>
                     @endif
-                    @if (!$isPtReadOnly)
+                    @if (Auth::user()->isOwner())
                         <button type="button" class="btn btn-info mb-2" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">
                             Download Excel
                         </button>

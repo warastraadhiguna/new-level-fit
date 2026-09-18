@@ -3,11 +3,13 @@
         <div class="row">
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
-                    <div>
-                        <a href="{{ route('member-expired.index', ['excel' => 1]) }}" class="btn btn-info">
-                            Download Excel
-                        </a>
-                    </div>
+                    @if (Auth::user()->isOwner())
+                        <div>
+                            <a href="{{ route('member-expired.index', ['excel' => 1]) }}" class="btn btn-info">
+                                Download Excel
+                            </a>
+                        </div>
+                    @endif
                     <div>
                         @if (!empty($memberRegistrationsOver))
                             <?php

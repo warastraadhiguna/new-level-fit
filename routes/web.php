@@ -52,7 +52,7 @@ use Illuminate\Support\Facades\Route;
 //     return view('welcome');
 // });
 
-Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonly'])->group(function () {
+Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonly', 'excel.owner'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/add-data', [MergeCreateDataController::class, 'index'])->name('add-data');

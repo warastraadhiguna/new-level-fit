@@ -26,9 +26,11 @@
                     <div class="card-body">
                         <form action="{{ route('members.index') }}" method="GET" id="memberSearchForm">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                    Download Excel
-                                </button>
+                                @if (Auth::user()->isOwner())
+                                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                        Download Excel
+                                    </button>
+                                @endif
                                 @if ($search)
                                     <a href="{{ route('members.index') }}" class="btn btn-danger light">
                                         Reset Search

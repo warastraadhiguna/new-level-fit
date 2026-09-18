@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-xl-12">
         <div class="row">
-            @if (!$isPtReadOnly)
+            @if (Auth::user()->isOwner())
             <div class="col-xl-12">
                 <div class="page-title flex-wrap justify-content-between">
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">Download Excel</button>
@@ -67,4 +67,6 @@
     </div>
 </div>
 
-@include('admin.pt-free.partials.excel-modal')
+@if (Auth::user()->isOwner())
+    @include('admin.pt-free.partials.excel-modal')
+@endif

@@ -8,7 +8,9 @@
                     <input type="date" id="historyToDate" class="form-control" value="{{ $toDate }}">
                     <button type="button" onclick="filterPtFreeHistory()" class="btn btn-info mx-1">Filter</button>
                 </div>
-                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">Download Excel</button>
+                @if (Auth::user()->isOwner())
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#ptFreeExcelModal">Download Excel</button>
+                @endif
             </div>
         </div>
         <div class="row">
@@ -52,7 +54,9 @@
     </div>
 </div>
 
-@include('admin.pt-free.partials.excel-modal')
+@if (Auth::user()->isOwner())
+    @include('admin.pt-free.partials.excel-modal')
+@endif
 
 <script>
     function filterPtFreeHistory() {

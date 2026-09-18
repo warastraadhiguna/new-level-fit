@@ -30,9 +30,11 @@
                     <button type="button" onclick="reloadPage()" class="btn btn-info">
                         Filter
                     </button>
-                    <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info">
-                        Download Excel
-                    </button>
+                    @if (Auth::user()->isOwner())
+                        <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info">
+                            Download Excel
+                        </button>
+                    @endif
                 </div>
 
             </div>
