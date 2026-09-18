@@ -19,7 +19,8 @@ class DashboardController extends Controller
     {
         $branchId = Auth::user()->branch_store_id;
         $activeBranchStore = BranchStore::find($branchId);
-        $canViewDashboardFinance = Auth::user()->isOwner();
+        $canViewDashboardFinance = optional($activeBranchStore)
+            ->canRoleViewDashboardFinance(Auth::user()->role);
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
 

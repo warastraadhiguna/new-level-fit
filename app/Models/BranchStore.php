@@ -18,6 +18,7 @@ class BranchStore extends Model
         'CS' => 'Customer Service',
         'CSPOS' => 'Customer Service POS',
         'FC' => 'Fitness Consultant',
+        'PT' => 'PT User',
     ];
 
     protected $fillable = [

@@ -28,6 +28,14 @@ class EnsurePtReadOnlyAccess
             return $next($request);
         }
 
+        if (
+            optional($request->route())->getName() === 'revenue-report.index'
+            && optional($user->branchStore)->canRoleViewDashboardFinance($user->role)
+            && in_array($request->method(), ['GET', 'HEAD'], true)
+        ) {
+            return $next($request);
+        }
+
         abort_unless(
             in_array($request->method(), ['GET', 'HEAD'], true)
                 && in_array(optional($request->route())->getName(), self::ALLOWED_ROUTES, true),

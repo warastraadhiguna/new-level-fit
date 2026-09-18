@@ -19,6 +19,7 @@ use App\Http\Controllers\Pos\SupplierController;
 use App\Http\Controllers\Report\MemberExpiredListController;
 use App\Http\Controllers\Report\MemberListController;
 use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Report\RevenueReportController;
 use App\Http\Controllers\Staff\AdministratorController;
 use App\Http\Controllers\Staff\ClassInstructorController;
 use App\Http\Controllers\Staff\CustomerServiceController;
@@ -321,6 +322,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
     Route::post('stop-layout-orientation/{id}', [MemberController::class, 'stopLO'])->name('stopLayoutOrientation');
 
     // REPORT
+    Route::get('revenue-report', [RevenueReportController::class, 'index'])->name('revenue-report.index');
     Route::get('pt-total-report', [StaffController::class, 'ptTotalReport'])->name('pt-total-report');
     Route::get('pt-detail-report', [StaffController::class, 'ptDetailReport'])->name('pt-detail-report');
 

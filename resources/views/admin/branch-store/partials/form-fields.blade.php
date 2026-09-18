@@ -173,7 +173,7 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
-            <label class="form-label d-block">Akses Informasi Keuangan Dashboard</label>
+            <label class="form-label d-block">Akses Keuangan Dashboard & Laporan Omzet</label>
             @php
                 $financeAccessKey = $branchStore->id ?? 'new';
                 $selectedFinanceRoles = old(
@@ -213,7 +213,7 @@
                 @endforeach
             </div>
             <small class="text-muted">
-                Pilih Semua Role atau minimal satu role tertentu. Pengguna yang tidak dipilih tidak akan menerima kartu maupun nominal keuangan pada dashboard.
+                Pilih Semua Role atau minimal satu role tertentu. Pengguna yang tidak dipilih tidak dapat melihat nominal keuangan dashboard maupun membuka Laporan Omzet. Owner selalu memiliki akses.
             </small>
         </div>
     </div>
