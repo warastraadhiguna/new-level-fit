@@ -15,6 +15,23 @@ class Member extends Model
     use HasFactory;
     public $timestamps = false;
 
+    protected static function booted()
+    {
+        static::saving(function (Member $member) {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('trashes')) {
+                return;
+            }
+            foreach (['member_code', 'card_number'] as $column) {
+                if ($member->{$column} && \Illuminate\Support\Facades\DB::table('trashes')
+                    ->where('kind', 'member')->where($column, $member->{$column})->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        $column => 'Kode/kartu ini masih digunakan member di Tempat Sampah Tip-Tap. Restore atau hapus permanen member tersebut terlebih dahulu.',
+                    ]);
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'branch_store_id',
         'full_name',

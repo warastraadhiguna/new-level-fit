@@ -774,14 +774,8 @@ class TrainerSessionController extends Controller
 
     public function destroy(TrainerSession $trainerSession)
     {
-        abort_if($trainerSession->is_pt_free, 404);
-
-        try {
-            $trainerSession->delete();
-            return redirect()->back()->with('success', 'Trainer Session Deleted Successfully');
-        } catch (\Throwable $th) {
-            return redirect()->back()->with('errorr', 'Deleted Failed, please delete check in first');
-        }
+        app(\App\Services\TipTapService::class)->trash(auth()->user(), 'pt', (int) $trainerSession->id);
+        return back()->with('success', 'PT registration dipindahkan ke Tempat Sampah Tip-Tap. Omzet sudah disesuaikan.');
     }
 
     public function cetak_pdf()

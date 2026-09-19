@@ -1392,14 +1392,8 @@ class MemberRegistrationController extends Controller
 
     public function destroy($id)
     {
-        $memberRegistration = MemberRegistration::find($id);
-
-        try {
-            $memberRegistration->delete();
-            return redirect()->back()->with('success', $memberRegistration->members->full_name . ' member package delete successfully');
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('errorr', 'Deleted Failed, Delete Member Check In First');
-        }
+        app(\App\Services\TipTapService::class)->trash(auth()->user(), 'membership', (int) $id);
+        return back()->with('success', 'Membership dipindahkan ke Tempat Sampah Tip-Tap. Omzet sudah disesuaikan.');
     }
 
     public function agreement($id)

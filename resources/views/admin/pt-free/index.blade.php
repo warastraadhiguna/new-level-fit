@@ -154,11 +154,13 @@
                                                 <li><a href="{{ route('pt-free.show', $item->id) }}" class="btn light btn-info btn-xs mb-1 btn-block">Detail</a></li>
                                                 @if (Auth::user()->isAdmin())
                                                     <li>
-                                                        <form action="{{ route('pt-free.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Delete Data ?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn light btn-danger btn-xs mb-1 btn-block">Delete</button>
-                                                        </form>
+                                                        @if (Auth::user()->isOwner())
+                                                            <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('pt-free.destroy', $item->id) }}" method="POST">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn light btn-danger btn-xs mb-1 btn-block">Hapus sementara</button>
+                                                            </form>
+                                                        @endif
                                                     </li>
                                                 @endif
                                             </ul>

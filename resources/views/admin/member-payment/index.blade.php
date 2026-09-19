@@ -78,13 +78,14 @@
                                                 class="btn light btn-success btn-xs mb-1 btn-block">Rejoin</a>
                                             <a href="#"
                                                 class="btn light btn-warning btn-xs mb-1 btn-block">Freeze</a>
-                                            <form action="{{ route('member.destroy', $item->id) }}"
-                                                onclick="return confirm('Delete Data ?')" method="POST">
-                                                @method('delete')
-                                                @csrf
-                                                <button type="submit"
-                                                    class="btn light btn-danger btn-xs btn-block">Delete</button>
-                                            </form>
+                                            @if (Auth::user()->isOwner())
+                                                <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member.destroy', $item->id) }}" method="POST">
+                                                    @method('delete')
+                                                    @csrf
+                                                    <button type="submit"
+                                                        class="btn light btn-danger btn-xs btn-block">Hapus sementara</button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

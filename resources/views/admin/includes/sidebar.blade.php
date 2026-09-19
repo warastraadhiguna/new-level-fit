@@ -4,6 +4,10 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
+            @if (Auth::user()->isOwner())
+                <li><a href="{{ route('tip-tap.index') }}"><i class="material-icons">delete</i><span class="nav-text">Tip-Tap / Tempat Sampah</span></a></li>
+            @endif
+
             @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC' || Auth::user()->isPt())
                 <li>
                     <a href="{{ route('dashboard') }}" aria-expanded="false">

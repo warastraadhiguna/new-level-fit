@@ -184,14 +184,13 @@
                                                         </button>
                                                     @endif
                                                 </li>
-                                                @if (Auth::user()->isAdmin())
+                                                @if (Auth::user()->isOwner())
                                                     <li>
-                                                        <form action="{{ route('member.destroy', $item->id) }}"
-                                                            onsubmit="return confirm('Delete Data ?')" method="POST">
+                                                        <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member.destroy', $item->id) }}" method="POST">
                                                             @method('delete')
                                                             @csrf
                                                             <button type="submit"
-                                                                class="btn light btn-danger btn-xs btn-block mb-1">Delete</button>
+                                                                class="btn light btn-danger btn-xs btn-block mb-1">Hapus sementara</button>
                                                         </form>
                                                     </li>
                                                 @endif

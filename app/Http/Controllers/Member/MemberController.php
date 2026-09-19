@@ -676,23 +676,8 @@ class MemberController extends Controller
 
     public function destroy(Member $member)
     {
-        try {
-            if ($member->photos != null) {
-                $realLocation = "storage/" . $member->photos;
-                if (file_exists($realLocation) && !is_dir($realLocation)) {
-                    unlink($realLocation);
-                }
-            }
-
-            Storage::delete($member->photos);
-            if ($member->small_photos) {
-                Storage::disk('public')->delete($member->small_photos);
-            }
-            $member->delete();
-            return redirect()->back()->with('success', 'Member Deleted Successfully');
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('errorr', 'Member Deleted Failed, please check other session where using this member');
-        }
+        app(\App\Services\TipTapService::class)->trash(auth()->user(), 'member', (int) $member->id);
+        return redirect()->route('members.index')->with('success', 'Member dan seluruh history dipindahkan ke Tempat Sampah Tip-Tap. Omzet sudah disesuaikan.');
     }
 
     public function updateSmallPhoto(Request $request, string $id)

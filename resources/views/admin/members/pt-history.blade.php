@@ -48,6 +48,15 @@
                             <td>{{ $histories->firstItem() + $loop->index }}</td>
                             <td>
                                 <h6 class="mb-1">{{ $item->package_name ?? 'Deleted Package' }}</h6>
+                                @if (Auth::user()->isOwner())
+                                    <form action="{{ route('tip-tap.trash', [$member->id, 'pt', $item->id]) }}" method="POST" class="mt-2"
+                                        onsubmit="return confirm('Hapus sementara registrasi ini beserta history dan pembayarannya? Omzet akan berkurang. Data dapat direstore dari Tempat Sampah Tip-Tap.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-outline-danger btn-xs" type="submit">Hapus sementara</button>
+                                    </form>
+                                @endif
+
                                 <span class="badge {{ $item->is_pt_free ? 'badge-success' : 'badge-primary' }}">
                                     {{ $item->is_pt_free ? 'PT Free' : 'Paid PT' }}
                                 </span>

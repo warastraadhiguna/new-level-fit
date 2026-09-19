@@ -246,16 +246,10 @@ class PtFreeController extends Controller
 
     public function destroy($id)
     {
+        abort_unless(auth()->user()->isOwner(), 403);
         $trainerSession = $this->findBranchSession($id);
-
-        if (CheckInTrainerSession::where('trainer_session_id', $trainerSession->id)->exists()) {
-            return back()->with('errorr', 'PT Free yang sudah memiliki data check-in tidak dapat dihapus.');
-        }
-
-        PtLeaveDay::where('trainer_session_id', $trainerSession->id)->delete();
-        $trainerSession->delete();
-
-        return back()->with('success', 'PT Free berhasil dihapus.');
+        app(\App\Services\TipTapService::class)->trash(auth()->user(), 'pt', (int) $trainerSession->id);
+        return back()->with('success', 'PT Free dipindahkan ke Tempat Sampah Tip-Tap.');
     }
 
     public function checkInIndex()

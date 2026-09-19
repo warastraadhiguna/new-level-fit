@@ -54,6 +54,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonly', 'excel.owner'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::prefix('tip-tap')->name('tip-tap.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Owner\TipTapController::class, 'index'])->name('index');
+        Route::delete('members/{member}/{kind}/{record}', [\App\Http\Controllers\Owner\TipTapController::class, 'trash'])->name('trash');
+        Route::post('{trash}/restore', [\App\Http\Controllers\Owner\TipTapController::class, 'restore'])->name('restore');
+        Route::delete('{trash}/purge', [\App\Http\Controllers\Owner\TipTapController::class, 'purge'])->name('purge');
+    });
+
 
     Route::get('/add-data', [MergeCreateDataController::class, 'index'])->name('add-data');
     Route::get('/1-day-visit-lead', [MergeCreateDataController::class, 'create'])->name('one-day-visit-lead');

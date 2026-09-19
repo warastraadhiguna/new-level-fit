@@ -165,14 +165,13 @@
                                             id="checkInButton">Freeze</button>
                                         <a href="{{ route('renewal', $item->id) }}"
                                             class="btn light btn-dark btn-xs mb-1 btn-block">Renewal</a>
-                                        @if (Auth::user()->isAdmin())
-                                            <form action="{{ route('member-active.destroy', $item->id) }}"
+                                        @if (Auth::user()->isOwner())
+                                            <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member-active.destroy', $item->id) }}"
                                                 method="POST">
                                                 @method('delete')
                                                 @csrf
                                                 <button type="submit"
-                                                    class="btn light btn-danger btn-xs btn-block mb-1"
-                                                    onclick="return confirm('Delete {{ $item->member_name }} member package ?')">Delete</button>
+                                                    class="btn light btn-danger btn-xs btn-block mb-1">Hapus sementara</button>
                                             </form>
                                         @endif
                                     </td>

@@ -179,13 +179,12 @@
                                         @endif
                                         <a href="{{ route('trainer-session.show', $item->id) }}"
                                             class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>
-                                        @if (Auth::user()->isAdmin())
-                                            <form action="{{ route('trainer-session.destroy', $item->id) }}"
-                                                onclick="return confirm('Delete Data ?')" method="POST">
+                                        @if (Auth::user()->isOwner())
+                                            <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('trainer-session.destroy', $item->id) }}" method="POST">
                                                 @method('delete')
                                                 @csrf
                                                 <button type="submit"
-                                                    class="btn light btn-danger btn-xs mb-1 btn-block">Delete</button>
+                                                    class="btn light btn-danger btn-xs mb-1 btn-block">Hapus sementara</button>
                                             </form>
                                         @endif
                                     </td>

@@ -353,14 +353,15 @@
 
                                                 @if (Auth::user()->isAdmin())
                                                     <li>
-                                                        <form action="{{ route('trainer-session.destroy', $item->id) }}"
-                                                            method="POST"
-                                                            onsubmit="return confirm('Delete Data ?')">
-                                                            @method('delete')
-                                                            @csrf
-                                                            <button type="submit"
-                                                                class="btn light btn-danger btn-xs mb-1 btn-block">Delete</button>
-                                                        </form>
+                                                        @if (Auth::user()->isOwner())
+                                                            <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('trainer-session.destroy', $item->id) }}"
+                                                                method="POST">
+                                                                @method('delete')
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    class="btn light btn-danger btn-xs mb-1 btn-block">Hapus sementara</button>
+                                                            </form>
+                                                        @endif
                                                     </li>
                                                 @endif
                                             </ul>
