@@ -23,6 +23,81 @@ php artisan migrate --path=database/migrations/2026_09_19_000003_rename_tip_tap_
 
 Tabel fitur ini bernama `trashes` dan `locks`. Migration pertama membuat tabel, lalu migration kedua mengganti nama lama tanpa menghapus isinya. Jika migration pertama sudah dijalankan, cukup jalankan migration kedua. Migration lama yang belum dijalankan tidak diubah oleh perintah tersebut. Sebelum kembali menggunakan branch lain pada database yang sama, restore data yang masih diperlukan. Pergantian branch Git tidak mengganti database.
 
+### SQL manual untuk membuat tabel dari awal
+
+Untuk database yang belum memiliki kedua tabel fitur ini, SQL berikut langsung membuat nama final `trashes` dan `locks`. Hasilnya setara dengan menjalankan migration create lalu rename, sehingga bagian SQL rename di bawah tidak perlu dijalankan setelah memakai SQL ini.
+
+```sql
+CREATE TABLE `trashes` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `kind` VARCHAR(20) NOT NULL,
+    `original_id` BIGINT UNSIGNED NOT NULL,
+    `member_id` BIGINT UNSIGNED NOT NULL,
+    `label` VARCHAR(255) NOT NULL,
+    `member_code` VARCHAR(255) NULL,
+    `card_number` VARCHAR(255) NULL,
+    `payload` LONGTEXT NOT NULL,
+    `deleted_at` TIMESTAMP NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `trashes_member_id_index` (`member_id`),
+    KEY `trashes_member_code_index` (`member_code`),
+    KEY `trashes_card_number_index` (`card_number`),
+    UNIQUE KEY `trashes_kind_original_id_unique` (`kind`, `original_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `locks` (
+    `id` INT UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `locks` (`id`) VALUES (1);
+```
+
+Setelah kedua tabel dan data awal berhasil dibuat, catat kedua migration pada tabel `migrations` Laravel yang sudah tersedia:
+
+```sql
+SET @tip_tap_create_batch = (SELECT COALESCE(MAX(`batch`), 0) + 1 FROM `migrations`);
+
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_09_19_000002_create_tip_tap_trash', @tip_tap_create_batch
+WHERE NOT EXISTS (
+    SELECT 1 FROM `migrations`
+    WHERE `migration` = '2026_09_19_000002_create_tip_tap_trash'
+);
+
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_09_19_000003_rename_tip_tap_tables', @tip_tap_create_batch
+WHERE NOT EXISTS (
+    SELECT 1 FROM `migrations`
+    WHERE `migration` = '2026_09_19_000003_rename_tip_tap_tables'
+);
+```
+
+### SQL manual untuk migration terakhir
+
+SQL MySQL berikut setara dengan migration `2026_09_19_000003_rename_tip_tap_tables.php`. Gunakan jika tabel `tip_tap_trash` dan `tip_tap_locks` sudah ada, sedangkan `trashes` dan `locks` belum ada:
+
+```sql
+RENAME TABLE
+    `tip_tap_trash` TO `trashes`,
+    `tip_tap_locks` TO `locks`;
+```
+
+Perintah ini mengganti nama tabel tanpa menghapus isinya. Di database lokal proyek ini, rename sudah dijalankan melalui migration, sehingga tidak perlu dijalankan lagi.
+
+Jika menjalankan SQL tersebut secara manual sebagai pengganti Artisan, setelah rename berhasil jalankan SQL berikut agar Laravel mencatat migration sebagai sudah dijalankan:
+
+```sql
+SET @tip_tap_batch = (SELECT COALESCE(MAX(`batch`), 0) + 1 FROM `migrations`);
+
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT '2026_09_19_000003_rename_tip_tap_tables', @tip_tap_batch
+WHERE NOT EXISTS (
+    SELECT 1 FROM `migrations`
+    WHERE `migration` = '2026_09_19_000003_rename_tip_tap_tables'
+);
+```
+
 ## Penyimpanan dan konsistensi
 
 Arsip baris lengkap dienkripsi menggunakan `APP_KEY` dan hanya tersedia di halaman owner. Pertahankan key tersebut agar arsip dapat direstore. Foto dipertahankan selama hapus sementara dan dihapus saat hapus permanen. Kode/kartu member di tempat sampah dicadangkan oleh model Member agar tidak dipakai kembali melalui aplikasi ini.

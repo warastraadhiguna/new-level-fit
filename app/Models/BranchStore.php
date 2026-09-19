@@ -12,6 +12,7 @@ class BranchStore extends Model
     use HasFactory;
 
     public const DASHBOARD_FINANCE_ALL_ROLES = 'ALL';
+    public const DASHBOARD_FINANCE_OWNER_ONLY = 'OWNER_ONLY';
 
     public const DASHBOARD_FINANCE_ROLE_OPTIONS = [
         'ADMIN' => 'Administrator',
@@ -74,6 +75,10 @@ class BranchStore extends Model
 
         $allowedRoles = array_map('strtoupper', $allowedRoles);
         $role = strtoupper((string) $role);
+
+        if (in_array(self::DASHBOARD_FINANCE_OWNER_ONLY, $allowedRoles, true)) {
+            return false;
+        }
 
         return in_array(self::DASHBOARD_FINANCE_ALL_ROLES, $allowedRoles, true)
             || in_array($role, $allowedRoles, true);

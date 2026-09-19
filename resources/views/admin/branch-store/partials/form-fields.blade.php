@@ -188,8 +188,22 @@
                     <div class="form-check">
                         <input class="form-check-input js-dashboard-finance-role" type="checkbox"
                             name="dashboard_finance_visible_roles[]"
+                            value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY }}"
+                            data-exclusive-role="1"
+                            id="financeRoleOwnerOnly{{ $financeAccessKey }}"
+                            {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY, $selectedFinanceRoles, true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="financeRoleOwnerOnly{{ $financeAccessKey }}">
+                            Owner Only
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                            name="dashboard_finance_visible_roles[]"
                             value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES }}"
                             data-all-roles="1"
+                            data-exclusive-role="1"
                             id="financeRoleAll{{ $financeAccessKey }}"
                             {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $selectedFinanceRoles, true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="financeRoleAll{{ $financeAccessKey }}">
@@ -213,7 +227,7 @@
                 @endforeach
             </div>
             <small class="text-muted">
-                Pilih Semua Role atau minimal satu role tertentu. Pengguna yang tidak dipilih tidak dapat melihat nominal keuangan dashboard maupun membuka Laporan Omzet. Owner selalu memiliki akses.
+                Pilih Owner Only, Semua Role, atau role tertentu. Owner selalu memiliki akses. Role yang tidak dipilih tidak dapat melihat nominal keuangan dashboard maupun membuka Laporan Omzet.
             </small>
         </div>
     </div>

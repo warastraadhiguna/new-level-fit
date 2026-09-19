@@ -125,7 +125,10 @@ class BranchStoreController extends Controller
             'dashboard_finance_visible_roles.*' => [
                 'required',
                 Rule::in(array_merge(
-                    [BranchStore::DASHBOARD_FINANCE_ALL_ROLES],
+                    [
+                        BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
+                        BranchStore::DASHBOARD_FINANCE_OWNER_ONLY,
+                    ],
                     array_keys(BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
                 )),
             ],
@@ -138,11 +141,13 @@ class BranchStoreController extends Controller
             $data['dashboard_finance_visible_roles']
         )));
 
-        $data['dashboard_finance_visible_roles'] = in_array(
-            BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
-            $roles,
-            true
-        ) ? [BranchStore::DASHBOARD_FINANCE_ALL_ROLES] : $roles;
+        if (in_array(BranchStore::DASHBOARD_FINANCE_OWNER_ONLY, $roles, true)) {
+            $data['dashboard_finance_visible_roles'] = [BranchStore::DASHBOARD_FINANCE_OWNER_ONLY];
+        } elseif (in_array(BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $roles, true)) {
+            $data['dashboard_finance_visible_roles'] = [BranchStore::DASHBOARD_FINANCE_ALL_ROLES];
+        } else {
+            $data['dashboard_finance_visible_roles'] = $roles;
+        }
 
         return $data;
     }

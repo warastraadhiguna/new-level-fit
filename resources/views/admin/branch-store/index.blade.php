@@ -29,7 +29,7 @@
         const form = event.target.closest('form');
         const roleCheckboxes = form.querySelectorAll('.js-dashboard-finance-role');
 
-        if (event.target.dataset.allRoles === '1' && event.target.checked) {
+        if (event.target.dataset.exclusiveRole === '1' && event.target.checked) {
             roleCheckboxes.forEach(function (checkbox) {
                 if (checkbox !== event.target) {
                     checkbox.checked = false;
@@ -39,10 +39,9 @@
         }
 
         if (event.target.checked) {
-            const allRolesCheckbox = form.querySelector('.js-dashboard-finance-role[data-all-roles="1"]');
-            if (allRolesCheckbox) {
-                allRolesCheckbox.checked = false;
-            }
+            form.querySelectorAll('.js-dashboard-finance-role[data-exclusive-role="1"]').forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
         }
     });
 </script>
