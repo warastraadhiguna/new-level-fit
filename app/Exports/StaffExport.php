@@ -20,6 +20,7 @@ class StaffExport implements FromView
         $fromDate = $fromDate ? $fromDate : $nowTimeString;
 
         $memberRegistrations = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',

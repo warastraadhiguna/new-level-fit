@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CheckInTrainerSession extends Model
 {
+    use \App\Traits\HasSupportedRegistration;
     use HasFactory;
+
+    protected $supportedRegistrationRelation = 'trainerSession';
 
     protected $fillable = [
         'trainer_session_id',

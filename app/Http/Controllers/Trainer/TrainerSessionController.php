@@ -363,6 +363,9 @@ class TrainerSessionController extends Controller
         if ($status == "one_day_visit") {
             // dd("Kondisi Pertama");
             $activePt = DB::table('trainer_sessions as a')
+            ->whereNotIn('a.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
                 ->select(
                     'a.id',
                     'a.start_date',
@@ -403,6 +406,9 @@ class TrainerSessionController extends Controller
                 )
                 ->leftJoin('members as b', 'a.member_id', '=', 'b.id')
                 ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+                ->where(function ($query) {
+                    $query->whereNull('c.status')->orWhere('c.status', '!=', 'LGT');
+                })
                 ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
                 ->leftJoin(DB::raw('(SELECT trainer_session_id, COUNT(id) as check_in_count FROM check_in_trainer_sessions where check_out_time is not null GROUP BY trainer_session_id) as e'), 'e.trainer_session_id', '=', 'a.id')
                 ->join('users as g', 'a.user_id', '=', 'g.id')
@@ -781,6 +787,9 @@ class TrainerSessionController extends Controller
     public function cetak_pdf()
     {
         $trainerSessions = DB::table('trainer_sessions as a')
+            ->whereNotIn('a.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'a.id',
                 'a.start_date',
@@ -803,6 +812,9 @@ class TrainerSessionController extends Controller
             )
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+            ->where(function ($query) {
+                $query->whereNull('c.status')->orWhere('c.status', '!=', 'LGT');
+            })
             ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
             ->join('users as g', 'a.user_id', '=', 'g.id')
             ->leftJoin('fitness_consultants as h', 'a.fc_id', '=', 'h.id')

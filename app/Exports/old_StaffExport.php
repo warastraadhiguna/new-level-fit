@@ -11,6 +11,9 @@ class StaffExport implements FromView
     public function view(): View
     {
         $ptStaff = DB::table('trainer_sessions as a')
+            ->whereNotIn('a.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'a.id',
                 'a.start_date',
@@ -58,6 +61,9 @@ class StaffExport implements FromView
                                     group by trainer_session_id) as b on a.id=b.id) as cits"), 'cits.trainer_session_id', '=', 'a.id')
             ->join('users as g', 'a.user_id', '=', 'g.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+            ->where(function ($query) {
+                $query->whereNull('c.status')->orWhere('c.status', '!=', 'LGT');
+            })
             ->join('fitness_consultants as h', 'a.fc_id', '=', 'h.id')
             ->join('method_payments as i', 'a.method_payment_id', '=', 'i.id')
             ->leftJoin('pt_leave_days as ptld', 'a.id', '=', 'ptld.trainer_session_id')

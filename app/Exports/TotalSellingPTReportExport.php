@@ -31,6 +31,9 @@ class TotalSellingPTReportExport implements FromView
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'), 'trainer_sessions.package_price')
                 ->join('trainer_sessions', 'trainer_sessions.fc_id', '=', 'users.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->whereDate('trainer_sessions.created_at', '>=', $fromDate)
                 ->whereDate('trainer_sessions.created_at', '<=', $toDate)
                 // ->where('users.role', '=', 'FC')
@@ -41,6 +44,9 @@ class TotalSellingPTReportExport implements FromView
         } else {
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'), 'trainer_sessions.package_price')
                 ->join('trainer_sessions', 'trainer_sessions.fc_id', '=', 'users.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->whereDate('trainer_sessions.created_at', '>=', $fromDate)
                 ->whereDate('trainer_sessions.created_at', '<=', $toDate)
                 ->where('users.role', '=', 'FC')

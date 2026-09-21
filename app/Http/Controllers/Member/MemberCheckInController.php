@@ -35,6 +35,7 @@ class MemberCheckInController extends Controller
                 DB::raw($branchStoreNameSql)
             )
             ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+            ->where('mr.days', '>', 1)
             ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
             ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', NowDate())
@@ -140,6 +141,7 @@ class MemberCheckInController extends Controller
     public function toggleByRegistrationId($memberRegistrationId)
     {
         $memberRegistration = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',
@@ -290,6 +292,7 @@ class MemberCheckInController extends Controller
     {
         return DB::transaction(function () use ($memberRegistrationId) {
             DB::table('member_registrations')
+                ->where('member_registrations.days', '>', 1)
                 ->where('id', $memberRegistrationId)
                 ->lockForUpdate()
                 ->first();

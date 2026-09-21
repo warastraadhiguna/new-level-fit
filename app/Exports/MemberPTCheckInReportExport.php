@@ -54,7 +54,10 @@ class MemberPTCheckInReportExport implements FromView
             ->leftJoin('personal_trainers as check_in_pt', 'cits.pt_id', '=', 'check_in_pt.id')
             ->leftJoin('personal_trainers as session_pt', 'ts.trainer_id', '=', 'session_pt.id')
             ->leftJoin('branch_stores as session_branch', 'ts.branch_store_id', '=', 'session_branch.id')
-            ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')            
+            ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->where('ts.is_pt_free', $this->isPtFree)
             ->where(function ($query) use ($fromDate, $toDate) {
                 $query->whereBetween(DB::raw('DATE(cits.check_in_time)'), [$fromDate, $toDate])

@@ -40,9 +40,7 @@
                                 <select name="category" class="form-control">
                                     <option value="">All Revenue</option>
                                     <option value="membership" {{ $category === 'membership' ? 'selected' : '' }}>Membership</option>
-                                    <option value="one_day" {{ $category === 'one_day' ? 'selected' : '' }}>One Day Visit</option>
                                     <option value="pt" {{ $category === 'pt' ? 'selected' : '' }}>PT</option>
-                                    <option value="lgt" {{ $category === 'lgt' ? 'selected' : '' }}>LGT</option>
                                     @if ($includePos)
                                         <option value="pos" {{ $category === 'pos' ? 'selected' : '' }}>POS</option>
                                     @endif
@@ -129,7 +127,7 @@
                             <tbody>
                                 @forelse ($summary as $item)
                                     @php
-                                        $categoryKeys = ['Membership' => 'membership', 'One Day Visit' => 'one_day', 'PT' => 'pt', 'LGT' => 'lgt', 'POS' => 'pos'];
+                                        $categoryKeys = ['Membership' => 'membership', 'PT' => 'pt', 'POS' => 'pos'];
                                         $categoryKey = $categoryKeys[$item->category] ?? null;
                                         $average = $item->transaction_count > 0 ? $item->total_amount / $item->transaction_count : 0;
                                         $contribution = $grandTotal > 0 ? ($item->total_amount / $grandTotal) * 100 : 0;

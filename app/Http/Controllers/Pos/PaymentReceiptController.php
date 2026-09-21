@@ -31,9 +31,7 @@ class PaymentReceiptController extends Controller
 
         return view('admin.pos.payment-receipt', [
             'receiptNumber' => 'MRP-' . str_pad($payment->id, 8, '0', STR_PAD_LEFT),
-            'receiptTitle' => $registration->members->status === 'one_day_visit' || (int) $registration->days <= 1
-                ? 'Pembayaran One Day Visit'
-                : 'Pembayaran Membership',
+            'receiptTitle' => 'Pembayaran Membership',
             'branchStore' => $registration->memberPackage->branchStore,
             'customerName' => $registration->members->full_name,
             'customerCode' => $registration->members->member_code,

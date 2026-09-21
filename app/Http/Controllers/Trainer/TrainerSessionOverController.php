@@ -39,6 +39,9 @@ class TrainerSessionOverController extends Controller
     public function pdfReport()
     {
         $trainerSessionsOver = DB::table('trainer_sessions as a')
+            ->whereNotIn('a.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'a.id',
                 'a.start_date',
@@ -63,6 +66,9 @@ class TrainerSessionOverController extends Controller
             ->addSelect(DB::raw('SUM(a.admin_price) as admin_price'))
             ->join('members as b', 'a.member_id', '=', 'b.id')
             ->join('trainer_packages as c', 'a.trainer_package_id', '=', 'c.id')
+            ->where(function ($query) {
+                $query->whereNull('c.status')->orWhere('c.status', '!=', 'LGT');
+            })
             ->join('personal_trainers as d', 'a.trainer_id', '=', 'd.id')
             ->join('users as e', 'a.user_id', '=', 'e.id')
             ->leftJoin(DB::raw('(SELECT trainer_session_id, COUNT(id) as check_in_count FROM check_in_trainer_sessions GROUP BY trainer_session_id) as ci'), 'ci.trainer_session_id', '=', 'a.id')

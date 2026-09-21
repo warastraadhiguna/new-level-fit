@@ -124,7 +124,7 @@
                         @if (data_get($memberRegistration, 'members.status') == 'sell')
                             <a href="{{ route('member-active.index') }}" class="btn btn-info">Back</a>
                         @else
-                            <a href="{{ route('oneDayVisit') }}" class="btn btn-info">Back</a>
+                            <a href="{{ route('member-active.index') }}" class="btn btn-info">Back</a>
                         @endif
                     </div>
                 </div>

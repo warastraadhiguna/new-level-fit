@@ -15,6 +15,15 @@ class TrainerPackage extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected static function booted()
+    {
+        static::addGlobalScope('without_lgt', function ($query) {
+            $query->where(function ($query) {
+                $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+            });
+        });
+    }
+
     protected $fillable = [
         'branch_store_id',        
         'package_name',

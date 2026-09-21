@@ -27,7 +27,7 @@ class RevenueReportController extends Controller
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'search' => ['nullable', 'string', 'max:150'],
             'view' => ['nullable', 'in:summary,detail'],
-            'category' => ['nullable', 'in:membership,one_day,pt,lgt,pos'],
+            'category' => ['nullable', 'in:membership,pt,pos'],
             'per_page' => ['nullable', 'integer', 'in:10,20,50,100'],
             'excel' => ['nullable', 'in:1'],
         ]);

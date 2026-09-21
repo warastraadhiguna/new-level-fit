@@ -69,6 +69,9 @@ class TrainerSessionExpiredExport implements FromView
             //         ->whereNull('tp.status');
             // })
             ->leftJoin('trainer_packages as tp', 'tp.id', '=', 'b.trainer_package_id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->where('a.created_at', '>=', $fromDate)
             ->where('a.created_at', '<=', $toDate)
             ->where('b.branch_store_id', $branchStoreId)

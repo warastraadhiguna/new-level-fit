@@ -62,7 +62,7 @@
                                         {{ old('trainer_package_id') == $item->id ? 'selected' : '' }}>
                                         {{ $item->package_name }} |
                                         {{ formatRupiah($item->package_price) }} |
-                                        {{ $item->number_of_session }} Sessions | {{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}
+                                        {{ $item->number_of_session }} Sessions | PT
                                     </option>
                                 @endforeach
                             </select>

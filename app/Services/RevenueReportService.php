@@ -24,6 +24,7 @@ class RevenueReportService
             ->leftJoin('member_packages as package', 'package.id', '=', 'registration.member_package_id')
             ->leftJoin('method_payments as method', 'method.id', '=', 'payment.method_payment_id')
             ->leftJoin('users as staff', 'staff.id', '=', 'payment.user_id')
+            ->where('registration.days', '>', 1)
             ->whereBetween('payment.created_at', [$from, $to])
             ->whereRaw(
                 'COALESCE(payment.branch_store_id, staff.branch_store_id, member.branch_store_id) = ?',
@@ -31,7 +32,7 @@ class RevenueReportService
             )
             ->selectRaw("payment.id AS row_id")
             ->selectRaw("'membership' AS source")
-            ->selectRaw("CASE WHEN registration.days <= 1 THEN 'One Day Visit' ELSE 'Membership' END AS category")
+            ->selectRaw("'Membership' AS category")
             ->selectRaw("CONCAT('MEM-', registration.id) AS reference_number")
             ->selectRaw("COALESCE(NULLIF(member.full_name, ''), NULLIF(member.email, ''), '-') AS customer_name")
             ->selectRaw("COALESCE(NULLIF(member.member_code, ''), '-') AS customer_code")
@@ -45,6 +46,9 @@ class RevenueReportService
             ->join('trainer_sessions as session', 'session.id', '=', 'payment.trainer_session_id')
             ->join('members as member', 'member.id', '=', 'session.member_id')
             ->leftJoin('trainer_packages as package', 'package.id', '=', 'session.trainer_package_id')
+            ->where(function ($query) {
+                $query->whereNull('package.status')->orWhere('package.status', '!=', 'LGT');
+            })
             ->leftJoin('method_payments as method', 'method.id', '=', 'payment.method_payment_id')
             ->leftJoin('users as staff', 'staff.id', '=', 'payment.user_id')
             ->whereBetween('payment.created_at', [$from, $to])
@@ -57,7 +61,7 @@ class RevenueReportService
             )
             ->selectRaw('payment.id AS row_id')
             ->selectRaw("'trainer' AS source")
-            ->selectRaw("CASE WHEN package.status = 'LGT' THEN 'LGT' ELSE 'PT' END AS category")
+            ->selectRaw("'PT' AS category")
             ->selectRaw("CONCAT('PT-', session.id) AS reference_number")
             ->selectRaw("COALESCE(NULLIF(member.full_name, ''), NULLIF(member.email, ''), '-') AS customer_name")
             ->selectRaw("COALESCE(NULLIF(member.member_code, ''), '-') AS customer_code")
@@ -67,7 +71,8 @@ class RevenueReportService
             ->selectRaw('payment.value AS amount')
             ->selectRaw('payment.created_at AS transaction_at');
 
-        $union = $membership->unionAll($trainer);
+        $union = $this->normalizeTextColumns($membership)
+            ->unionAll($this->normalizeTextColumns($trainer));
 
         if ($includePos) {
             $posPayment = DB::table('pos_sale_payments')
@@ -96,7 +101,7 @@ class RevenueReportService
                 ->selectRaw('sale.grand_total AS amount')
                 ->selectRaw('sale.created_at AS transaction_at');
 
-            $union->unionAll($pos);
+            $union->unionAll($this->normalizeTextColumns($pos));
         }
 
         $query = DB::query()->fromSub($union, 'revenue_transactions');
@@ -116,9 +121,7 @@ class RevenueReportService
         if ($category !== null && $category !== '') {
             $categories = [
                 'membership' => 'Membership',
-                'one_day' => 'One Day Visit',
                 'pt' => 'PT',
-                'lgt' => 'LGT',
                 'pos' => 'POS',
             ];
 
@@ -128,5 +131,22 @@ class RevenueReportService
         }
 
         return $query;
+    }
+
+    private function normalizeTextColumns(Builder $query): Builder
+    {
+        if (DB::getDriverName() !== 'mysql') {
+            return $query;
+        }
+
+        // Legacy/imported tables can use different collations. Normalize the
+        // report's text columns before UNION without changing stored data.
+        $normalized = DB::query()->fromSub($query, 'revenue_source')->select('row_id');
+        foreach (['source', 'category', 'reference_number', 'customer_name', 'customer_code',
+            'item_name', 'payment_method', 'staff_name'] as $column) {
+            $normalized->selectRaw("CONVERT(`{$column}` USING utf8mb4) COLLATE utf8mb4_unicode_ci AS `{$column}`");
+        }
+
+        return $normalized->addSelect('amount', 'transaction_at');
     }
 }

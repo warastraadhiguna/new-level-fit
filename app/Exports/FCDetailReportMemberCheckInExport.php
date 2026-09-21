@@ -36,6 +36,7 @@ class FCDetailReportMemberCheckInExport implements FromView
                     'cim.check_out_time'
                 )
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+                ->where('mr.days', '>', 1)
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
                 ->whereDate('cim.check_in_time', '<=', $toDate)
@@ -52,6 +53,7 @@ class FCDetailReportMemberCheckInExport implements FromView
                     'cim.check_out_time'
                 )
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+                ->where('mr.days', '>', 1)
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
                 ->whereDate('cim.check_in_time', '<=', $toDate)

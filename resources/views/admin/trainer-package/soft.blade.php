@@ -43,7 +43,7 @@
                                         <h6 class="mb-0">Admin: {{ formatRupiah($item->admin_price) }}</h6>
                                     </td>
                                     <td>
-                                        <h6>{{ $item->status == 'LGT' ? 'LGT' : 'Non LGT' }}</h6>
+                                        <h6>PT</h6>
                                     </td>
                                     <td>
                                         <h6>{{ $item->description }}</h6>

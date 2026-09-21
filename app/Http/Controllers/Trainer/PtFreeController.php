@@ -478,6 +478,9 @@ class PtFreeController extends Controller
         $remainingSql = '(ts.number_of_session - COALESCE(checkin_summary.completed_sessions, 0))';
 
         $query = DB::table('trainer_sessions as ts')
+            ->whereNotIn('ts.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'ts.id',
                 'ts.member_id',
@@ -511,6 +514,9 @@ class PtFreeController extends Controller
             ->selectRaw('0 as payment_summary')
             ->leftJoin('members', 'ts.member_id', '=', 'members.id')
             ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->leftJoin('personal_trainers as pt', 'ts.trainer_id', '=', 'pt.id')
             ->leftJoin('branch_stores', 'ts.branch_store_id', '=', 'branch_stores.id')
             ->leftJoin('users', 'ts.user_id', '=', 'users.id')
@@ -653,6 +659,9 @@ class PtFreeController extends Controller
             ->join('trainer_sessions as ts', 'cits.trainer_session_id', '=', 'ts.id')
             ->join('members', 'ts.member_id', '=', 'members.id')
             ->join('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->leftJoin('personal_trainers as pt', 'ts.trainer_id', '=', 'pt.id')
             ->leftJoin('personal_trainers as check_in_pt', 'cits.pt_id', '=', 'check_in_pt.id')
             ->leftJoin('branch_stores', 'ts.branch_store_id', '=', 'branch_stores.id')

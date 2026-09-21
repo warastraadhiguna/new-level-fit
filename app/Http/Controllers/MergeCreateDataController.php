@@ -28,27 +28,7 @@ class MergeCreateDataController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function create()
-    {
-        $memberPackage = MemberPackage::where('days', '1')
-            ->visibleToUser(Auth::user())
-            ->get();
-        
-        $data = [
-            'title'             => '1 Day Visit Lead',
-            'members'           => Member::get(),
-            'memberPackage'         => $memberPackage,
-            'methodPayment'         => MethodPayment::all(),
-            'content'           => 'admin/one-visit/onevisit'
-        ];
 
-        return view('admin.layouts.wrapper', $data);
-    }
 
-    public function openMembers()
-    {
-        $members = Member::where('status', 'one_day_visit')->get();
 
-        return response()->json($members);
-    }
 }

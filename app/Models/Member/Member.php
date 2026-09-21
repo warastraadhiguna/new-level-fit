@@ -18,6 +18,11 @@ class Member extends Model
     protected static function booted()
     {
         static::saving(function (Member $member) {
+            if ($member->isDirty('status') && $member->status === 'one_day_visit') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' => 'Jenis registrasi tersebut tidak tersedia.',
+                ]);
+            }
             if (!\Illuminate\Support\Facades\Schema::hasTable('trashes')) {
                 return;
             }

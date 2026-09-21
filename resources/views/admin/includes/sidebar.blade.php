@@ -25,7 +25,6 @@
                     </a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('add-data') }}">General Lead</a></li>
-                        <li><a href="{{ route('one-day-visit-lead') }}">1 Day Visit Lead</a></li>
                     </ul>
                 </li>
             @endif
@@ -40,7 +39,6 @@
                         <li><a href="{{ route('members.index') }}">Member List</a></li>
                         <li><a href="{{ route('missed-guest.index') }}">Missed Guest</a></li>
                         {{-- <li><a href="{{ route('appointmentSchedule') }}">Appointment Schedule</a></li> --}}
-                        <li><a href="{{ route('oneDayVisit') }}">1 Day Visit</a></li>
                     </ul>
                 </li>
             @endif
@@ -85,7 +83,6 @@
                         <li><a href="{{ route('trainer-session-over.index') }}">PT Expired</a></li>
                         <li><a href="{{ route('trainer-session-waiting-list') }}">PT Waiting List</a></li>
                         @if (!Auth::user()->isPt())
-                            <li><a href="{{ route('lgt') }}">LGT</a></li>
                             @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->trainer_approval_enabled)
                                 <li><a href="{{ route('trainer-approval.index') }}">PT Approval</a></li>
                             @endif
@@ -172,7 +169,6 @@
                         </ul>
                     </li> --}}
                     <li><a href="{{ route('lo-report') }}">LO</a></li>
-                    {{-- <li><a href="{{ route('one-visit-report') }}">1 Visit</a></li> --}}
                     <li><a href="{{ route('report-member-checkin') }}">Member Check In</a></li>
                     <li>
                         <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">PT</a>

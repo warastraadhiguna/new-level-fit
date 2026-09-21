@@ -31,6 +31,7 @@ class TotalSellingLeadGeneralReportExport implements FromView
         if ($fcId){
             $results = User::select('users.full_name as fc_name', 'member_registrations.fc_id', DB::raw('COUNT(users.id) as fc_total'))
             ->join('member_registrations', 'member_registrations.fc_id', '=', 'users.id')
+            ->where('member_registrations.days', '>', 1)
             ->whereDate('member_registrations.created_at', '>=', $fromDate)
             ->whereDate('member_registrations.created_at', '<=', $toDate)
             // ->where('users.role', '=', 'FC')
@@ -41,6 +42,7 @@ class TotalSellingLeadGeneralReportExport implements FromView
         }else{
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'))
             ->join('member_registrations', 'member_registrations.fc_id', '=', 'users.id')
+            ->where('member_registrations.days', '>', 1)
             ->whereDate('member_registrations.created_at', '>=', $fromDate)
             ->whereDate('member_registrations.created_at', '<=', $toDate)
             ->where('users.role', '=', 'FC')

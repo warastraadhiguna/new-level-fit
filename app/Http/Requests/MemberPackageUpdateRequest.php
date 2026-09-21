@@ -28,7 +28,7 @@ class MemberPackageUpdateRequest extends FormRequest
             '_submission_token'     => 'required|string|size:36',
             'branch_store_id'       => 'required',            
             'package_name'          => 'string',
-            'days'                  => 'numeric',
+            'days'                  => 'required|integer|min:2',
             'package_type_id'       => 'exists:member_package_types,id',
             'package_category_id'   => 'exists:member_package_categories,id',
             'package_price'         => 'numeric',

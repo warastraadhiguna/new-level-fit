@@ -1,4 +1,4 @@
-@if (optional(Auth::user()->branchStore)->trainer_approval_enabled && ($item->trainer_package_status ?? null) !== 'LGT')
+@if (optional(Auth::user()->branchStore)->trainer_approval_enabled)
     <div class="mt-1">
         @if ((bool) ($item->is_approved ?? false))
             <span class="badge badge-success badge-sm">Approved</span>

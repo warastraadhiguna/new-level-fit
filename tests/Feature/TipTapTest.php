@@ -53,6 +53,8 @@ class TipTapTest extends TestCase
         foreach ($relations as $name => $columns) {
             Schema::create($name, function (Blueprint $table) use ($name, $columns) {
                 $table->increments('id');
+                if ($name === 'member_registrations') $table->integer('days')->default(30);
+                if ($name === 'trainer_sessions') $table->integer('trainer_package_id')->default(1);
                 foreach ($columns as $column => $parent) {
                     $table->unsignedInteger($column)->nullable();
                     $table->foreign($column)->references('id')->on($parent);
@@ -62,6 +64,11 @@ class TipTapTest extends TestCase
                 }
             });
         }
+        Schema::create('trainer_packages', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('status')->nullable();
+            $table->string('package_name')->default('Demo');
+        });
         $migration = require database_path('migrations/2026_09_19_000002_create_tip_tap_trash.php');
         $migration->up();
         $rename = require database_path('migrations/2026_09_19_000003_rename_tip_tap_tables.php');
@@ -294,10 +301,8 @@ class TipTapTest extends TestCase
         });
         Schema::table('member_registrations', function (Blueprint $table) {
             $table->integer('member_package_id')->default(1);
-            $table->integer('days')->default(30);
         });
         Schema::table('trainer_sessions', function (Blueprint $table) {
-            $table->integer('trainer_package_id')->default(1);
             $table->integer('branch_store_id')->default(1);
             $table->boolean('is_pt_free')->default(false);
         });
@@ -310,7 +315,7 @@ class TipTapTest extends TestCase
             });
         }
         foreach (['member_packages', 'trainer_packages'] as $name) {
-            Schema::create($name, function (Blueprint $table) {
+            if (!Schema::hasTable($name)) Schema::create($name, function (Blueprint $table) {
                 $table->increments('id');
                 $table->string('package_name');
                 $table->string('status')->default('PT');
@@ -332,6 +337,11 @@ class TipTapTest extends TestCase
             return (int) app(\App\Services\RevenueReportService::class)
                 ->query(1, '2026-09-01', '2026-09-30', false)->get()->sum('amount');
         };
+        DB::table('member_registrations')->insert(['id' => 3, 'member_id' => 1, 'days' => 1]);
+        DB::table('member_registration_payments')->insert(['id' => 3, 'member_registration_id' => 3, 'value' => 900000]);
+        DB::table('trainer_packages')->insert(['id' => 2, 'package_name' => 'Old group training', 'status' => 'LGT']);
+        DB::table('trainer_sessions')->insert(['id' => 3, 'member_id' => 1, 'trainer_package_id' => 2]);
+        DB::table('trainer_session_payments')->insert(['id' => 3, 'trainer_session_id' => 3, 'value' => 800000]);
         $this->assertSame(600000, $total());
         $this->service->trash($this->owner, 'membership', 1);
         $this->assertSame(500000, $total());

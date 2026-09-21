@@ -26,7 +26,6 @@ use App\Http\Controllers\Staff\CustomerServiceController;
 use App\Http\Controllers\Staff\FitnessConsultantController;
 use App\Http\Controllers\Staff\PersonalTrainerController;
 use App\Http\Controllers\Staff\StaffController;
-use App\Http\Controllers\Trainer\LGTController;
 use App\Http\Controllers\Trainer\TrainerApprovalController;
 use App\Http\Controllers\Trainer\PtFreeController;
 use App\Http\Controllers\Trainer\TrainerPackageController;
@@ -63,11 +62,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
 
 
     Route::get('/add-data', [MergeCreateDataController::class, 'index'])->name('add-data');
-    Route::get('/1-day-visit-lead', [MergeCreateDataController::class, 'create'])->name('one-day-visit-lead');
-    Route::get('/openMembers', [MergeCreateDataController::class, 'openMembers'])->name('openMembers');
     Route::post('renewal/store/{id}', [MemberRegistrationController::class, 'renewMemberRegistration'])->name('renewMemberRegistration');
     // Route::get('1-day-visit', [MemberController::class, 'dayVisit'])->name('1-day-visit');
-    Route::get('one-day-visit', [MemberRegistrationController::class, 'oneDayVisit'])->name('oneDayVisit');
 
 
     Route::resource('member', '\App\Http\Controllers\Member\MemberController');
@@ -115,8 +111,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
         Route::post('pt-free-check-in', [PtFreeController::class, 'checkIn'])->name('pt-free.check-in');
         Route::get('pt-free-report', [PtFreeController::class, 'report'])->name('pt-free.report');
     });
-    Route::post('lgt-check-in', [TrainerSessionCheckInController::class, 'lgtStore'])->name('LGTCheckIn');
-    Route::get('lgt-second-check-in/{id}', [TrainerSessionCheckInController::class, 'lgtSecondStore'])->name('LGTSecondCheckIn');
     Route::get('history-member-registration', [MemberRegistrationController::class, 'history'])->name('history-member-registration');
     Route::get('history-member-registration/detail/{id}', [MemberRegistrationController::class, 'historyDetail'])->name('detail-history-member-registration');
 
@@ -213,10 +207,8 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
         ->name('trainer-session-unfreeze');
     Route::resource('running-session', '\App\Http\Controllers\Trainer\RunningSessionController');
     Route::get('cutiTrainerSession/{id}', [TrainerSessionController::class, 'cuti'])->name('cutiTrainerSession');
-    Route::get('leave-days-lgt/{id}', [LGTController::class, 'cuti'])->name('cutiLGT');
     Route::get('leave-day-list/{id}', [TrainerSessionController::class, 'listCuti'])->name('pt-leave-days-list');
 
-    Route::get('lgt', [LGTController::class, 'index'])->name('lgt');
 
     Route::resource('trainer-session-FO', '\App\Http\Controllers\Trainer\TrainerSessionFOController');
     Route::get('cetak-trainer-session-pdf', [TrainerSessionController::class, 'cetak_pdf'])->name('cetak-trainer-session-pdf');
@@ -255,7 +247,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
     Route::resource('member-list', '\App\Http\Controllers\Report\MemberListController');
     Route::resource('member-active', '\App\Http\Controllers\Member\MemberRegistrationController');
     Route::resource('member-registration-payment', '\App\Http\Controllers\Member\MemberRegistrationPaymentController');
-    Route::get('member-one-visit-detail/{id}', [MemberRegistrationController::class, 'showOneVisit'])->name('member-one-visit-detail');
     Route::get('mmember-active-excel', [MemberRegistrationController::class, 'excel'])->name('member-active-excel');
     Route::get('mmember-expired-excel', [MemberRegistrationOverController::class, 'excel'])->name('member-expired-excel');
     Route::resource('member-expired', '\App\Http\Controllers\Member\MemberRegistrationOverController');
@@ -344,7 +335,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
     Route::get('fc-total-report-pt', [StaffController::class, 'fcTotalReportPT'])->name('fc-total-report-pt');
     Route::get('fc-detail-report-pt', [StaffController::class, 'fcDetailReportPT'])->name('fc-detail-report-pt');
     Route::get('lo', [StaffController::class, 'lo'])->name('lo-report');
-    Route::get('one-visit-report', [StaffController::class, 'oneVisit'])->name('one-visit-report');
 
     Route::get('appointment/{id}', [MissedGuestController::class, 'appointment'])->name('appointment');
     Route::get('appointment-schedule', [MissedGuestController::class, 'appointmentSchedule'])->name('appointmentSchedule');

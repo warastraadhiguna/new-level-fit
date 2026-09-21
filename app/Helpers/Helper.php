@@ -188,7 +188,7 @@ function GetLatestNonExpiredMembershipAccess($memberId = '', $cardNumber = '', $
             mp.branch_store_id AS member_package_branch_store_id
         FROM members m
         JOIN member_registrations mr ON mr.member_id = m.id
-        JOIN member_packages mp ON mp.id = mr.member_package_id
+        JOIN member_packages mp ON mp.id = mr.member_package_id AND mr.days > 1
         LEFT JOIN (
             SELECT member_registration_id, SUM(days) AS total_days
             FROM leave_days
@@ -232,7 +232,7 @@ function GetAccessibleNonExpiredMembersForBranch($branchStoreId)
         WHERE EXISTS (
             SELECT 1
             FROM member_registrations mr
-            JOIN member_packages mp ON mp.id = mr.member_package_id
+            JOIN member_packages mp ON mp.id = mr.member_package_id AND mr.days > 1
             LEFT JOIN (
                 SELECT member_registration_id, SUM(days) AS total_days
                 FROM leave_days

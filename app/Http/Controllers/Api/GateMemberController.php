@@ -31,6 +31,7 @@ class GateMemberController extends Controller
         $today = Carbon::now(self::TIMEZONE)->toDateString();
 
         $activeMemberships = DB::table('member_registrations as mr')
+            ->where('mr.days', '>', 1)
             ->selectRaw('MAX(mr.id) as member_registration_id')
             ->join('member_packages as mp', 'mp.id', '=', 'mr.member_package_id')
             ->whereDate('mr.start_date', '<=', $today)
@@ -48,6 +49,7 @@ class GateMemberController extends Controller
             ->groupBy('mr.member_id');
 
         $members = DB::table('member_registrations as mr')
+            ->where('mr.days', '>', 1)
             ->select([
                 'm.id',
                 'm.full_name',
@@ -131,6 +133,7 @@ class GateMemberController extends Controller
 
         $checkIn = DB::transaction(function () use ($membership, $branchStoreId, $request, $checkInTime) {
             DB::table('member_registrations')
+                ->where('member_registrations.days', '>', 1)
                 ->where('id', $membership->member_registration_id)
                 ->lockForUpdate()
                 ->first();
@@ -188,6 +191,7 @@ class GateMemberController extends Controller
 
         $checkIn = DB::transaction(function () use ($membership, $checkOutTime) {
             DB::table('member_registrations')
+                ->where('member_registrations.days', '>', 1)
                 ->where('id', $membership->member_registration_id)
                 ->lockForUpdate()
                 ->first();
@@ -228,6 +232,7 @@ class GateMemberController extends Controller
         $eventDate = $eventTime->toDateString();
 
         $query = DB::table('member_registrations as mr')
+            ->where('mr.days', '>', 1)
             ->select([
                 'mr.id as member_registration_id',
                 'mr.start_date',

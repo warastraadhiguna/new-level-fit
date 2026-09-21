@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Member;
 use App\Exports\MemberActiveExport;
 use App\Exports\MemberPendingExport;
 use App\Exports\MemberUnpaidExport;
-use App\Exports\OneVisitExport;
 use App\Http\Controllers\Controller;
 use App\Models\Member\LeaveDay;
 use App\Models\Member\Member;
@@ -129,64 +128,7 @@ class MemberRegistrationController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function oneDayVisit()
-    {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
 
-        $excel = Request()->input('excel');
-        if ($excel && $excel == "1") {
-            return Excel::download(new OneVisitExport(), 'One Day Visit, ' . $fromDate . ' to ' . $toDate . '.xlsx');
-        }
-
-        $memberRegistrations = DB::table('member_registrations as a')
-            ->select(
-                'a.id',
-                'a.start_date',
-                'a.description',
-                'a.days as member_registration_days',
-                'a.package_price as mr_package_price',
-                'a.admin_price as mr_admin_price',
-                'a.discount_amount as mr_discount_amount',
-                'a.updated_at',
-                'b.id as member_id',
-                'b.full_name as member_name',
-                'b.member_code',
-                'b.phone_number',
-                'c.package_name',
-                'c.days',
-                'c.package_price',
-                'e.name as method_payment_name',
-                'f.full_name as staff_name'
-            )
-            ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                DB::raw('CASE 
-                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" 
-                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Running" 
-                    ELSE "Not Started" 
-                END as status'),
-            )
-            ->join('members as b', 'a.member_id', '=', 'b.id')
-            ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
-            ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
-            ->join('users as f', 'a.user_id', '=', 'f.id')
-            ->where('b.status', 'one_day_visit')
-            ->where(function ($query) {
-                $query->where('b.branch_store_id', Auth::user()->branch_store_id)
-                    ->orWhere('c.is_all_club', 1);
-            })
-            ->orderBy('a.created_at', 'desc')
-            ->get();
-
-        $data = [
-            'title'                 => '1 Day Visit',
-            'memberRegistrations'   => $memberRegistrations,
-            'content'               => 'admin/one-visit/index'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
 
     public function create()
     {
@@ -209,6 +151,7 @@ class MemberRegistrationController extends Controller
 
     public function memberSecondStore(Request $request)
     {
+        $request->validate(['status' => ['nullable', 'not_in:one_day_visit']]);
         DB::beginTransaction();
         try {
             $createdPayment = null;
@@ -223,10 +166,6 @@ class MemberRegistrationController extends Controller
                     'string',
                     'max:250',
                     function ($attribute, $value, $fail) use ($request) {
-                        // One Day Visit memang boleh memakai data member yang sudah ada.
-                        if ($request->input('status') === 'one_day_visit') {
-                            return;
-                        }
 
                         $existingMember = Member::with('branchStore')
                             ->where('phone_number', $value)
@@ -413,95 +352,6 @@ class MemberRegistrationController extends Controller
                     "method_payment_id" => $data["method_payment_id"]
                 ], $receivedAmount));
 
-            } elseif ($request->status == 'one_day_visit') {
-                $data += $request->validate([
-                    'start_date'            => 'nullable',
-                    'member_package_id'     => 'required|exists:member_packages,id',
-                    'method_payment_id'     => 'required|exists:method_payments,id',
-                ]);
-
-                $package = MemberPackage::findOrFail($data['member_package_id'])
-                    ->ensureAssignableBy(Auth::user());
-                $data['package_price'] = $package->package_price;
-
-                $data['user_id'] = Auth::user()->id;
-                $data['admin_price'] = $package->admin_price;
-                $data['days'] = $package->days;
-                $data['branch_store_id'] = Auth::user()->branch_store_id;
-                $data['start_date'] = Carbon::now()->tz('Asia/Jakarta')->startOfDay();
-                $data['discount_amount'] = NormalizeSalesDiscount(
-                    $data['discount_amount'] ?? 0,
-                    'member',
-                    Auth::user()->branch_store_id
-                );
-
-                $existingMember = Member::where('phone_number', $data['phone_number'])
-                    ->orWhere('full_name', $data['full_name'])
-                    ->first();
-                $newMemberRegistrationId = 0;
-
-                if ($existingMember) {
-                    $data['member_id'] = $existingMember->id;
-
-                    $newMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
-                        'member_id',
-                        'member_package_id',
-                        'start_date',
-                        'method_payment_id',
-                        'user_id',
-                        'description',
-                        'package_price',
-                        'admin_price',
-                        'days',
-                        'discount_amount'
-                    ])));
-
-                    $newMemberRegistrationId = $newMemberRegistration->id;
-                } else {
-                    // Create new member
-                    $newMember = Member::create(array_intersect_key($data, array_flip([
-                        'full_name',
-                        'phone_number',
-                        'status',
-                        'branch_store_id'
-                    ])));
-
-                    $data['member_id'] = $newMember->id;
-
-                    // Create member registration
-                    $newMemberRegistration = MemberRegistration::create(array_intersect_key($data, array_flip([
-                        'member_id',
-                        'member_package_id',
-                        'start_date',
-                        'method_payment_id',
-                        'user_id',
-                        'description',
-                        'package_price',
-                        'admin_price',
-                        'days',
-                        'discount_amount'
-                    ])));
-
-                    $newMemberRegistrationId = $newMemberRegistration->id;
-                }
-
-                $package = MemberPackage::findOrFail($data['member_package_id'])
-                    ->ensureAssignableBy(Auth::user());
-
-                $paymentAmount = (int) $package->package_price + (int) $package->admin_price - (int) $data['discount_amount'];
-                $receivedAmount = NormalizePosReceivedAmount(
-                    $data['received_amount'] ?? null,
-                    $paymentAmount,
-                    Auth::user()->branch_store_id
-                );
-
-                $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
-                    "member_registration_id" =>  $newMemberRegistrationId,
-                    "user_id" =>  Auth::user()->id,
-                    "value" =>  $paymentAmount,
-                    "note" =>  !empty($data['description']) ? $data['description'] : "One Day Visit",
-                    "method_payment_id" => $data["method_payment_id"]
-                ], $receivedAmount));
             } else {
                 $fc = Auth::user()->role;
                 $data['branch_store_id'] = Auth::user()->branch_store_id;
@@ -529,12 +379,6 @@ class MemberRegistrationController extends Controller
             }
 
             DB::commit();
-            if ($request->status == 'one_day_visit') {
-                return $this->withPaymentReceipt(
-                    redirect()->back()->with('success', 'One Day Visit Added Successfully'),
-                    $createdPayment
-                );
-            }
             return $this->withPaymentReceipt(
                 redirect()->back()->with('success', 'Member Registration Added Successfully'),
                 $createdPayment
@@ -605,12 +449,13 @@ class MemberRegistrationController extends Controller
 
     public function show($id)
     {
-        $mr = MemberRegistration::find($id);
+        $mr = MemberRegistration::findOrFail($id);
         $status = $mr->members->status;
         $memberId = $mr->members->id;
 
         if ($status == "one_day_visit") {
             $memberRegistrations = DB::table('member_registrations as a')
+                ->where('a.days', '>', 1)
                 ->select(
                     'a.id',
                     'a.start_date',
@@ -675,67 +520,7 @@ class MemberRegistrationController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function showOneVisit($id)
-    {
-        $mr = MemberRegistration::find($id);
-        $status = $mr->members->status;
-        $memberId = $mr->members->id;
 
-        $memberRegistrations = DB::table('member_registrations as a')
-            ->select(
-                'a.id',
-                'a.start_date',
-                'a.description',
-                'a.days as member_registration_days',
-                'a.old_days',
-                'a.package_price as mr_package_price',
-                'a.admin_price as mr_admin_price',
-                'b.full_name as member_name',
-                'b.address',
-                'b.member_code',
-                'b.phone_number',
-                'b.photos',
-                'b.gender',
-                'b.nickname',
-                'b.ig',
-                'b.emergency_contact',
-                'b.email',
-                'b.born',
-                'b.status as member_status',
-                'c.id as member_package_id',
-                'c.package_name',
-                'c.days',
-                'c.package_price',
-                'c.admin_price',
-                'e.id as method_payment_id',
-                'e.name as method_payment_name',
-                'f.full_name as staff_name'
-            )
-            ->addSelect(
-                DB::raw('DATE_ADD(a.start_date, INTERVAL a.days DAY) as expired_date'),
-                DB::raw('CASE WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" ELSE "Running" END as status')
-            )
-            ->join('members as b', 'a.member_id', '=', 'b.id')
-            ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
-            ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
-            ->join('users as f', 'a.user_id', '=', 'f.id')
-            ->where('a.id', $id)
-            ->get();
-
-        $checkInMemberRegistration = MemberRegistration::find($id);
-        // dd($memberRegistrations);
-        $data = [
-            'title'                     => 'One Visit Detail',
-            'memberRegistrations'       => $memberRegistrations,
-            'memberRegistration'        => MemberRegistration::find($id),
-            'members'                   => Member::get(),
-            'memberRegistrationCheckIn' => $checkInMemberRegistration->memberRegistrationCheckIn,
-            'status'                    => $status,
-            'content'                   => 'admin/one-visit/show',
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
 
     public function edit(string $id)
     {
@@ -777,6 +562,7 @@ class MemberRegistrationController extends Controller
     private function getMemberRegistrationEditDetail(string $id)
     {
         return DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',
@@ -835,6 +621,7 @@ class MemberRegistrationController extends Controller
     public function update(Request $request, string $id)
     {
         $memberRegistration = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',
@@ -1399,6 +1186,7 @@ class MemberRegistrationController extends Controller
     public function agreement($id)
     {
         $memberRegistration = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',
@@ -1473,6 +1261,7 @@ class MemberRegistrationController extends Controller
         $toDate     = $request->input('toDate');
 
         $query = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.start_date',
@@ -1690,7 +1479,7 @@ class MemberRegistrationController extends Controller
 
     public function historyDetail($id)
     {
-        $mr = MemberRegistration::find($id);
+        $mr = MemberRegistration::findOrFail($id);
         $status = $mr->members->status;
         $memberId = $mr->members->id;
 

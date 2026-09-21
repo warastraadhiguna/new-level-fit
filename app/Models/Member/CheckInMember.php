@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class CheckInMember extends Model
 {
+    use \App\Traits\HasSupportedRegistration;
     use HasFactory;
+    protected $supportedRegistrationRelation = 'memberRegistration';
+
     protected $fillable = [
         'member_registration_id',
         'branch_store_id',

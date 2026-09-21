@@ -177,6 +177,7 @@ class MembershipPtUnfreezeTest extends TestCase
     private function createTables(): void
     {
         Schema::create('member_registrations', function (Blueprint $table) {
+            $table->integer('days')->default(30);
             $table->increments('id');
             $table->integer('member_id');
             $table->timestamps();
@@ -189,7 +190,12 @@ class MembershipPtUnfreezeTest extends TestCase
             $table->integer('price');
             $table->integer('days');
         });
+        Schema::create('trainer_packages', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('status')->nullable();
+        });
         Schema::create('trainer_sessions', function (Blueprint $table) {
+            $table->integer('trainer_package_id')->nullable();
             $table->increments('id');
             $table->integer('member_id');
         });

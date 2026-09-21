@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Models\Trainer\TrainerSession;
+
 use App\Exports\DetailSellingLeadGeneralReportExport;
 use App\Exports\DetailSellingPTReportExport;
 use App\Exports\LOReportExport;
@@ -80,6 +82,7 @@ class StaffController extends Controller
 
         $results = PersonalTrainer::select('personal_trainers.full_name as trainer_name', DB::raw('COUNT(personal_trainers.id) as pt_total'))
             ->join('check_in_trainer_sessions', 'check_in_trainer_sessions.pt_id', '=', 'personal_trainers.id')
+            ->whereIn('check_in_trainer_sessions.trainer_session_id', TrainerSession::select('trainer_sessions.id'))
             ->whereNotNull('check_in_trainer_sessions.check_out_time')
             ->whereDate('check_in_trainer_sessions.check_in_time', '>=', $fromDate) // Ini bukannya harus pakai start_date ?
             ->whereDate('check_in_trainer_sessions.check_in_time', '<=', $toDate)
@@ -202,7 +205,13 @@ class StaffController extends Controller
         )
             ->join('personal_trainers', 'check_in_trainer_sessions.pt_id', '=', 'personal_trainers.id')
             ->join('trainer_sessions', 'check_in_trainer_sessions.trainer_session_id', '=', 'trainer_sessions.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
             ->join('trainer_packages', 'trainer_sessions.trainer_package_id', '=', 'trainer_packages.id')
+            ->where(function ($query) {
+                $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+            })
             ->join('members', 'trainer_sessions.member_id', '=', 'members.id')
             ->where('trainer_sessions.is_pt_free', false)
             ->whereNotNull('check_in_trainer_sessions.check_out_time')
@@ -264,6 +273,7 @@ class StaffController extends Controller
                     'cim.check_out_time'
                 )
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+                ->where('mr.days', '>', 1)
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
                 ->whereDate('cim.check_in_time', '<=', $toDate)
@@ -279,6 +289,7 @@ class StaffController extends Controller
                     'cim.check_out_time'
                 )
                 ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+                ->where('mr.days', '>', 1)
                 ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
                 ->whereDate('cim.check_in_time', '>=', $fromDate)
                 ->whereDate('cim.check_in_time', '<=', $toDate)
@@ -320,6 +331,7 @@ class StaffController extends Controller
 
         $results = User::select('users.full_name as cs_name', 'members.full_name as member_name', 'member_packages.package_name')
             ->join('member_registrations as mr', 'users.id', '=', 'mr.user_id')
+            ->where('mr.days', '>', 1)
             ->join('member_packages', 'mr.member_package_id', '=', 'member_packages.id')
             ->join('members', 'members.id', '=', 'mr.member_id')
             ->whereDate('mr.created_at', '>=', $fromDate)
@@ -360,6 +372,9 @@ class StaffController extends Controller
 
         $results = User::select('users.full_name as cs_name', DB::raw('COUNT(users.id) as cs_total'))
             ->join('trainer_sessions', 'trainer_sessions.user_id', '=', 'users.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
             ->where('trainer_sessions.is_pt_free', false)
             ->whereDate('trainer_sessions.created_at', '>=', $fromDate)
             ->whereDate('trainer_sessions.created_at', '<=', $toDate)
@@ -401,7 +416,13 @@ class StaffController extends Controller
 
         $results = User::select('users.full_name as cs_name', 'members.full_name as member_name', 'trainer_packages.package_name')
             ->join('trainer_sessions as ts', 'users.id', '=', 'ts.user_id')
+                ->whereNotIn('ts.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
             ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
+            ->where(function ($query) {
+                $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+            })
             ->join('members', 'members.id', '=', 'ts.member_id')
             ->where('ts.is_pt_free', false)
             ->whereDate('ts.created_at', '>=', $fromDate)
@@ -452,6 +473,7 @@ class StaffController extends Controller
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', 'member_registrations.fc_id', DB::raw('COUNT(users.id) as fc_total'))
                 ->join('member_registrations', 'member_registrations.fc_id', '=', 'users.id')
+                ->where('member_registrations.days', '>', 1)
                 ->whereDate('member_registrations.created_at', '>=', $fromDate)
                 ->whereDate('member_registrations.created_at', '<=', $toDate)
                 // ->where('users.role', '=', 'FC')
@@ -462,6 +484,7 @@ class StaffController extends Controller
         } else {
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'))
                 ->join('member_registrations', 'member_registrations.fc_id', '=', 'users.id')
+                ->where('member_registrations.days', '>', 1)
                 ->whereDate('member_registrations.created_at', '>=', $fromDate)
                 ->whereDate('member_registrations.created_at', '<=', $toDate)
                 ->where('users.role', '=', 'FC')
@@ -515,6 +538,7 @@ class StaffController extends Controller
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'member_packages.package_name', 'mr.package_price', 'mr.created_at')
                 ->join('member_registrations as mr', 'users.id', '=', 'mr.fc_id')
+                ->where('mr.days', '>', 1)
                 ->join('member_packages', 'mr.member_package_id', '=', 'member_packages.id')
                 ->join('members', 'members.id', '=', 'mr.member_id')
                 ->whereDate('mr.created_at', '>=', $fromDate)
@@ -527,6 +551,7 @@ class StaffController extends Controller
         } else {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'member_packages.package_name', 'mr.package_price', 'mr.created_at')
                 ->join('member_registrations as mr', 'users.id', '=', 'mr.fc_id')
+                ->where('mr.days', '>', 1)
                 ->join('member_packages', 'mr.member_package_id', '=', 'member_packages.id')
                 ->join('members', 'members.id', '=', 'mr.member_id')
                 ->whereDate('mr.created_at', '>=', $fromDate)
@@ -585,6 +610,9 @@ class StaffController extends Controller
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'), 'trainer_sessions.package_price')
                 ->join('trainer_sessions', 'trainer_sessions.fc_id', '=', 'users.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->where('trainer_sessions.is_pt_free', false)
                 ->whereDate('trainer_sessions.created_at', '>=', $fromDate)
                 ->whereDate('trainer_sessions.created_at', '<=', $toDate)
@@ -596,6 +624,9 @@ class StaffController extends Controller
         } else {
             $results = User::select('users.full_name as fc_name', DB::raw('COUNT(users.id) as fc_total'), 'trainer_sessions.package_price')
                 ->join('trainer_sessions', 'trainer_sessions.fc_id', '=', 'users.id')
+                ->whereNotIn('trainer_sessions.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->where('trainer_sessions.is_pt_free', false)
                 ->whereDate('trainer_sessions.created_at', '>=', $fromDate)
                 ->whereDate('trainer_sessions.created_at', '<=', $toDate)
@@ -659,7 +690,13 @@ class StaffController extends Controller
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
+                ->whereNotIn('ts.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
+                ->where(function ($query) {
+                    $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+                })
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->where('ts.is_pt_free', false)
                 ->whereDate('ts.created_at', '>=', $fromDate)
@@ -672,7 +709,13 @@ class StaffController extends Controller
         } else {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
+                ->whereNotIn('ts.trainer_package_id', function ($query) {
+                    $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+                })
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
+                ->where(function ($query) {
+                    $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+                })
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->where('ts.is_pt_free', false)
                 ->whereDate('ts.created_at', '>=', $fromDate)
@@ -715,69 +758,5 @@ class StaffController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function oneVisit()
-    {
-        $fromDate   = Request()->input('fromDate');
-        $toDate     = Request()->input('toDate');
-        $fcId       = Request()->input('fcId');
-        $pdf        = Request()->input('pdf');
-        $excel      = Request()->input('excel');
 
-        $fc = User::where('role', 'fc')->get();
-
-        if (!$fromDate || !$toDate) {
-            $fromDate = NowDate();
-            $toDate = NowDate();
-        }
-
-        // if ($fcId) {
-        $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
-            ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
-            ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
-            ->join('members', 'members.id', '=', 'ts.member_id')
-            ->where('ts.is_pt_free', false)
-            ->whereDate('ts.created_at', '>=', $fromDate)
-            ->whereDate('ts.created_at', '<=', $toDate)
-            ->where('ts.fc_id', '=', $fcId)
-            ->where('users.role', 'FC')
-            ->orderBy('users.full_name')
-            // ->get();
-            ->paginate(5);
-        // } else {
-        //     $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'trainer_packages.package_name', 'ts.created_at', 'ts.package_price')
-        //         ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
-        //         ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
-        //         ->join('members', 'members.id', '=', 'ts.member_id')
-        //         ->whereDate('ts.created_at', '>=', $fromDate)
-        //         ->whereDate('ts.created_at', '<=', $toDate)
-        //         // ->where('ts.fc_id', '=', $fcId)
-        //         ->where('users.role', 'FC')
-        //         ->orderBy('users.full_name')
-        //         // ->get();
-        //         ->paginate(5);
-        // }
-
-
-        if ($fcId) {
-            $results->where('trainer_sessions.fc_id', '=', $fcId);
-        }
-
-        if ($excel && $excel == "1") {
-            return Excel::download(new DetailSellingPTReportExport(), 'Detail-Selling-PT-Report, ' . $fromDate . ' to ' . $toDate . '.xlsx');
-        }
-
-        $data = [
-            'title'                 => 'FC Detail PT Selling Report',
-            'personalTrainers'      => PersonalTrainer::get(),
-            'result'                => $results,
-            'fc'                    => $fc,
-            'fcId'                  => $fcId,
-            'fromDate'              => $fromDate,
-            // 'fromFc'                => $fromFc,
-            'toDate'                => $toDate,
-            'content'               => 'admin/gym-report/one-visit'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
 }

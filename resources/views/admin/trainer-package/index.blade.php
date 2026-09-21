@@ -34,10 +34,8 @@
                                         <h6>{{ $item->package_name }}</h6>
                                         @if ($item->is_free)
                                             <span class="badge badge-success">PT Free</span>
-                                        @elseif ($item->status == 'LGT')
-                                            <span class="badge badge-info">LGT</span>
                                         @else
-                                            <span class="badge badge-primary">Non LGT</span>
+                                            <span class="badge badge-primary">PT</span>
                                         @endif
                                         @if ($item->description)
                                             <small class="text-muted d-block mt-1">{{ $item->description }}</small>

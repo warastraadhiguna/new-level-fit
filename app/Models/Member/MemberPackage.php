@@ -17,6 +17,13 @@ class MemberPackage extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected static function booted()
+    {
+        static::addGlobalScope('membership_only', function ($query) {
+            $query->where('member_packages.days', '>', 1);
+        });
+    }
+
     protected $fillable = [
         'branch_store_id',
         'package_name',

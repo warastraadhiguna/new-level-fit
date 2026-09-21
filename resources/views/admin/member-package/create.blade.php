@@ -47,7 +47,7 @@
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Number Of Days</label>
-                                <input type="number" name="days" value="{{ old('days') }}" class="form-control"
+                                <input type="number" name="days" min="2" value="{{ old('days') }}" class="form-control"
                                     id="exampleFormControlInput1" autocomplete="off" required>
                             </div>
                         </div>

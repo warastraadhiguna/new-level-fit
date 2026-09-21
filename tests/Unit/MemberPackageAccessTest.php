@@ -26,6 +26,7 @@ class MemberPackageAccessTest extends TestCase
         Schema::create('member_packages', function (Blueprint $table) {
             $table->increments('id');
             $table->string('package_name');
+            $table->integer('days')->default(30);
             $table->integer('package_price')->default(0);
             $table->integer('admin_price')->default(0);
             $table->softDeletes();

@@ -15,6 +15,23 @@ class MemberRegistration extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::addGlobalScope('membership_only', function ($query) {
+            // The legacy expired-list scope selects from members, not registrations.
+            if ($query->getQuery()->from === 'member_registrations') {
+                $query->where('member_registrations.days', '>', 1);
+            }
+        });
+        static::saving(function ($registration) {
+            if ((int) $registration->days <= 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'days' => 'Durasi membership harus lebih dari satu hari.',
+                ]);
+            }
+        });
+    }
+
     protected $fillable = [
         'member_id',
         'member_package_id',
@@ -139,7 +156,7 @@ class MemberRegistration extends Model
             from members as mbr
             inner join branch_stores bs on mbr.branch_store_id = bs.id
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- left join fitness_consultants fit_cons on fit_cons.id = mbr_reg.fc_id
@@ -226,7 +243,7 @@ class MemberRegistration extends Model
             from members as mbr
             inner join branch_stores bs on mbr.branch_store_id = bs.id
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             left join (select cim1.id as current_check_in_members_id, cim1.updated_at as updated_at_check_in, cim1.member_registration_id, cim1.check_in_time, cim1.check_out_time from check_in_members cim1
@@ -298,7 +315,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- left join fitness_consultants fit_cons on fit_cons.id = mbr_reg.fc_id
@@ -379,7 +396,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- WHERE usr.role = 'FC'
@@ -465,7 +482,7 @@ class MemberRegistration extends Model
             ->leftJoin(DB::raw('(
                 select distinct member_id as registered_member_id
                 from member_registrations
-                where DATE_ADD(start_date, INTERVAL days DAY) >= now()
+                where days > 1 AND DATE_ADD(start_date, INTERVAL days DAY) >= now()
             ) as c'), function ($join) {
                 $join->on('a.id', '=', 'c.registered_member_id');
             })
@@ -512,7 +529,7 @@ class MemberRegistration extends Model
 
             inner join branch_stores bs on mbr.branch_store_id = bs.id
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- left join fitness_consultants fit_cons on fit_cons.id = mbr_reg.fc_id
@@ -569,7 +586,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- WHERE usr.role = 'FC'
@@ -624,7 +641,7 @@ class MemberRegistration extends Model
     //         from members as mbr
 
     //         inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-    //         inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+    //         inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
     //         inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
     //         inner join users usr on usr.id=mbr_reg.fc_id
 
@@ -678,7 +695,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- WHERE usr.role = 'FC'
@@ -737,7 +754,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- left join fitness_consultants fit_cons on fit_cons.id = mbr_reg.fc_id
@@ -799,7 +816,7 @@ class MemberRegistration extends Model
             from members as mbr
 
             inner join member_registrations mbr_reg on mbr.id = mbr_reg.member_id
-            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id
+            inner join member_packages mbr_pkg on mbr_pkg.id = mbr_reg.member_package_id AND mbr_reg.days > 1
             inner join method_payments mtd_pay on mtd_pay.id = mbr_reg.method_payment_id
             inner join users usr on usr.id=mbr_reg.user_id
             -- left join fitness_consultants fit_cons on fit_cons.id = mbr_reg.fc_id

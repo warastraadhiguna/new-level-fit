@@ -61,7 +61,7 @@
                                     {{ data_get($trainerSession, 'trainerPackages.number_of_session', 0) }}
                                     Session |
                                     {{ old('trainer_package_id', $trainerSession->days) }} Days |
-                                    {{ data_get($trainerSession, 'trainerPackages.status') == 'LGT' ? 'LGT' : 'Non LGT' }}
+                                    PT
                                 </option>
                                 @foreach ($trainerPackages as $item)
                                     <option value="{{ $item->id }}">

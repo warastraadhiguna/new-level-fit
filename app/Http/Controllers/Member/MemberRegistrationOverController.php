@@ -34,43 +34,12 @@ class MemberRegistrationOverController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function oneVisitExpired()
-    {
-        $memberRegistrationsOver = Member::select(
-            'b.id as mr_id',
-            'a.id',
-            'a.full_name',
-            // 'start_date',
-            'max_end_date',
-            'total_package_price',
-            'total_admin_price',
-            'c.registered_member_id'
-        )
-            ->from('members as a')
-            ->join(DB::raw('(select a.id as id_max, b.id, max(DATE_ADD(b.start_date, INTERVAL b.days DAY)) as max_end_date, sum(package_price) as total_package_price,
-                            sum(admin_price) as total_admin_price from members a inner join member_registrations b on a.id=b.member_id
-                            where DATE_ADD(b.start_date, INTERVAL b.days DAY) < now() group by a.id, b.id) as b'), function ($join) {
-                $join->on('a.id', '=', 'b.id_max');
-            })
-            ->leftJoin(DB::raw('(select distinct member_id as registered_member_id from member_registrations where DATE_ADD(start_date, INTERVAL days DAY) >= now()) as c'), function ($join) {
-                $join->on('a.id', '=', 'c.registered_member_id');
-            })
-            ->whereNull('c.registered_member_id')
-            ->where('status', 'one_day_visit')
-            ->get();
 
-        $data = [
-            'title'                     => '1 Day Visit Expired',
-            'memberRegistrationsOver'   => $memberRegistrationsOver,
-            'content'                   => 'admin/one-visit/one-visit-expired'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
 
     public function pdfReport()
     {
         $memberRegistrationsOver = DB::table('member_registrations as a')
+            ->where('a.days', '>', 1)
             ->select(
                 'a.id',
                 'a.package_price',

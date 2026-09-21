@@ -23,6 +23,9 @@ class TrainerSessionActiveExport implements FromView
         $fromDate = $fromDate ? $fromDate : $nowTimeString;
 
         $trainerSessions = DB::table('trainer_sessions as a')
+            ->whereNotIn('a.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'a.id',
                 'a.start_date',

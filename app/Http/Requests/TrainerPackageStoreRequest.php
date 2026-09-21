@@ -32,7 +32,7 @@ class TrainerPackageStoreRequest extends FormRequest
             'package_price'         => 'required|numeric|min:0',
             'admin_price'           => 'required|numeric|min:0',
             'description'           => 'nullable',
-            'status'                => 'nullable',
+            'status'                => 'prohibited',
         ];
     }
 

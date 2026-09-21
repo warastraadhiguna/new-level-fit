@@ -31,6 +31,7 @@ class DetailSellingLeadGeneralReportExport implements FromView
         if ($fcId) {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'member_packages.package_name', 'mr.package_price', 'mr.created_at')
                 ->join('member_registrations as mr', 'users.id', '=', 'mr.fc_id')
+                ->where('mr.days', '>', 1)
                 ->join('member_packages', 'mr.member_package_id', '=', 'member_packages.id')
                 ->join('members', 'members.id', '=', 'mr.member_id')
                 ->whereDate('mr.created_at', '>=', $fromDate)
@@ -42,6 +43,7 @@ class DetailSellingLeadGeneralReportExport implements FromView
         } else {
             $results = User::select('users.full_name as fc_name', 'members.full_name as member_name', 'member_packages.package_name', 'mr.package_price', 'mr.created_at')
                 ->join('member_registrations as mr', 'users.id', '=', 'mr.fc_id')
+                ->where('mr.days', '>', 1)
                 ->join('member_packages', 'mr.member_package_id', '=', 'member_packages.id')
                 ->join('members', 'members.id', '=', 'mr.member_id')
                 ->whereDate('mr.created_at', '>=', $fromDate)

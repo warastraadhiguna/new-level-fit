@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrainerSessionPayment extends Model
 {
+    use \App\Traits\HasSupportedRegistration;
     use HasFactory;
+    protected $supportedRegistrationRelation = 'trainerSession';
+
     protected $fillable = [
         'branch_store_id',
         'trainer_session_id',

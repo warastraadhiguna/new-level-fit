@@ -41,6 +41,7 @@ class MemberCheckInReportExport implements FromView
                 DB::raw($branchStoreNameSql)
             )
             ->join('member_registrations as mr', 'mr.member_id', '=', 'members.id')
+            ->where('mr.days', '>', 1)
             ->join('check_in_members as cim', 'cim.member_registration_id', '=', 'mr.id')
             ->leftJoin('branch_stores as member_branch', 'members.branch_store_id', '=', 'member_branch.id')
             ->whereDate('cim.check_in_time', '>=', $fromDate)

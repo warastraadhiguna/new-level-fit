@@ -33,6 +33,9 @@ class DetailSellingPTReportExport implements FromView
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
                 ->where('ts.is_pt_free', false)
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
+                ->where(function ($query) {
+                    $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+                })
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->whereDate('ts.created_at', '>=', $fromDate)
                 ->whereDate('ts.created_at', '<=', $toDate)
@@ -45,6 +48,9 @@ class DetailSellingPTReportExport implements FromView
                 ->join('trainer_sessions as ts', 'users.id', '=', 'ts.fc_id')
                 ->where('ts.is_pt_free', false)
                 ->join('trainer_packages', 'ts.trainer_package_id', '=', 'trainer_packages.id')
+                ->where(function ($query) {
+                    $query->whereNull('trainer_packages.status')->orWhere('trainer_packages.status', '!=', 'LGT');
+                })
                 ->join('members', 'members.id', '=', 'ts.member_id')
                 ->whereDate('ts.created_at', '>=', $fromDate)
                 ->whereDate('ts.created_at', '<=', $toDate)

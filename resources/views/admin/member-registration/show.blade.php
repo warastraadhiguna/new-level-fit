@@ -395,7 +395,7 @@
                 <a href="{{ route('member-active.index') }}" class="btn btn-primary">Back</a>
             {{-- nando : @elseif ($memberRegistration->member_status == 'one_day_visit') --}}
             @elseif ($memberRegistration->days == 1)            
-                <a href="{{ route('oneDayVisit') }}" class="btn btn-primary">Back</a>
+                <a href="{{ route('member-active.index') }}" class="btn btn-primary">Back</a>
             @else
                 <a href="{{ route('member-expired.index') }}" class="btn btn-primary">Back</a>
             @endif

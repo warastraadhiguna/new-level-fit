@@ -9,7 +9,10 @@ use App\Models\User;
 
 class MemberRegistrationPayment extends Model
 {
+    use \App\Traits\HasSupportedRegistration;
     use HasFactory;
+    protected $supportedRegistrationRelation = 'memberRegistration';
+
     protected $fillable = [
         'branch_store_id',
         'member_registration_id',

@@ -113,52 +113,7 @@ class MemberController extends Controller
         return view('admin.layouts.wrapper', $data);
     }
 
-    public function dayVisit()
-    {
-        $memberRegistrations = DB::table('member_registrations as a')
-            ->select(
-                'a.id',
-                'a.start_date',
-                'a.description',
-                'a.days as member_registration_days',
-                'a.old_days',
-                'a.package_price as mr_package_price',
-                'a.admin_price as mr_admin_price',
-                'a.updated_at',
-                'b.id as member_id',
-                'b.full_name as member_name',
-                'b.phone_number',
-                'c.package_name',
-                'c.days',
-                'c.package_price',
-                'e.name as method_payment_name',
-                'f.full_name as staff_name',
-            )
-            ->addSelect(
-                // DB::raw('DATE_ADD(a.start_date, INTERVAL COALESCE(ld.days, 0) + a.days DAY) as expired_date'),
-                DB::raw('CASE 
-                    WHEN NOW() > DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Over" 
-                    WHEN NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY) THEN "Running" 
-                    ELSE "Not Started" 
-                END as status')
-            )
-            ->join('members as b', 'a.member_id', '=', 'b.id')
-            ->join('member_packages as c', 'a.member_package_id', '=', 'c.id')
-            ->join('method_payments as e', 'a.method_payment_id', '=', 'e.id')
-            ->join('users as f', 'a.user_id', '=', 'f.id')
-            ->whereRaw('NOW() BETWEEN a.start_date AND DATE_ADD(a.start_date, INTERVAL a.days DAY)')
-            //         ->where('a.status', '=', 'one_day_visit')
-            //         ->orderBy('created_at', 'desc')
-            ->get();
 
-        $data = [
-            'title'                 => '1 Day Visit',
-            'memberRegistrations'   => $memberRegistrations,
-            'content'               => 'admin/one-visit/index'
-        ];
-
-        return view('admin.layouts.wrapper', $data);
-    }
 
     public function create()
     {
@@ -438,6 +393,7 @@ class MemberController extends Controller
             ->groupBy('member_registration_id');
 
         $histories = DB::table('member_registrations as mr')
+            ->where('mr.days', '>', 1)
             ->select(
                 'mr.id',
                 'mr.start_date',
@@ -487,6 +443,7 @@ class MemberController extends Controller
             'histories' => $histories,
             'totalWorkouts' => (int) DB::table('check_in_members')
                 ->join('member_registrations', 'check_in_members.member_registration_id', '=', 'member_registrations.id')
+                ->where('member_registrations.days', '>', 1)
                 ->where('member_registrations.member_id', $member->id)
                 ->where('member_registrations.days', '>', 1)
                 ->count(),
@@ -507,6 +464,9 @@ class MemberController extends Controller
             ->groupBy('trainer_session_id');
 
         $histories = DB::table('trainer_sessions as ts')
+            ->whereNotIn('ts.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'ts.id',
                 'ts.start_date',
@@ -538,6 +498,9 @@ class MemberController extends Controller
                 END as pt_status")
             )
             ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->leftJoin('personal_trainers as trainers', 'ts.trainer_id', '=', 'trainers.id')
             ->leftJoin('branch_stores as bs', 'ts.branch_store_id', '=', 'bs.id')
             ->leftJoin('method_payments as methods', 'ts.method_payment_id', '=', 'methods.id')
@@ -558,7 +521,13 @@ class MemberController extends Controller
             ->paginate(10);
 
         $totals = DB::table('trainer_sessions as ts')
+            ->whereNotIn('ts.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->leftJoinSub($checkInSummary, 'check_ins', function ($join) {
                 $join->on('ts.id', '=', 'check_ins.trainer_session_id');
             })
@@ -583,6 +552,7 @@ class MemberController extends Controller
         abort_unless((int) $memberRegistration->member_id === (int) $member->id, 404);
 
         $package = DB::table('member_registrations as mr')
+            ->where('mr.days', '>', 1)
             ->select(
                 'mr.id',
                 'mr.start_date',
@@ -628,6 +598,9 @@ class MemberController extends Controller
         abort_unless((int) $trainerSession->member_id === (int) $member->id, 404);
 
         $package = DB::table('trainer_sessions as ts')
+            ->whereNotIn('ts.trainer_package_id', function ($query) {
+                $query->select('id')->from('trainer_packages')->where('status', 'LGT');
+            })
             ->select(
                 'ts.id',
                 'ts.start_date',
@@ -638,6 +611,9 @@ class MemberController extends Controller
                 'bs.name as branch_store_name'
             )
             ->leftJoin('trainer_packages as tp', 'ts.trainer_package_id', '=', 'tp.id')
+            ->where(function ($query) {
+                $query->whereNull('tp.status')->orWhere('tp.status', '!=', 'LGT');
+            })
             ->leftJoin('personal_trainers as trainers', 'ts.trainer_id', '=', 'trainers.id')
             ->leftJoin('branch_stores as bs', 'ts.branch_store_id', '=', 'bs.id')
             ->where('ts.id', $trainerSession->id)
