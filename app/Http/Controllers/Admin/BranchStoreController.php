@@ -124,27 +124,51 @@ class BranchStoreController extends Controller
             'dashboard_finance_visible_roles' => ['required', 'array', 'min:1'],
             'dashboard_finance_visible_roles.*' => [
                 'required',
-                Rule::in(array_merge(
-                    [BranchStore::DASHBOARD_FINANCE_ALL_ROLES],
-                    array_keys(BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
-                )),
+                Rule::in($this->financeRoleOptions()),
+            ],
+            'revenue_report_visible_roles' => ['required', 'array', 'min:1'],
+            'revenue_report_visible_roles.*' => [
+                'required',
+                Rule::in($this->financeRoleOptions()),
             ],
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);
 
-        $roles = array_values(array_unique(array_map(
-            'strtoupper',
+        $data['dashboard_finance_visible_roles'] = $this->normalizeFinanceRoles(
             $data['dashboard_finance_visible_roles']
-        )));
-
-        $data['dashboard_finance_visible_roles'] = in_array(
-            BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
-            $roles,
-            true
-        ) ? [BranchStore::DASHBOARD_FINANCE_ALL_ROLES] : $roles;
+        );
+        $data['revenue_report_visible_roles'] = $this->normalizeFinanceRoles(
+            $data['revenue_report_visible_roles']
+        );
 
         return $data;
+    }
+
+    private function financeRoleOptions(): array
+    {
+        return array_merge(
+            [
+                BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
+                BranchStore::DASHBOARD_FINANCE_OWNER_ONLY,
+            ],
+            array_keys(BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
+        );
+    }
+
+    private function normalizeFinanceRoles(array $roles): array
+    {
+        $roles = array_values(array_unique(array_map('strtoupper', $roles)));
+
+        if (in_array(BranchStore::DASHBOARD_FINANCE_OWNER_ONLY, $roles, true)) {
+            return [BranchStore::DASHBOARD_FINANCE_OWNER_ONLY];
+        }
+
+        if (in_array(BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $roles, true)) {
+            return [BranchStore::DASHBOARD_FINANCE_ALL_ROLES];
+        }
+
+        return $roles;
     }
 
     private function resolveSlug(?string $submittedSlug, string $name, ?int $ignoreId = null): string

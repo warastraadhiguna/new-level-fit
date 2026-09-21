@@ -173,7 +173,7 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
-            <label class="form-label d-block">Akses Keuangan Dashboard & Laporan Omzet</label>
+            <label class="form-label d-block">Akses Keuangan Dashboard</label>
             @php
                 $financeAccessKey = $branchStore->id ?? 'new';
                 $selectedFinanceRoles = old(
@@ -183,13 +183,27 @@
                         : [\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES]
                 );
             @endphp
-            <div class="row">
+            <div class="row" data-finance-access-group>
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                            name="dashboard_finance_visible_roles[]"
+                            value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY }}"
+                            data-exclusive-role="1"
+                            id="financeRoleOwnerOnly{{ $financeAccessKey }}"
+                            {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY, $selectedFinanceRoles, true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="financeRoleOwnerOnly{{ $financeAccessKey }}">
+                            Owner Only
+                        </label>
+                    </div>
+                </div>
                 <div class="col-md-4 mb-2">
                     <div class="form-check">
                         <input class="form-check-input js-dashboard-finance-role" type="checkbox"
                             name="dashboard_finance_visible_roles[]"
                             value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES }}"
                             data-all-roles="1"
+                            data-exclusive-role="1"
                             id="financeRoleAll{{ $financeAccessKey }}"
                             {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $selectedFinanceRoles, true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="financeRoleAll{{ $financeAccessKey }}">
@@ -213,7 +227,67 @@
                 @endforeach
             </div>
             <small class="text-muted">
-                Pilih Semua Role atau minimal satu role tertentu. Pengguna yang tidak dipilih tidak dapat melihat nominal keuangan dashboard maupun membuka Laporan Omzet. Owner selalu memiliki akses.
+                Mengatur siapa yang dapat melihat kartu dan nominal keuangan pada Dashboard. Owner selalu memiliki akses.
+            </small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label d-block">Akses Laporan Omzet</label>
+            @php
+                $revenueAccessKey = $branchStore->id ?? 'new';
+                $selectedRevenueRoles = old(
+                    'revenue_report_visible_roles',
+                    !empty($branchStore) && !empty($branchStore->revenue_report_visible_roles)
+                        ? $branchStore->revenue_report_visible_roles
+                        : [\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES]
+                );
+            @endphp
+            <div class="row" data-finance-access-group>
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                            name="revenue_report_visible_roles[]"
+                            value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY }}"
+                            data-exclusive-role="1"
+                            id="revenueRoleOwnerOnly{{ $revenueAccessKey }}"
+                            {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_OWNER_ONLY, $selectedRevenueRoles, true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="revenueRoleOwnerOnly{{ $revenueAccessKey }}">
+                            Owner Only
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                            name="revenue_report_visible_roles[]"
+                            value="{{ \App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES }}"
+                            data-all-roles="1"
+                            data-exclusive-role="1"
+                            id="revenueRoleAll{{ $revenueAccessKey }}"
+                            {{ in_array(\App\Models\BranchStore::DASHBOARD_FINANCE_ALL_ROLES, $selectedRevenueRoles, true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="revenueRoleAll{{ $revenueAccessKey }}">
+                            Semua Role
+                        </label>
+                    </div>
+                </div>
+                @foreach (\App\Models\BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS as $roleCode => $roleLabel)
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input js-dashboard-finance-role" type="checkbox"
+                                name="revenue_report_visible_roles[]"
+                                value="{{ $roleCode }}"
+                                id="revenueRole{{ $roleCode }}{{ $revenueAccessKey }}"
+                                {{ in_array($roleCode, $selectedRevenueRoles, true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="revenueRole{{ $roleCode }}{{ $revenueAccessKey }}">
+                                {{ $roleLabel }}
+                            </label>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <small class="text-muted">
+                Mengatur siapa yang dapat melihat menu dan membuka Revenue Report. Owner selalu memiliki akses.
             </small>
         </div>
     </div>

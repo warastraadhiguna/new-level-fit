@@ -88,7 +88,7 @@ class EnsurePtReadOnlyAccessTest extends TestCase
 
         if ($financeRoles !== null) {
             $branchStore = new BranchStore();
-            $branchStore->dashboard_finance_visible_roles = $financeRoles;
+            $branchStore->revenue_report_visible_roles = $financeRoles;
             $user->setRelation('branchStore', $branchStore);
         }
 

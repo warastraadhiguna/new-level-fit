@@ -17,7 +17,7 @@ class RevenueReportController extends Controller
         $branchStore = Auth::user()->branchStore;
 
         abort_unless(
-            $branchStore && $branchStore->canRoleViewDashboardFinance(Auth::user()->role),
+            $branchStore && $branchStore->canRoleViewRevenueReport(Auth::user()->role),
             403,
             'Role Anda tidak diizinkan melihat Laporan Omzet cabang ini.'
         );

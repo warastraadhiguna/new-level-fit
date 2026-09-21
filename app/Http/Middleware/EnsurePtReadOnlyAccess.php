@@ -30,7 +30,7 @@ class EnsurePtReadOnlyAccess
 
         if (
             optional($request->route())->getName() === 'revenue-report.index'
-            && optional($user->branchStore)->canRoleViewDashboardFinance($user->role)
+            && optional($user->branchStore)->canRoleViewRevenueReport($user->role)
             && in_array($request->method(), ['GET', 'HEAD'], true)
         ) {
             return $next($request);

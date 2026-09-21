@@ -147,7 +147,7 @@
 
             @php
                 $canViewRevenueReport = optional(Auth::user()->branchStore)
-                    ->canRoleViewDashboardFinance(Auth::user()->role);
+                    ->canRoleViewRevenueReport(Auth::user()->role);
             @endphp
             @if (!Auth::user()->isPt() || $canViewRevenueReport)
                 <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">

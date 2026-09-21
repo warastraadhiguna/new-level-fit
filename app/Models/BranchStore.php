@@ -12,6 +12,7 @@ class BranchStore extends Model
     use HasFactory;
 
     public const DASHBOARD_FINANCE_ALL_ROLES = 'ALL';
+    public const DASHBOARD_FINANCE_OWNER_ONLY = 'OWNER_ONLY';
 
     public const DASHBOARD_FINANCE_ROLE_OPTIONS = [
         'ADMIN' => 'Administrator',
@@ -41,6 +42,7 @@ class BranchStore extends Model
         'pt_free_enabled',
         'pos_inventory_enabled',
         'dashboard_finance_visible_roles',
+        'revenue_report_visible_roles',
         'class_booking_advance_days',
         'type',
     ];
@@ -56,16 +58,25 @@ class BranchStore extends Model
         'pt_free_enabled' => 'boolean',
         'pos_inventory_enabled' => 'boolean',
         'dashboard_finance_visible_roles' => 'array',
+        'revenue_report_visible_roles' => 'array',
         'class_booking_advance_days' => 'integer',
     ];
 
     public function canRoleViewDashboardFinance(?string $role): bool
     {
+        return $this->canRoleAccessFinance($role, $this->dashboard_finance_visible_roles);
+    }
+
+    public function canRoleViewRevenueReport(?string $role): bool
+    {
+        return $this->canRoleAccessFinance($role, $this->revenue_report_visible_roles);
+    }
+
+    private function canRoleAccessFinance(?string $role, ?array $allowedRoles): bool
+    {
         if (strtoupper((string) $role) === 'OWNER') {
             return true;
         }
-
-        $allowedRoles = $this->dashboard_finance_visible_roles;
 
         // Data lama yang belum diatur tetap mempertahankan perilaku sebelumnya.
         if (empty($allowedRoles)) {
@@ -74,6 +85,10 @@ class BranchStore extends Model
 
         $allowedRoles = array_map('strtoupper', $allowedRoles);
         $role = strtoupper((string) $role);
+
+        if (in_array(self::DASHBOARD_FINANCE_OWNER_ONLY, $allowedRoles, true)) {
+            return false;
+        }
 
         return in_array(self::DASHBOARD_FINANCE_ALL_ROLES, $allowedRoles, true)
             || in_array($role, $allowedRoles, true);
