@@ -18,19 +18,18 @@ class RevenueReportService
         $from = $fromDate . ' 00:00:00';
         $to = $toDate . ' 23:59:59';
 
-        $membership = DB::table('member_registration_payments as payment')
-            ->join('member_registrations as registration', 'registration.id', '=', 'payment.member_registration_id')
+        $membership = DB::table('member_registrations as registration')
             ->join('members as member', 'member.id', '=', 'registration.member_id')
             ->leftJoin('member_packages as package', 'package.id', '=', 'registration.member_package_id')
-            ->leftJoin('method_payments as method', 'method.id', '=', 'payment.method_payment_id')
-            ->leftJoin('users as staff', 'staff.id', '=', 'payment.user_id')
+            ->leftJoin('method_payments as method', 'method.id', '=', 'registration.method_payment_id')
+            ->leftJoin('users as staff', 'staff.id', '=', 'registration.user_id')
             ->where('registration.days', '>', 1)
-            ->whereBetween('payment.created_at', [$from, $to])
+            ->whereBetween('registration.created_at', [$from, $to])
             ->whereRaw(
-                'COALESCE(payment.branch_store_id, staff.branch_store_id, member.branch_store_id) = ?',
+                'COALESCE(staff.branch_store_id, member.branch_store_id) = ?',
                 [$branchStoreId]
             )
-            ->selectRaw("payment.id AS row_id")
+            ->selectRaw("registration.id AS row_id")
             ->selectRaw("'membership' AS source")
             ->selectRaw("'Membership' AS category")
             ->selectRaw("CONCAT('MEM-', registration.id) AS reference_number")
@@ -39,27 +38,26 @@ class RevenueReportService
             ->selectRaw("COALESCE(NULLIF(package.package_name, ''), '(deleted)') AS item_name")
             ->selectRaw("COALESCE(NULLIF(method.name, ''), '-') AS payment_method")
             ->selectRaw("COALESCE(NULLIF(staff.full_name, ''), '-') AS staff_name")
-            ->selectRaw('payment.value AS amount')
-            ->selectRaw('payment.created_at AS transaction_at');
+            ->selectRaw('CASE WHEN (COALESCE(registration.package_price, 0) + COALESCE(registration.admin_price, 0) - COALESCE(registration.discount_amount, 0)) > 0 THEN (COALESCE(registration.package_price, 0) + COALESCE(registration.admin_price, 0) - COALESCE(registration.discount_amount, 0)) ELSE 0 END AS amount')
+            ->selectRaw('registration.created_at AS transaction_at');
 
-        $trainer = DB::table('trainer_session_payments as payment')
-            ->join('trainer_sessions as session', 'session.id', '=', 'payment.trainer_session_id')
+        $trainer = DB::table('trainer_sessions as session')
             ->join('members as member', 'member.id', '=', 'session.member_id')
             ->leftJoin('trainer_packages as package', 'package.id', '=', 'session.trainer_package_id')
             ->where(function ($query) {
                 $query->whereNull('package.status')->orWhere('package.status', '!=', 'LGT');
             })
-            ->leftJoin('method_payments as method', 'method.id', '=', 'payment.method_payment_id')
-            ->leftJoin('users as staff', 'staff.id', '=', 'payment.user_id')
-            ->whereBetween('payment.created_at', [$from, $to])
+            ->leftJoin('method_payments as method', 'method.id', '=', 'session.method_payment_id')
+            ->leftJoin('users as staff', 'staff.id', '=', 'session.user_id')
+            ->whereBetween('session.created_at', [$from, $to])
             ->where(function ($query) {
                 $query->whereNull('session.is_pt_free')->orWhere('session.is_pt_free', false);
             })
             ->whereRaw(
-                'COALESCE(payment.branch_store_id, session.branch_store_id, staff.branch_store_id) = ?',
+                'COALESCE(session.branch_store_id, staff.branch_store_id, member.branch_store_id) = ?',
                 [$branchStoreId]
             )
-            ->selectRaw('payment.id AS row_id')
+            ->selectRaw('session.id AS row_id')
             ->selectRaw("'trainer' AS source")
             ->selectRaw("'PT' AS category")
             ->selectRaw("CONCAT('PT-', session.id) AS reference_number")
@@ -68,8 +66,8 @@ class RevenueReportService
             ->selectRaw("COALESCE(NULLIF(package.package_name, ''), '(deleted)') AS item_name")
             ->selectRaw("COALESCE(NULLIF(method.name, ''), '-') AS payment_method")
             ->selectRaw("COALESCE(NULLIF(staff.full_name, ''), '-') AS staff_name")
-            ->selectRaw('payment.value AS amount')
-            ->selectRaw('payment.created_at AS transaction_at');
+            ->selectRaw('CASE WHEN (COALESCE(session.package_price, 0) + COALESCE(session.admin_price, 0) - COALESCE(session.discount_amount, 0)) > 0 THEN (COALESCE(session.package_price, 0) + COALESCE(session.admin_price, 0) - COALESCE(session.discount_amount, 0)) ELSE 0 END AS amount')
+            ->selectRaw('session.created_at AS transaction_at');
 
         $union = $this->normalizeTextColumns($membership)
             ->unionAll($this->normalizeTextColumns($trainer));

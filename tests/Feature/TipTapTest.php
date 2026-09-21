@@ -306,6 +306,23 @@ class TipTapTest extends TestCase
             $table->integer('branch_store_id')->default(1);
             $table->boolean('is_pt_free')->default(false);
         });
+        foreach (['member_registrations', 'trainer_sessions'] as $name) {
+            Schema::table($name, function (Blueprint $table) {
+                $table->integer('package_price')->default(0);
+                $table->integer('admin_price')->default(0);
+                $table->integer('discount_amount')->nullable();
+                $table->integer('method_payment_id')->default(1);
+                $table->integer('user_id')->default(1);
+                $table->dateTime('created_at')->default('2026-09-19 12:00:00');
+            });
+            foreach ([1, 2] as $id) {
+                DB::table($name)->where('id', $id)->update([
+                    'package_price' => $id * 100000,
+                    'admin_price' => 20000,
+                    'discount_amount' => 20000,
+                ]);
+            }
+        }
         foreach (['member_registration_payments', 'trainer_session_payments'] as $name) {
             Schema::table($name, function (Blueprint $table) {
                 $table->integer('branch_store_id')->default(1);
@@ -342,6 +359,16 @@ class TipTapTest extends TestCase
         DB::table('trainer_packages')->insert(['id' => 2, 'package_name' => 'Old group training', 'status' => 'LGT']);
         DB::table('trainer_sessions')->insert(['id' => 3, 'member_id' => 1, 'trainer_package_id' => 2]);
         DB::table('trainer_session_payments')->insert(['id' => 3, 'trainer_session_id' => 3, 'value' => 800000]);
+        // Payments in a later month (and multiple installments) must not affect revenue.
+        DB::table('member_registration_payments')->update(['created_at' => '2026-10-01 12:00:00']);
+        DB::table('trainer_session_payments')->delete();
+        DB::table('member_registration_payments')->insert([
+            'id' => 4, 'member_registration_id' => 1, 'value' => 50000,
+        ]);
+        $this->assertSame(4, app(\App\Services\RevenueReportService::class)
+            ->query(1, '2026-09-01', '2026-09-30', false)->count());
+        $this->assertSame(0, app(\App\Services\RevenueReportService::class)
+            ->query(1, '2026-10-01', '2026-10-31', false)->count());
         $this->assertSame(600000, $total());
         $this->service->trash($this->owner, 'membership', 1);
         $this->assertSame(500000, $total());

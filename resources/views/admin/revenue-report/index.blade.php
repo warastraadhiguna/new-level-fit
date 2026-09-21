@@ -10,7 +10,7 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                     <div class="mb-2">
                         <h4 class="mb-1">Revenue Report</h4>
-                        <p class="text-muted mb-0">Revenue is recorded according to the date payment was received.</p>
+                        <p class="text-muted mb-0">Membership and PT revenue uses the registration creation date and full package value plus admin fees, less discounts.</p>
                     </div>
                     @if (! $includePos)
                         <span class="badge badge-light mb-2">POS is disabled for this branch</span>

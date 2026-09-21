@@ -6,11 +6,7 @@ LGT dan One Day Visit sudah dihapus dari fitur branch ini: dashboard, menu, pili
 
 Perubahan penghapusan kedua fitur ini tidak memerlukan migration tambahan. Setelah memperbarui kode di server, jalankan `php artisan optimize:clear` menggunakan versi PHP yang sesuai untuk aplikasi agar cache route dan tampilan lama dibersihkan.
 
-Laporan omzet membutuhkan migration lama `2026_09_19_000001_add_branch_store_id_to_payment_tables.php`. Jika database hasil impor belum memiliki kolom `branch_store_id` pada tabel pembayaran, jalankan migration tersebut:
-
-```sh
-php artisan migrate --path=database/migrations/2026_09_19_000001_add_branch_store_id_to_payment_tables.php
-```
+Laporan omzet demo (ringkasan, detail, dan Excel) memakai tanggal pembuatan membership/PT (`created_at`), bukan tanggal mulai paket atau tanggal pembayaran cicilan. Setiap registrasi dihitung sekali sebesar harga paket + biaya admin − diskon (minimum nol), termasuk registrasi yang belum dibayar. LGT, One Day Visit, dan PT Free tidak dihitung. POS tetap mengikuti transaksi penjualan selesai. Perubahan ini tidak mengubah tanggal atau nilai data tersimpan dan tidak memerlukan migration tambahan.
 
 ## Penggunaan
 
