@@ -25,10 +25,7 @@ class RevenueReportService
             ->leftJoin('method_payments as method', 'method.id', '=', 'payment.method_payment_id')
             ->leftJoin('users as staff', 'staff.id', '=', 'payment.user_id')
             ->whereBetween('payment.created_at', [$from, $to])
-            ->whereRaw(
-                'COALESCE(payment.branch_store_id, staff.branch_store_id, member.branch_store_id) = ?',
-                [$branchStoreId]
-            )
+            ->where('member.branch_store_id', $branchStoreId)
             ->selectRaw("payment.id AS row_id")
             ->selectRaw("'membership' AS source")
             ->selectRaw("CASE WHEN registration.days <= 1 THEN 'One Day Visit' ELSE 'Membership' END AS category")
@@ -52,7 +49,7 @@ class RevenueReportService
                 $query->whereNull('session.is_pt_free')->orWhere('session.is_pt_free', false);
             })
             ->whereRaw(
-                'COALESCE(payment.branch_store_id, session.branch_store_id, staff.branch_store_id) = ?',
+                'COALESCE(session.branch_store_id, member.branch_store_id) = ?',
                 [$branchStoreId]
             )
             ->selectRaw('payment.id AS row_id')
