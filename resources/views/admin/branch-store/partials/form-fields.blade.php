@@ -164,6 +164,22 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
+            <label class="form-label">Tampilkan di Gym Landing Page</label>
+            @php
+                $showOnGymLandingPage = old(
+                    'show_on_gym_landing_page',
+                    isset($branchStore) ? (int) $branchStore->show_on_gym_landing_page : 1
+                );
+            @endphp
+            <select name="show_on_gym_landing_page" class="form-control" required>
+                <option value="1" {{ (string) $showOnGymLandingPage === '1' ? 'selected' : '' }}>Aktif</option>
+                <option value="0" {{ (string) $showOnGymLandingPage === '0' ? 'selected' : '' }}>Nonaktif</option>
+            </select>
+            <small class="text-muted">Hanya mengatur apakah cabang muncul pada daftar Gym Landing Page. Operasional cabang tidak terpengaruh.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
             <label class="form-label">Booking Class Dibuka (H-N)</label>
             <input type="number" min="0" max="30" name="class_booking_advance_days"
                 value="{{ old('class_booking_advance_days', $branchStore->class_booking_advance_days ?? 1) }}"
