@@ -121,3 +121,27 @@ php vendor/phpunit/phpunit/phpunit --filter TipTapTest
 ```
 
 Tes memakai SQLite terpisah di memori, mencakup pembatasan owner, jalur hapus lama, pemulihan baris persis, laporan omzet, penghapusan permanen, foto, konflik restore, rollback, dan registrasi yang dihapus terpisah.
+
+## Acuan cabang laporan omzet
+
+Membership mengikuti `members.branch_store_id`, sesuai dashboard. PT mengikuti `trainer_sessions.branch_store_id`; jika NULL pada data lama, gunakan cabang member. Cabang akun staf tidak menentukan omzet. Ringkasan, detail, dan Excel memakai aturan yang sama. Cabang member belum merupakan snapshot historis: jika member dipindahkan, omzet membership ikut cabang member saat ini.
+
+## Prompt perbaikan untuk branch master
+
+Salin prompt berikut saat bekerja di branch master:
+
+```text
+Perbaiki penentuan cabang laporan revenue pada branch master di project new-level-fit-master.
+
+Masalah: membership member Supriyadi tidak muncul di laporan Supriyadi karena query mengutamakan users.branch_store_id milik staf. Akun staf dapat berada di cabang lain atau pindah cabang; perubahan itu tidak boleh memindahkan omzet.
+
+Periksa implementasi dan skema master terlebih dahulu. Terapkan acuan cabang:
+1. Membership menggunakan cabang registrasi yang tersimpan jika memang tersedia dan merupakan cabang transaksi. Jika registrasi belum memiliki kolom tersebut, gunakan members.branch_store_id, sesuai dashboard saat ini.
+2. PT menggunakan trainer_sessions.branch_store_id. Untuk nilai NULL pada data lama, gunakan members.branch_store_id.
+3. Jangan gunakan cabang akun staf sebagai penentu atau fallback omzet.
+4. Jika master masih menggunakan payment.branch_store_id, audit asal pengisiannya. Nilai yang berasal dari cabang staf/backfill staf tidak boleh mengalahkan acuan registrasi/member tersebut. Jangan mengubah data tersimpan secara massal.
+5. Pastikan ringkasan, detail, dan ekspor Excel memakai filter cabang yang sama; pertahankan pembatasan akses cabang.
+6. Pertahankan aturan tanggal pembayaran/cicilan, nominal omzet, POS, dan kategori fitur yang berlaku di master. Jangan menyalin aturan khusus demo tip-tap (tanggal dibuat registrasi, nilai penuh paket, atau penghapusan LGT/One Day Visit).
+7. Tambahkan tes regresi: member cabang A dibuat staf cabang B, staf pindah cabang, dan PT memiliki cabang berbeda dari member. Transaksi harus masuk hanya ke cabang sesuai aturan di atas tanpa duplikasi.
+8. Jalankan tes relevan dan laporkan hasil serta batasan historis ketika membership masih mengikuti cabang member saat ini. Jangan membuat migration, commit, push, atau menghapus data tanpa permintaan tambahan.
+```

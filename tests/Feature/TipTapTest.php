@@ -359,6 +359,19 @@ class TipTapTest extends TestCase
         DB::table('trainer_packages')->insert(['id' => 2, 'package_name' => 'Old group training', 'status' => 'LGT']);
         DB::table('trainer_sessions')->insert(['id' => 3, 'member_id' => 1, 'trainer_package_id' => 2]);
         DB::table('trainer_session_payments')->insert(['id' => 3, 'trainer_session_id' => 3, 'value' => 800000]);
+        // Moving staff must not reassign historical revenue to their new branch.
+        DB::table('users')->where('id', 1)->update(['branch_store_id' => 3]);
+        $this->assertSame(600000, $total());
+        $this->assertSame(0, app(\App\Services\RevenueReportService::class)
+            ->query(3, '2026-09-01', '2026-09-30', false)->count());
+
+        // A PT registration's branch takes precedence over the member's branch.
+        DB::table('trainer_sessions')->where('id', 1)->update(['branch_store_id' => 2]);
+        $this->assertSame(500000, $total());
+        $this->assertSame(100000, (int) app(\App\Services\RevenueReportService::class)
+            ->query(2, '2026-09-01', '2026-09-30', false)->sum('amount'));
+        DB::table('trainer_sessions')->where('id', 1)->update(['branch_store_id' => 1]);
+
         // Payments in a later month (and multiple installments) must not affect revenue.
         DB::table('member_registration_payments')->update(['created_at' => '2026-10-01 12:00:00']);
         DB::table('trainer_session_payments')->delete();

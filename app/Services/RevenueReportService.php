@@ -25,10 +25,8 @@ class RevenueReportService
             ->leftJoin('users as staff', 'staff.id', '=', 'registration.user_id')
             ->where('registration.days', '>', 1)
             ->whereBetween('registration.created_at', [$from, $to])
-            ->whereRaw(
-                'COALESCE(staff.branch_store_id, member.branch_store_id) = ?',
-                [$branchStoreId]
-            )
+            // Staff may work across branches or change their assigned branch.
+            ->where('member.branch_store_id', $branchStoreId)
             ->selectRaw("registration.id AS row_id")
             ->selectRaw("'membership' AS source")
             ->selectRaw("'Membership' AS category")
@@ -54,7 +52,7 @@ class RevenueReportService
                 $query->whereNull('session.is_pt_free')->orWhere('session.is_pt_free', false);
             })
             ->whereRaw(
-                'COALESCE(session.branch_store_id, staff.branch_store_id, member.branch_store_id) = ?',
+                'COALESCE(session.branch_store_id, member.branch_store_id) = ?',
                 [$branchStoreId]
             )
             ->selectRaw('session.id AS row_id')
