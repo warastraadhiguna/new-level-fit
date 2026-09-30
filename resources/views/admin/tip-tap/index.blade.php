@@ -9,6 +9,21 @@
         @if ($errors->any())
             <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
+        @if ($entries->total() > 0)
+            <details class="mb-4">
+                <summary class="text-danger">Hapus permanen semua ({{ $entries->total() }} arsip)…</summary>
+                <form action="{{ route('tip-tap.purge-all') }}" method="POST" class="mt-2"
+                    onsubmit="return confirm('Hapus SELURUH isi tempat sampah di semua halaman dan cabang? Data tidak dapat direstore. Lanjutkan?')">
+                    @csrf
+                    @method('DELETE')
+                    <p>Seluruh isi tempat sampah di semua halaman dan cabang, termasuk history dan foto yang diarsipkan, akan dihapus selamanya. Data aktif tetap tersimpan.</p>
+                    <label for="confirm-purge-all">Ketik HAPUS SEMUA PERMANEN untuk melanjutkan.</label>
+                    <input id="confirm-purge-all" name="confirmation" class="form-control mb-2"
+                        required autocomplete="off" pattern="HAPUS SEMUA PERMANEN">
+                    <button type="submit" class="btn btn-danger">Hapus permanen semua</button>
+                </form>
+            </details>
+        @endif
         <div class="table-responsive">
             <table class="table table-bordered">
                 <thead><tr><th>Data</th><th>Jenis</th><th>Dihapus pada</th><th>Tindakan</th></tr></thead>

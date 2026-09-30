@@ -246,6 +246,7 @@ class TipTapTest extends TestCase
 
     public function test_guests_cannot_access_tip_tap(): void
     {
+        $this->delete(route('tip-tap.purge-all'))->assertRedirect(route('login'));
         $this->get(route('tip-tap.index'))->assertRedirect(route('login'));
         $this->post(route('tip-tap.restore', 1))->assertRedirect(route('login'));
         $this->delete(route('tip-tap.trash', [1, 'membership', 1]))->assertRedirect(route('login'));
@@ -258,6 +259,7 @@ class TipTapTest extends TestCase
             $user = new User(['role' => $role]);
             $user->id = 2;
             $this->actingAs($user);
+            $this->delete(route('tip-tap.purge-all'), ['confirmation' => 'HAPUS SEMUA PERMANEN'])->assertForbidden();
             $this->get(route('tip-tap.index'))->assertForbidden();
             $this->delete(route('tip-tap.trash', [1, 'membership', 1]))->assertForbidden();
             $this->post(route('tip-tap.restore', 1))->assertForbidden();
@@ -391,6 +393,36 @@ class TipTapTest extends TestCase
         $this->assertSame(500000, $total());
         $this->service->restore($this->owner, $this->trashId('membership'));
         $this->assertSame(600000, $total());
+    }
+
+    public function test_owner_can_purge_all_archives_without_deleting_active_data(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('assets/member/bulk.jpg', 'photo');
+        DB::table('members')->where('id', 1)->update(['photos' => 'assets/member/bulk.jpg']);
+        $this->service->trash($this->owner, 'member', 1);
+        $this->service->trash($this->owner, 'pt', 2);
+        $this->actingAs($this->owner);
+        $this->deleteJson(route('tip-tap.purge-all'))->assertUnprocessable();
+        $this->deleteJson(route('tip-tap.purge-all'), ['confirmation' => 'HAPUS PERMANEN'])
+            ->assertUnprocessable();
+        $this->assertDatabaseCount('trashes', 2);
+        $this->delete(route('tip-tap.purge-all'), ['confirmation' => 'HAPUS SEMUA PERMANEN'])
+            ->assertRedirect(route('tip-tap.index'));
+        $this->assertDatabaseCount('trashes', 0);
+        Storage::disk('public')->assertMissing('assets/member/bulk.jpg');
+        $this->assertDatabaseHas('members', ['id' => 2]);
+        $this->assertDatabaseHas('member_registrations', ['id' => 2]);
+        $this->assertSame(0, $this->service->purgeAll($this->owner));
+    }
+
+    public function test_bulk_purge_handles_nested_archives(): void
+    {
+        $this->service->trash($this->owner, 'member', 1);
+        $this->service->trash($this->owner, 'pt', 2);
+        $this->service->trash($this->owner, 'member', 2);
+        $this->assertSame(3, $this->service->purgeAll($this->owner));
+        $this->assertDatabaseCount('trashes', 0);
     }
 
     private function trashId(string $kind): int

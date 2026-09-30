@@ -47,6 +47,20 @@ class TipTapController extends Controller
         return back()->with('success', 'Data beserta history dan omzet berhasil dipulihkan.');
     }
 
+    public function purgeAll(Request $request, TipTapService $service)
+    {
+        $request->validate(
+            ['confirmation' => ['required', 'in:HAPUS SEMUA PERMANEN']],
+            [
+                'confirmation.required' => 'Ketik HAPUS SEMUA PERMANEN untuk menghapus seluruh isi tempat sampah.',
+                'confirmation.in' => 'Konfirmasi harus persis HAPUS SEMUA PERMANEN.',
+            ]
+        );
+        $count = $service->purgeAll($request->user());
+        return redirect()->route('tip-tap.index')
+            ->with('success', $count . ' arsip tempat sampah telah dihapus permanen.');
+    }
+
     public function purge(Request $request, TipTapService $service, int $trash)
     {
         $request->validate(['confirmation' => ['required', 'in:HAPUS PERMANEN']]);

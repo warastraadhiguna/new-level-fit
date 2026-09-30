@@ -145,3 +145,7 @@ Periksa implementasi dan skema master terlebih dahulu. Terapkan acuan cabang:
 7. Tambahkan tes regresi: member cabang A dibuat staf cabang B, staf pindah cabang, dan PT memiliki cabang berbeda dari member. Transaksi harus masuk hanya ke cabang sesuai aturan di atas tanpa duplikasi.
 8. Jalankan tes relevan dan laporkan hasil serta batasan historis ketika membership masih mengikuti cabang member saat ini. Jangan membuat migration, commit, push, atau menghapus data tanpa permintaan tambahan.
 ```
+
+## Hapus permanen semua
+
+Owner dapat membuka **Hapus permanen semua** di Tempat Sampah, mengetik **HAPUS SEMUA PERMANEN**, lalu menyetujui konfirmasi. Tindakan mencakup seluruh arsip di semua halaman dan cabang beserta foto arsip; data aktif tidak dihapus. Tidak memerlukan migration tambahan.

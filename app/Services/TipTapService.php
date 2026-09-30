@@ -165,6 +165,22 @@ class TipTapService
         }, 3);
     }
 
+    public function purgeAll(User $actor): int
+    {
+        $this->authorize($actor);
+        return DB::transaction(function () use ($actor) {
+            $this->lock();
+            $ids = DB::table('trashes')->orderBy('id')->pluck('id');
+            foreach ($ids as $id) {
+                // Purging a member can also remove separately archived registrations.
+                if (DB::table('trashes')->where('id', $id)->exists()) {
+                    $this->purge($actor, (int) $id);
+                }
+            }
+            return $ids->count();
+        }, 3);
+    }
+
     private function authorize(User $actor): void
     {
         abort_unless($actor->isOwner(), 403, 'Tip-Tap hanya untuk Owner.');

@@ -57,6 +57,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
         Route::get('/', [\App\Http\Controllers\Owner\TipTapController::class, 'index'])->name('index');
         Route::delete('members/{member}/{kind}/{record}', [\App\Http\Controllers\Owner\TipTapController::class, 'trash'])->name('trash');
         Route::post('{trash}/restore', [\App\Http\Controllers\Owner\TipTapController::class, 'restore'])->name('restore');
+        Route::delete('purge-all', [\App\Http\Controllers\Owner\TipTapController::class, 'purgeAll'])->name('purge-all');
         Route::delete('{trash}/purge', [\App\Http\Controllers\Owner\TipTapController::class, 'purge'])->name('purge');
     });
 
