@@ -15,13 +15,20 @@ class EnsureOwnerForExcelDownloads
         'ptReportExcel',
     ];
 
+    private const EXCEL_ROUTES_AVAILABLE_TO_ALL_ROLES = [
+        'report-member-pt-checkin',
+    ];
+
     public function handle(Request $request, Closure $next)
     {
         $routeName = optional($request->route())->getName();
         $isExcelRequest = (string) $request->input('excel') === '1'
             || in_array($routeName, self::EXCEL_ROUTES, true);
 
-        if ($isExcelRequest) {
+        if (
+            $isExcelRequest
+            && ! in_array($routeName, self::EXCEL_ROUTES_AVAILABLE_TO_ALL_ROLES, true)
+        ) {
             abort_unless(
                 $request->user() && $request->user()->isOwner(),
                 403,

@@ -51,6 +51,18 @@ class EnsureOwnerForExcelDownloadsTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
+    public function test_all_roles_can_download_member_pt_check_in_report_excel(): void
+    {
+        foreach (['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC', 'PT'] as $role) {
+            $response = app(EnsureOwnerForExcelDownloads::class)->handle(
+                $this->requestFor($role, 'report-member-pt-checkin', ['excel' => '1']),
+                fn () => response('allowed')
+            );
+
+            $this->assertSame(200, $response->getStatusCode(), "Role {$role} tidak dapat download Excel.");
+        }
+    }
+
     private function requestFor(string $role, string $routeName, array $query = []): Request
     {
         $request = Request::create('/', 'GET', $query);

@@ -36,6 +36,18 @@ class EnsurePtReadOnlyAccessTest extends TestCase
         $this->assertSame('allowed', $response->getContent());
     }
 
+    public function test_pt_can_open_member_pt_check_in_report(): void
+    {
+        $request = $this->requestFor('GET', 'report-member-pt-checkin');
+
+        $response = app(EnsurePtReadOnlyAccess::class)->handle($request, function () {
+            return response('allowed');
+        });
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('allowed', $response->getContent());
+    }
+
     public function test_pt_cannot_open_an_unlisted_page(): void
     {
         $this->expectException(HttpException::class);

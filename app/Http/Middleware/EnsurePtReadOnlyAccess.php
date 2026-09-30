@@ -18,6 +18,7 @@ class EnsurePtReadOnlyAccess
         'pt-free.pending',
         'pt-free.expired',
         'pt-free.waiting-list',
+        'report-member-pt-checkin',
     ];
 
     public function handle(Request $request, Closure $next)

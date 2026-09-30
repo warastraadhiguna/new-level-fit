@@ -149,7 +149,6 @@
                 $canViewRevenueReport = optional(Auth::user()->branchStore)
                     ->canRoleViewRevenueReport(Auth::user()->role);
             @endphp
-            @if (!Auth::user()->isPt() || $canViewRevenueReport)
                 <li><a class="has-arrow " href="javascript:void(0);" aria-expanded="false">
                         <i class="material-icons"> app_registration </i>
                         <span class="nav-text">Report</span>
@@ -157,6 +156,14 @@
                     <ul aria-expanded="false">
                     @if ($canViewRevenueReport)
                         <li><a href="{{ route('revenue-report.index') }}">Revenue</a></li>
+                    @endif
+                    @if (Auth::user()->isPt())
+                    <li>
+                        <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">PT</a>
+                        <ul aria-expanded="false">
+                            <li style="margin-left: 10px"><a href="{{ route('report-member-pt-checkin') }}">Check In</a></li>
+                        </ul>
+                    </li>
                     @endif
                     @if (!Auth::user()->isPt())
                     {{-- <li><a class="has-arrow" href="javascript:void(0);" aria-expanded="false">PT</a>
@@ -205,7 +212,6 @@
                     @endif
                     </ul>
                 </li>
-            @endif
 
             @if (Auth::user()->isAdmin())
                 {{-- <li>
