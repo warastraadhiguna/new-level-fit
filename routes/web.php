@@ -54,6 +54,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonly', 'excel.owner'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('tip-tap-transfer', [\App\Http\Controllers\Owner\TipTapTransferController::class, 'index'])
+        ->middleware('tip-tap-transfer.enabled')
+        ->name('tip-tap-transfer.index');
+    Route::post('tip-tap-transfer/export', [\App\Http\Controllers\Owner\TipTapTransferController::class, 'export'])
+        ->middleware('tip-tap-transfer.enabled')
+        ->name('tip-tap-transfer.export');
 
     Route::get('/add-data', [MergeCreateDataController::class, 'index'])->name('add-data');
     Route::get('/1-day-visit-lead', [MergeCreateDataController::class, 'create'])->name('one-day-visit-lead');

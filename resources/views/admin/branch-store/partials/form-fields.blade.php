@@ -189,6 +189,22 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
+            <label class="form-label">Export Data Tip-Tap</label>
+            @php
+                $tipTapTransferEnabled = old(
+                    'tip_tap_transfer_enabled',
+                    isset($branchStore) ? (int) $branchStore->tip_tap_transfer_enabled : 0
+                );
+            @endphp
+            <select name="tip_tap_transfer_enabled" class="form-control" required>
+                <option value="0" {{ (string) $tipTapTransferEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $tipTapTransferEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Jika aktif, Owner cabang ini dapat melihat menu dan membuat file transfer untuk aplikasi Tip-Tap.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
             <label class="form-label d-block">Akses Keuangan Dashboard</label>
             @php
                 $financeAccessKey = $branchStore->id ?? 'new';

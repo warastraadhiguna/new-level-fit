@@ -121,6 +121,7 @@ class BranchStoreController extends Controller
             'pt_free_enabled' => ['required', 'boolean'],
             'pos_inventory_enabled' => ['required', 'boolean'],
             'show_on_gym_landing_page' => ['required', 'boolean'],
+            'tip_tap_transfer_enabled' => ['required', 'boolean'],
             'class_booking_advance_days' => ['required', 'integer', 'min:0', 'max:30'],
             'dashboard_finance_visible_roles' => ['required', 'array', 'min:1'],
             'dashboard_finance_visible_roles.*' => [

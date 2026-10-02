@@ -4,6 +4,15 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
+            @if (Auth::user()->isOwner() && optional(Auth::user()->branchStore)->tip_tap_transfer_enabled)
+                <li>
+                    <a href="{{ route('tip-tap-transfer.index') }}" aria-expanded="false">
+                        <i class="material-icons">archive</i>
+                        <span class="nav-text">Export Tip-Tap</span>
+                    </a>
+                </li>
+            @endif
+
             @if (Auth::user()->isAdmin() || Auth::user()->role == 'CS' || Auth::user()->role == 'FC' || Auth::user()->isPt())
                 <li>
                     <a href="{{ route('dashboard') }}" aria-expanded="false">
