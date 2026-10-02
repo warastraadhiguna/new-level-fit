@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Services\TipTapService;
+use App\Services\TipTapTransferImportService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class TipTapController extends Controller
 {
@@ -45,6 +48,42 @@ class TipTapController extends Controller
             return back()->withErrors(['trash' => 'Restore belum berhasil. Pulihkan data induk yang terkait terlebih dahulu dan pastikan kode/kartu member belum digunakan data lain. Data tetap aman di tempat sampah.']);
         }
         return back()->with('success', 'Data beserta history dan omzet berhasil dipulihkan.');
+    }
+
+    public function import(Request $request, TipTapTransferImportService $service)
+    {
+        $request->validate([
+            'transfer_file' => ['required', 'file', 'max:102400'],
+            'confirmation' => ['required', 'in:IMPORT DATA'],
+        ], [
+            'confirmation.in' => 'Konfirmasi harus persis IMPORT DATA.',
+        ]);
+
+        try {
+            $summary = $service->import($request->file('transfer_file'));
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (QueryException $exception) {
+            return back()->withErrors([
+                'transfer_file' => 'Import dibatalkan seluruhnya karena ada konflik ID, kode member, atau relasi data. Database tidak diubah.',
+            ]);
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['transfer_file' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', sprintf(
+            'Import %s s.d. %s berhasil: %d data baru, %d data diperbarui, %d dilewati, %d referensi baru, dan %d file disimpan.%s',
+            $summary['from_exclusive'],
+            $summary['until_inclusive'],
+            $summary['inserted'],
+            $summary['updated'],
+            $summary['skipped'],
+            $summary['references'],
+            $summary['files'],
+            $summary['source_missing_files'] > 0
+                ? ' ' . $summary['source_missing_files'] . ' file memang tidak tersedia di storage master.'
+                : ''
+        ));
     }
 
     public function purgeAll(Request $request, TipTapService $service)

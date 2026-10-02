@@ -14,6 +14,17 @@ Laporan omzet demo (ringkasan, detail, dan Excel) memakai tanggal pembuatan memb
 2. Di Membership History atau PT History seorang member, pilih **Hapus sementara** pada registrasi yang diinginkan. Member dan registrasi lainnya tetap ada.
 3. Buka menu **Tip-Tap / Tempat Sampah** untuk **Restore** atau **Hapus permanen**. Penghapusan permanen memerlukan teks `HAPUS PERMANEN` dan konfirmasi.
 
+### Mengambil data baru dari branch master
+
+1. Login sebagai Owner di branch `master`, buka **Export Tip-Tap**, lalu pilih batas awal data. Untuk dataset yang sudah dirapikan sampai 27 September 2026, gunakan `27 September 2026 23:59`.
+2. Download file ZIP transfer. Export tidak mengubah database master.
+3. Login sebagai Owner di branch `tip-tap`, buka **Tip-Tap / Tempat Sampah**, lalu upload file pada bagian **Import Data Baru dari Master**.
+4. Ketik `IMPORT DATA` dan jalankan import setelah backup database dibuat.
+
+Import mempertahankan ID asli dan bersifat idempotent: data aktif yang masih ada diperbarui, sedangkan data baru ditambahkan. Root lama yang sudah hilang dari Tip-Tap tidak dibuat kembali; ini mencegah member, membership, atau PT yang telah dihapus muncul lagi. Child seperti pembayaran dan check-in hanya dimasukkan jika parent masih aktif. Foto member yang tersedia di storage master ikut di dalam ZIP. Tidak ada migration tambahan untuk fitur transfer ini.
+
+Setelah import berhasil, catat waktu akhir yang tampil pada pesan hasil import dan gunakan nilai itu sebagai batas awal export berikutnya. Rentang berantai ini penting karena **Hapus permanen** sengaja tidak menyisakan tombstone. Mengulang file tetap tidak menggandakan data aktif, tetapi data baru setelah cutoff yang kemudian dihapus permanen dapat masuk kembali jika export berikutnya kembali memakai cutoff lama.
+
 Hapus sementara mengeluarkan data dari tabel operasional: daftar, pencarian, akses/check-in, history, pembayaran, cicilan, laporan, ekspor, dan omzet tidak lagi membacanya. Restore mengembalikan ID, tanggal, nilai pembayaran, serta history semula, tanpa mengulang event pembuatan transaksi. Tanggal kedaluwarsa tidak diperpanjang selama data berada di tempat sampah.
 
 Restore member sebelum registrasinya. Registrasi yang sudah dihapus terpisah sebelum member dihapus tetap berada di tempat sampah setelah member direstore. Hapus permanen member juga menghapus arsip registrasinya, termasuk foto lokal yang terkait. Hapus permanen registrasi tidak menghapus member.

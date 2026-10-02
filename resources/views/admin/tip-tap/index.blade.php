@@ -9,6 +9,38 @@
         @if ($errors->any())
             <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
+        <div class="card border mb-4">
+            <div class="card-body">
+                <h5>Import Data Baru dari Master</h5>
+                <p>
+                    Upload file ZIP yang dibuat dari menu <strong>Export Tip-Tap</strong> di branch master.
+                    Import mempertahankan ID, memperbarui data aktif, dan menambahkan data baru. Data lama yang sudah
+                    dipindahkan ke tempat sampah atau dihapus permanen tidak akan dihidupkan kembali.
+                </p>
+                <div class="alert alert-warning">
+                    Buat backup database Tip-Tap sebelum import. File yang sama aman diimpor ulang dan tidak menggandakan ID.
+                    Untuk export berikutnya, gunakan waktu akhir dari pesan hasil import terakhir sebagai batas awal agar rentang tidak tumpang tindih.
+                </div>
+                <form action="{{ route('tip-tap.import') }}" method="POST" enctype="multipart/form-data"
+                    onsubmit="return confirm('Gabungkan data dari master ke database Tip-Tap sekarang?')">
+                    @csrf
+                    <div class="row align-items-end">
+                        <div class="col-md-5 mb-3">
+                            <label for="transfer_file" class="form-label">File transfer (.zip)</label>
+                            <input id="transfer_file" name="transfer_file" type="file" class="form-control" accept=".zip" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="import_confirmation" class="form-label">Ketik IMPORT DATA</label>
+                            <input id="import_confirmation" name="confirmation" class="form-control" required
+                                autocomplete="off" pattern="IMPORT DATA">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button type="submit" class="btn btn-primary">Import Data</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
         @if ($entries->total() > 0)
             <details class="mb-4">
                 <summary class="text-danger">Hapus permanen semua ({{ $entries->total() }} arsip)…</summary>

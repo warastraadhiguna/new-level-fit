@@ -248,6 +248,7 @@ class TipTapTest extends TestCase
     {
         $this->delete(route('tip-tap.purge-all'))->assertRedirect(route('login'));
         $this->get(route('tip-tap.index'))->assertRedirect(route('login'));
+        $this->post(route('tip-tap.import'))->assertRedirect(route('login'));
         $this->post(route('tip-tap.restore', 1))->assertRedirect(route('login'));
         $this->delete(route('tip-tap.trash', [1, 'membership', 1]))->assertRedirect(route('login'));
         $this->delete(route('tip-tap.purge', 1))->assertRedirect(route('login'));
@@ -261,6 +262,7 @@ class TipTapTest extends TestCase
             $this->actingAs($user);
             $this->delete(route('tip-tap.purge-all'), ['confirmation' => 'HAPUS SEMUA PERMANEN'])->assertForbidden();
             $this->get(route('tip-tap.index'))->assertForbidden();
+            $this->post(route('tip-tap.import'))->assertForbidden();
             $this->delete(route('tip-tap.trash', [1, 'membership', 1]))->assertForbidden();
             $this->post(route('tip-tap.restore', 1))->assertForbidden();
             $this->delete(route('tip-tap.purge', 1), ['confirmation' => 'HAPUS PERMANEN'])->assertForbidden();
