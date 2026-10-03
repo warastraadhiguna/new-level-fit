@@ -54,7 +54,11 @@ class MemberInstallmentService
             ];
         }
         DB::table('member_registration_installments')->insert($rows);
-        $this->refresh($registration->fresh());
+
+        // Pembayaran awal dibuat setelah event `MemberRegistration::created` selesai.
+        // Biarkan kontrak baru berstatus pending sampai event pembayaran melakukan
+        // refresh agar tanggal mulai lampau tidak membatalkan kontrak sebelum
+        // pembayaran bulan pertama dan deposit sempat disimpan.
     }
 
     public function refresh(MemberRegistration $registration): void
