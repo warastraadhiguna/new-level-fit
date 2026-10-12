@@ -38,7 +38,22 @@ class TipTapTransferAccessTest extends TestCase
 
         $this->get(route('tip-tap-transfer.index'))
             ->assertOk()
-            ->assertSee('Export Data untuk Tip-Tap');
+            ->assertSee('Export Data untuk Tip-Tap')
+            ->assertSee('Tanggal awal (setelah)')
+            ->assertSee('Tanggal akhir (sampai dengan)');
+    }
+
+    public function test_export_rejects_end_date_that_is_not_after_start_date(): void
+    {
+        $this->actingAs($this->ownerWithSetting(true));
+
+        $this->from(route('tip-tap-transfer.index'))
+            ->post(route('tip-tap-transfer.export'), [
+                'from_at' => '2026-10-10 12:00:00',
+                'until_at' => '2026-10-10 11:59:59',
+            ])
+            ->assertRedirect(route('tip-tap-transfer.index'))
+            ->assertSessionHasErrors('until_at');
     }
 
     private function ownerWithSetting(bool $enabled): User
