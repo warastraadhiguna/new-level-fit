@@ -11,7 +11,7 @@
             Setelah import berhasil, gunakan waktu akhir yang ditampilkan Tip-Tap sebagai waktu awal export berikutnya.
         </div>
 
-        <form action="{{ route('tip-tap-transfer.export') }}" method="POST" class="row align-items-end">
+        <form action="{{ route('tip-tap-transfer.export') }}" method="POST" class="row align-items-end" data-allow-repeat-submit>
             @csrf
             <div class="col-md-4 mb-3">
                 <label for="from_at" class="form-label">Tanggal awal (setelah)</label>

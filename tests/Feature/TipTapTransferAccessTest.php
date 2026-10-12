@@ -40,7 +40,8 @@ class TipTapTransferAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Export Data untuk Tip-Tap')
             ->assertSee('Tanggal awal (setelah)')
-            ->assertSee('Tanggal akhir (sampai dengan)');
+            ->assertSee('Tanggal akhir (sampai dengan)')
+            ->assertSee('data-allow-repeat-submit', false);
     }
 
     public function test_export_rejects_end_date_that_is_not_after_start_date(): void
