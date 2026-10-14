@@ -244,6 +244,16 @@ class TipTapTest extends TestCase
         $this->assertDatabaseMissing('members', ['id' => 1]);
     }
 
+    public function test_member_trash_preserves_list_pagination_and_filters(): void
+    {
+        $this->actingAs($this->owner);
+        $filters = ['per_page' => 50, 'search' => 'Member', 'sort' => 'full_name', 'direction' => 'asc', 'page' => 2];
+        $this->delete(route('member.destroy', array_merge([1], $filters)))
+            ->assertRedirect(route('members.index', $filters));
+        $this->assertDatabaseMissing('members', ['id' => 1]);
+        $this->assertDatabaseHas('trashes', ['kind' => 'member', 'original_id' => 1]);
+    }
+
     public function test_guests_cannot_access_tip_tap(): void
     {
         $this->delete(route('tip-tap.purge-all'))->assertRedirect(route('login'));

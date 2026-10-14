@@ -140,11 +140,11 @@
                                     </td>
                                     <td>
                                         <div class="btn-group dropstart" role="group">
-                                            <button type="button" class="btn btn-primary btn-xs dropdown-toggle"
+                                            <button type="button" class="btn btn-primary btn-xs dropdown-toggle member-actions-toggle"
                                                 style="width: 100px" data-bs-toggle="dropdown" aria-expanded="false">
                                                 Action
                                             </button>
-                                            <ul class="dropdown-menu">
+                                            <ul class="dropdown-menu member-actions-menu">
                                                 <li>
                                                     <a href="{{ route('edit-member-sell', $item->id) }}"
                                                         class="btn light btn-warning btn-xs btn-block mb-1">Edit Member</a>
@@ -186,7 +186,7 @@
                                                 </li>
                                                 @if (Auth::user()->isOwner())
                                                     <li>
-                                                        <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member.destroy', $item->id) }}" method="POST">
+                                                        <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member.destroy', array_merge([$item->id], request()->only(['per_page', 'search', 'sort', 'direction', 'page']))) }}" method="POST">
                                                             @method('delete')
                                                             @csrf
                                                             <button type="submit"
@@ -222,6 +222,11 @@
 </div>
 
 <style>
+    .member-actions-menu {
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+
     .small-photo-crop-stage {
         width: 320px;
         max-width: 100%;
@@ -322,6 +327,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Fixed positioning lets the menu escape the responsive table's clipping area.
+        document.querySelectorAll('#membersTable .member-actions-toggle').forEach(function(toggle) {
+            new bootstrap.Dropdown(toggle, {
+                boundary: document.body,
+                popperConfig: function(config) {
+                    return Object.assign({}, config, { strategy: 'fixed' });
+                },
+            });
+        });
+
         const searchForm = document.getElementById('memberSearchForm');
         const searchInput = document.getElementById('memberSearchInput');
         let searchTimer;

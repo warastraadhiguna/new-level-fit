@@ -650,10 +650,10 @@ class MemberController extends Controller
         ]);
     }
 
-    public function destroy(Member $member)
+    public function destroy(Request $request, Member $member)
     {
         app(\App\Services\TipTapService::class)->trash(auth()->user(), 'member', (int) $member->id);
-        return redirect()->route('members.index')->with('success', 'Member dan seluruh history dipindahkan ke Tempat Sampah Tip-Tap. Omzet sudah disesuaikan.');
+        return redirect()->route('members.index', $request->only(['per_page', 'search', 'sort', 'direction', 'page']))->with('success', 'Member dan seluruh history dipindahkan ke Tempat Sampah Tip-Tap. Omzet sudah disesuaikan.');
     }
 
     public function updateSmallPhoto(Request $request, string $id)
