@@ -138,7 +138,7 @@
                         @if (optional(Auth::user()->branchStore)->face_enrollment_enabled)
                             <li><a href="{{ route('face-enrollment.index') }}">Pendaftaran Wajah</a></li>
                         @endif
-                        @if (Auth::user()->isOwner())
+                        @if (Auth::user()->isOwner() && optional(Auth::user()->branchStore)->face_enrollment_enabled)
                             <li><a href="{{ route('attendance-device.index') }}">Perangkat Absensi</a></li>
                         @endif
                     </ul>
