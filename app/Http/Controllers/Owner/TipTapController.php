@@ -72,7 +72,7 @@ class TipTapController extends Controller
         }
 
         return back()->with('success', sprintf(
-            'Import %s s.d. %s berhasil: %d data baru, %d data diperbarui, %d dilewati, %d referensi baru, dan %d file disimpan.%s',
+            'Import %s s.d. %s berhasil: %d data baru, %d data diperbarui, %d dilewati, %d referensi baru, dan %d file disimpan.%s%s',
             $summary['from_exclusive'],
             $summary['until_inclusive'],
             $summary['inserted'],
@@ -82,6 +82,9 @@ class TipTapController extends Controller
             $summary['files'],
             $summary['source_missing_files'] > 0
                 ? ' ' . $summary['source_missing_files'] . ' file memang tidak tersedia di storage master.'
+                : '',
+            $summary['resolved_member_identifiers'] > 0
+                ? ' ' . $summary['resolved_member_identifiers'] . ' nomor member/kartu lama disesuaikan otomatis untuk kebutuhan demo.'
                 : ''
         ));
     }

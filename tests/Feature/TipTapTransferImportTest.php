@@ -31,6 +31,8 @@ class TipTapTransferImportTest extends TestCase
         Schema::create('members', function (Blueprint $table) {
             $table->increments('id');
             $table->string('full_name');
+            $table->string('member_code')->nullable()->unique();
+            $table->string('card_number')->nullable()->unique();
             $table->timestamps();
         });
         Schema::create('member_registrations', function (Blueprint $table) {
@@ -101,6 +103,43 @@ class TipTapTransferImportTest extends TestCase
         $this->assertSame(1, DB::table('members')->where('id', 4)->count());
         $this->assertSame(1, DB::table('member_registrations')->where('id', 12)->count());
         $this->assertSame(1, DB::table('check_in_members')->where('id', 20)->count());
+    }
+
+    public function test_import_reassigns_conflicting_demo_member_code_and_card_number(): void
+    {
+        DB::table('members')->insert([
+            'id' => 5,
+            'full_name' => 'Data lama Tip-Tap',
+            'member_code' => 'WSP1867',
+            'card_number' => '0005256098',
+            'created_at' => '2026-09-01 00:00:00',
+            'updated_at' => '2026-09-01 00:00:00',
+        ]);
+
+        $file = $this->transferFile([
+            'members' => [[
+                'id' => 4620,
+                'full_name' => 'Ardhya Regita Pramesti',
+                'member_code' => 'WSP1867',
+                'card_number' => '0005256098',
+                'created_at' => '2026-09-28 00:00:00',
+                'updated_at' => '2026-09-28 00:00:00',
+            ]],
+        ]);
+
+        $summary = app(TipTapTransferImportService::class)->import($file);
+
+        $this->assertDatabaseHas('members', [
+            'id' => 5,
+            'member_code' => 'TT-OLD-MEMBER-5',
+            'card_number' => 'TT-OLD-CARD-5',
+        ]);
+        $this->assertDatabaseHas('members', [
+            'id' => 4620,
+            'member_code' => 'WSP1867',
+            'card_number' => '0005256098',
+        ]);
+        $this->assertSame(2, $summary['resolved_member_identifiers']);
     }
 
     private function transferFile(array $tables): UploadedFile

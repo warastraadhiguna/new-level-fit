@@ -76,7 +76,13 @@ class TipTapTransferImportService
 
             $summary = DB::transaction(function () use ($data, $fromExclusive) {
                 DB::table('locks')->where('id', 1)->lockForUpdate()->first();
-                $summary = ['inserted' => 0, 'updated' => 0, 'skipped' => 0, 'references' => 0];
+                $summary = [
+                    'inserted' => 0,
+                    'updated' => 0,
+                    'skipped' => 0,
+                    'references' => 0,
+                    'resolved_member_identifiers' => 0,
+                ];
 
                 foreach (self::REFERENCE_TABLES as $table) {
                     foreach ($data['tables'][$table] ?? [] as $row) {
@@ -122,6 +128,9 @@ class TipTapTransferImportService
         $id = $row['id'];
 
         if ($this->exists($table, $id)) {
+            if ($table === 'members') {
+                $this->resolveMemberIdentifierConflicts($row, $summary);
+            }
             $this->update($table, $id, $row);
             $summary['updated']++;
             return;
@@ -134,8 +143,42 @@ class TipTapTransferImportService
             return;
         }
 
+        if ($table === 'members') {
+            $this->resolveMemberIdentifierConflicts($row, $summary);
+        }
         DB::table($table)->insert($row);
         $summary['inserted']++;
+    }
+
+    private function resolveMemberIdentifierConflicts(array $incoming, array &$summary): void
+    {
+        foreach (['member_code' => 'TT-OLD-MEMBER-', 'card_number' => 'TT-OLD-CARD-'] as $column => $prefix) {
+            $value = $incoming[$column] ?? null;
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $conflictingIds = DB::table('members')
+                ->where($column, $value)
+                ->where('id', '!=', $incoming['id'])
+                ->pluck('id');
+
+            foreach ($conflictingIds as $conflictingId) {
+                $candidate = $prefix . $conflictingId;
+                $suffix = 1;
+                while (DB::table('members')
+                    ->where($column, $candidate)
+                    ->where('id', '!=', $conflictingId)
+                    ->exists()) {
+                    $candidate = $prefix . $conflictingId . '-' . $suffix++;
+                }
+
+                DB::table('members')->where('id', $conflictingId)->update([
+                    $column => $candidate,
+                ]);
+                $summary['resolved_member_identifiers']++;
+            }
+        }
     }
 
     private function importChild(string $table, array $parents, array $row, array &$summary): void
