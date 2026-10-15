@@ -43,11 +43,14 @@ class BranchStore extends Model
         'pos_inventory_enabled',
         'show_on_gym_landing_page',
         'tip_tap_transfer_enabled',
+        'face_enrollment_enabled',
         'dashboard_finance_visible_roles',
         'revenue_report_visible_roles',
         'class_booking_advance_days',
         'type',
     ];
+
+    protected $attributes = ['face_enrollment_enabled' => false];
 
     protected $casts = [
         'is_payment_strict' => 'boolean',
@@ -61,6 +64,7 @@ class BranchStore extends Model
         'pos_inventory_enabled' => 'boolean',
         'show_on_gym_landing_page' => 'boolean',
         'tip_tap_transfer_enabled' => 'boolean',
+        'face_enrollment_enabled' => 'boolean',
         'dashboard_finance_visible_roles' => 'array',
         'revenue_report_visible_roles' => 'array',
         'class_booking_advance_days' => 'integer',

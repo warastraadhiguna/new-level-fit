@@ -4,6 +4,7 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
+
             @if (Auth::user()->isOwner() && optional(Auth::user()->branchStore)->tip_tap_transfer_enabled)
                 <li>
                     <a href="{{ route('tip-tap-transfer.index') }}" aria-expanded="false">
@@ -128,10 +129,19 @@
 
             @if (Auth::user()->isAdmin())
                 <li>
-                    <a href="{{ route('staff.index') }}?page=cs" href="javascript:void(0);" aria-expanded="false">
+                    <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person</i>
-                        <span class="nav-text">Staff List</span>
+                        <span class="nav-text">Staff</span>
                     </a>
+                    <ul aria-expanded="false">
+                        <li><a href="{{ route('staff.index', ['page' => 'cs']) }}">Staff List</a></li>
+                        @if (optional(Auth::user()->branchStore)->face_enrollment_enabled)
+                            <li><a href="{{ route('face-enrollment.index') }}">Pendaftaran Wajah</a></li>
+                        @endif
+                        @if (Auth::user()->isOwner())
+                            <li><a href="{{ route('attendance-device.index') }}">Perangkat Absensi</a></li>
+                        @endif
+                    </ul>
                 </li>
             @endif
 

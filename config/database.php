@@ -43,6 +43,20 @@ return [
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
 
+        'face_enrollment' => [
+            'driver' => 'mysql',
+            'host' => env('FACE_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('FACE_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('FACE_DB_DATABASE', 'level-fit'),
+            'username' => env('FACE_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('FACE_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => 'InnoDB',
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),

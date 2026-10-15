@@ -122,6 +122,7 @@ class BranchStoreController extends Controller
             'pos_inventory_enabled' => ['required', 'boolean'],
             'show_on_gym_landing_page' => ['required', 'boolean'],
             'tip_tap_transfer_enabled' => ['required', 'boolean'],
+            'face_enrollment_enabled' => ['sometimes', 'boolean'],
             'class_booking_advance_days' => ['required', 'integer', 'min:0', 'max:30'],
             'dashboard_finance_visible_roles' => ['required', 'array', 'min:1'],
             'dashboard_finance_visible_roles.*' => [
@@ -136,6 +137,8 @@ class BranchStoreController extends Controller
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
         ]);
+
+        $data['face_enrollment_enabled'] = (bool) ($data['face_enrollment_enabled'] ?? false);
 
         $data['dashboard_finance_visible_roles'] = $this->normalizeFinanceRoles(
             $data['dashboard_finance_visible_roles']

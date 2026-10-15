@@ -189,6 +189,17 @@
     </div>
     <div class="col-md-6">
         <div class="mb-3">
+            <label class="form-label">Pendaftaran Wajah Pegawai</label>
+            @php $faceEnrollmentEnabled = old('face_enrollment_enabled', isset($branchStore) ? (int) $branchStore->face_enrollment_enabled : 0); @endphp
+            <select name="face_enrollment_enabled" class="form-control" required>
+                <option value="0" {{ (string) $faceEnrollmentEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
+                <option value="1" {{ (string) $faceEnrollmentEnabled === '1' ? 'selected' : '' }}>Aktif</option>
+            </select>
+            <small class="text-muted">Aktifkan agar Admin/Owner cabang ini dapat membuka Staff → Pendaftaran Wajah. Default: Nonaktif.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
             <label class="form-label">Export Data Tip-Tap</label>
             @php
                 $tipTapTransferEnabled = old(
