@@ -66,6 +66,23 @@ class AttendanceDeviceOwnerTest extends TestCase
         $this->assertEquals(hash('sha256','token1'),DB::table('face_attendance_devices')->where('id',2)->value('token_hash'));
         $this->assertEquals(hash('sha256','token2'),DB::table('face_attendance_devices')->where('id',3)->value('token_hash'));
     }
+    public function test_list_only_shows_active_or_pending_devices_in_current_branch(): void
+    {
+        $now=now('UTC');
+        DB::table('face_attendance_devices')->insert([
+            ['branch_store_id'=>1,'label'=>'Current phone','token_hash'=>hash('sha256','active'),'expires_at'=>$now->copy()->addYear()],
+            ['branch_store_id'=>1,'label'=>'Expired phone','token_hash'=>hash('sha256','expired'),'expires_at'=>$now->copy()->subSecond()],
+        ]);
+        DB::table('face_attendance_devices')->insert(['branch_store_id'=>1,'label'=>'Revoked phone']);
+        DB::table('face_attendance_devices')->insert(['branch_store_id'=>1,'pairing_label'=>'Pending phone','pairing_hash'=>hash('sha256','pending'),'pairing_expires_at'=>$now->copy()->addMinutes(5)]);
+        DB::table('face_attendance_devices')->insert(['branch_store_id'=>1,'pairing_label'=>'Expired code','pairing_hash'=>hash('sha256','expired-code'),'pairing_expires_at'=>$now->copy()->subSecond()]);
+        DB::table('face_attendance_devices')->insert(['branch_store_id'=>2,'label'=>'Other branch','token_hash'=>hash('sha256','other'),'expires_at'=>$now->copy()->addYear()]);
+        $this->actingAs($this->actor())->get('/attendance-device')->assertOk()
+            ->assertSee('Current phone')->assertSee('Pending phone')->assertDontSee('Expired phone')
+            ->assertDontSee('Revoked phone')->assertDontSee('Expired code')->assertDontSee('Other branch');
+        $this->post('/attendance-device/revoke',['device_id'=>1])->assertRedirect();
+        $this->get('/attendance-device')->assertOk()->assertDontSee('Current phone')->assertSee('Pending phone');
+    }
     public function test_owner_login_branch_snapshot_ignores_input_and_survives_owner_branch_change(): void
     {
         $owner=$this->actor();$this->actingAs($owner);

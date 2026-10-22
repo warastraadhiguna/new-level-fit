@@ -24,7 +24,11 @@ class AttendanceDeviceController extends Controller
     }
     public function index(Request $request)
     {
-        $devices=DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)->orderByDesc('id')->get();
+        $devices=DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)
+            ->where(function($query) {
+                $query->where(function($active) { $active->whereNotNull('token_hash')->where('expires_at','>',now('UTC')); })
+                    ->orWhere(function($pending) { $pending->whereNotNull('pairing_hash')->where('pairing_expires_at','>',now('UTC')); });
+            })->orderByDesc('id')->get();
         return response()->view('admin.layouts.wrapper',['title'=>'Perangkat Absensi','content'=>'admin.attendance-device.index','devices'=>$devices])->header('Cache-Control','no-store, private');
     }
     public function pair(Request $request)
