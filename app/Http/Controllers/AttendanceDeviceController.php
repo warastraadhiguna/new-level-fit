@@ -24,8 +24,8 @@ class AttendanceDeviceController extends Controller
     }
     public function index(Request $request)
     {
-        $device=DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)->first();
-        return response()->view('admin.layouts.wrapper',['title'=>'Perangkat Absensi','content'=>'admin.attendance-device.index','device'=>$device])->header('Cache-Control','no-store, private');
+        $devices=DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)->orderByDesc('id')->get();
+        return response()->view('admin.layouts.wrapper',['title'=>'Perangkat Absensi','content'=>'admin.attendance-device.index','devices'=>$devices])->header('Cache-Control','no-store, private');
     }
     public function pair(Request $request)
     {
@@ -34,17 +34,18 @@ class AttendanceDeviceController extends Controller
         $db=DB::connection('face_enrollment');
         $db->transaction(function() use($request,$db,$code,$now) {
             $branch=$db->table('branch_stores')->where('id',$request->user()->branch_store_id)->lockForUpdate()->first();abort_unless($branch,404);
-            $row=$db->table('face_attendance_devices')->where('branch_store_id',$branch->id)->lockForUpdate()->first();
             $values=['pairing_hash'=>hash('sha256',$code),'pairing_label'=>$request->label,'pairing_expires_at'=>$now->copy()->addMinutes(5),'updated_at'=>$now]+$this->ownerContext($request);
-            if($row) $db->table('face_attendance_devices')->where('id',$row->id)->update($values);
-            else $db->table('face_attendance_devices')->insert($values+['branch_store_id'=>$branch->id,'created_at'=>$now]);
+            $db->table('face_attendance_devices')->insert($values+['branch_store_id'=>$branch->id,'created_at'=>$now]);
         });
         return redirect()->route('attendance-device.index')->with('pairing_code',implode('-',str_split($code,4)))->with('message','Kode aktivasi berlaku 5 menit dan hanya dapat digunakan sekali.');
     }
     public function revoke(Request $request)
     {
-        DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)
+        $request->validate(['device_id'=>'required|integer|min:1']);
+        $device=DB::connection('face_enrollment')->table('face_attendance_devices')->where('branch_store_id',$request->user()->branch_store_id)->where('id',$request->device_id);
+        abort_unless((clone $device)->exists(),404);
+        $device
             ->update(['token_hash'=>null,'expires_at'=>null,'pairing_hash'=>null,'pairing_expires_at'=>null,'pairing_label'=>null,'updated_at'=>now('UTC')]+$this->ownerContext($request));
-        return redirect()->route('attendance-device.index')->with('message','Akses perangkat dan kode aktivasi cabang ini sudah dicabut.');
+        return redirect()->route('attendance-device.index')->with('message','Akses perangkat yang dipilih dan kode aktivasinya sudah dicabut.');
     }
 }

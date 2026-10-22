@@ -14,6 +14,7 @@ class AttendanceDeviceOwnerTest extends TestCase
         DB::table('branch_stores')->insert([['id'=>1,'name'=>'One'],['id'=>2,'name'=>'Two']]);
         require_once database_path('migrations/2026_10_15_000004_create_face_attendance_devices.php');(new \CreateFaceAttendanceDevices)->up();
         require_once database_path('migrations/2026_10_15_000005_add_owner_login_context_to_attendance_devices.php');(new \AddOwnerLoginContextToAttendanceDevices)->up();
+        require_once database_path('migrations/2026_10_16_000001_allow_multiple_attendance_devices_per_branch.php');(new \AllowMultipleAttendanceDevicesPerBranch)->up();
     }
     private function actor(string $role='OWNER'): User
     {
@@ -31,7 +32,7 @@ class AttendanceDeviceOwnerTest extends TestCase
         $this->assertDatabaseCount('face_attendance_devices',0);
         $this->actingAs($this->actor('ADMIN'))->view('admin.includes.sidebar')->assertDontSee('Perangkat Absensi');
     }
-    public function test_owner_code_is_hashed_single_pending_and_scoped_to_current_branch(): void
+    public function test_owner_creates_independent_devices_scoped_to_current_branch(): void
     {
         $this->actingAs($this->actor());
         $this->post('/attendance-device/pair',['label'=>'Front Desk','branch_store_id'=>2])->assertRedirect(route('attendance-device.index'));
@@ -41,17 +42,29 @@ class AttendanceDeviceOwnerTest extends TestCase
         $this->assertStringNotContainsString($code,json_encode($row));
         DB::table('face_attendance_devices')->where('id',$row->id)->update(['token_hash'=>hash('sha256','existing'),'label'=>'Existing HP','expires_at'=>now('UTC')->addYear()]);
         $this->post('/attendance-device/pair',['label'=>'Replacement'])->assertRedirect();
-        $new=DB::table('face_attendance_devices')->first();$this->assertNotEquals($row->pairing_hash,$new->pairing_hash);
-        $this->assertEquals(hash('sha256','existing'),$new->token_hash);$this->assertEquals('Existing HP',$new->label);
-        $this->assertDatabaseCount('face_attendance_devices',1);
+        $new=DB::table('face_attendance_devices')->orderByDesc('id')->first();$this->assertNotEquals($row->pairing_hash,$new->pairing_hash);
+        $existing=DB::table('face_attendance_devices')->where('id',$row->id)->first();
+        $this->assertEquals(hash('sha256','existing'),$existing->token_hash);$this->assertEquals('Existing HP',$existing->label);
+        $this->assertNull($new->token_hash);
+        $this->assertDatabaseCount('face_attendance_devices',2);
         $this->get('/attendance-device')->assertOk()->assertSee('Existing HP');
     }
     public function test_revoke_only_current_branch_device_and_pending_code(): void
     {
         foreach([1,2] as $branch)DB::table('face_attendance_devices')->insert(['branch_store_id'=>$branch,'token_hash'=>hash('sha256','token'.$branch),'pairing_hash'=>hash('sha256','code'.$branch)]);
-        $this->actingAs($this->actor())->post('/attendance-device/revoke',['branch_store_id'=>2])->assertRedirect();
+        $this->actingAs($this->actor())->post('/attendance-device/revoke',['branch_store_id'=>2,'device_id'=>1])->assertRedirect();
         $row=DB::table('face_attendance_devices')->where('branch_store_id',1)->first();$this->assertNull($row->token_hash);$this->assertNull($row->pairing_hash);
         $this->assertEquals(hash('sha256','token2'),DB::table('face_attendance_devices')->where('branch_store_id',2)->value('token_hash'));
+    }
+    public function test_revoke_targets_only_selected_device_and_rejects_other_branches(): void
+    {
+        foreach([1,1,2] as $i=>$branch) DB::table('face_attendance_devices')->insert(['branch_store_id'=>$branch,'token_hash'=>hash('sha256','token'.$i)]);
+        $this->actingAs($this->actor())->post('/attendance-device/revoke',['device_id'=>3])->assertNotFound();
+        $this->post('/attendance-device/revoke')->assertSessionHasErrors('device_id');
+        $this->post('/attendance-device/revoke',['device_id'=>1])->assertRedirect();
+        $this->assertNull(DB::table('face_attendance_devices')->where('id',1)->value('token_hash'));
+        $this->assertEquals(hash('sha256','token1'),DB::table('face_attendance_devices')->where('id',2)->value('token_hash'));
+        $this->assertEquals(hash('sha256','token2'),DB::table('face_attendance_devices')->where('id',3)->value('token_hash'));
     }
     public function test_owner_login_branch_snapshot_ignores_input_and_survives_owner_branch_change(): void
     {
@@ -65,7 +78,7 @@ class AttendanceDeviceOwnerTest extends TestCase
         $this->actingAs($owner)->post('/attendance-device/pair',['label'=>'HP Two'])->assertRedirect();
         $this->assertEquals('One',DB::table('face_attendance_devices')->where('branch_store_id',1)->value('owner_login_branch_name'));
         $this->assertEquals(2,DB::table('face_attendance_devices')->where('branch_store_id',2)->value('owner_login_branch_store_id'));
-        $this->post('/attendance-device/revoke',['owner_login_branch_store_id'=>1])->assertRedirect();
+        $this->post('/attendance-device/revoke',['owner_login_branch_store_id'=>1,'device_id'=>2])->assertRedirect();
         $this->assertEquals('Two',DB::table('face_attendance_devices')->where('branch_store_id',2)->value('owner_login_branch_name'));
     }
 }

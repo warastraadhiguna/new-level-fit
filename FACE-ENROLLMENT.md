@@ -1,5 +1,7 @@
 # Pendaftaran wajah di aplikasi master
 
+> Pembaruan: satu cabang kini dapat memiliki beberapa perangkat aktif. Lihat [FACE-MULTI-DEVICE.md](FACE-MULTI-DEVICE.md) untuk SQL manual dan deployment. Penjelasan satu perangkat pada bagian historis di bawah sudah digantikan.
+
 Halaman **GET /enroll** dan **POST /enroll** tersedia pada `new-level-fit-master`. Akses menggunakan login aplikasi yang sudah ada, middleware Management, dan hak Admin/Owner. Menu sidebar: **Staff → Pendaftaran Wajah**, di bawah **Staff List**.
 
 - Owner dan Admin hanya dapat mendaftarkan akun aktif pada cabang akun yang sedang login (`branch_store_id`).
