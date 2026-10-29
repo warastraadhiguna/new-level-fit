@@ -14,7 +14,7 @@
             <thead>
                 <tr style="background-color: #f5e400;">
                     <th>No</th>
-                    <th>Member Code</th>                    
+                    <th>Member Number</th>
                     <th>Member Name</th>
                     <th>Package Name</th>                          
                     <th>Branch</th>                     
@@ -28,7 +28,7 @@
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>
-                            {{ $item->member_code }}
+                            {{ $item->member_code ?: '-' }}
                         </td>                            
                         <td>
                             <h6>{{ $item->member_name }}</h6>

@@ -38,6 +38,7 @@ class ReportController extends Controller
             ->select(
                 'cim.id as cim_id',
                 'members.id as member_id',
+                'members.member_code',
                 'members.full_name as member_name',
                 'cim.check_in_time',
                 'cim.check_out_time',

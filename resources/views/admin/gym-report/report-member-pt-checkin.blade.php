@@ -54,7 +54,7 @@
                         <thead>
                             <tr>
                                 <th>No</th>
-                                <th>Member Code</th>
+                                <th>Member Number</th>
                                 <th>Member Name</th>
                                 <th>Package Name</th>
                                 <th>Trainer Name</th>
@@ -67,7 +67,7 @@
                             @forelse ($results as $item)
                                 <tr>
                                     <td>{{ ($results->currentPage() - 1) * $results->perPage() + $loop->iteration }}</td>
-                                    <td>{{ $item->member_code }}</td>
+                                    <td>{{ $item->member_code ?: '-' }}</td>
                                     <td>{{ $item->member_name }}</td>
                                     <td><h6>{{ $item->package_name }}</h6></td>
                                     <td>{{ $item->trainer_name }}</td>
