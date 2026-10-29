@@ -39,7 +39,9 @@
                     } elseif (($item->leave_day_status ?? null) === 'Freeze') {
                         $membershipStatus = 'Freeze';
                     } elseif ($exportType === 'active') {
-                        $membershipStatus = 'Running';
+                        $membershipStatus = !empty($item->check_in_time) && empty($item->check_out_time)
+                            ? 'Running'
+                            : 'Not Start';
                     } else {
                         $rawStatus = strtolower((string) ($item->status ?? 'Running'));
                         $membershipStatus = $rawStatus === 'over'
