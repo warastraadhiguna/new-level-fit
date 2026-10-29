@@ -69,7 +69,13 @@
                             <h6>{{ $item->staff_name }}</h6>
                         </td>
                         <td>
-                            {{ $item->expired_date_status }}
+                            @if (($item->leave_day_status ?? null) === 'Freeze')
+                                Freeze
+                            @elseif (!empty($item->check_in_time) && empty($item->check_out_time))
+                                Running
+                            @else
+                                Not Start
+                            @endif
                         </td>
                         <td>
                             <h6>{{ $item->description }}</h6>
