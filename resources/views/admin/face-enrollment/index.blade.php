@@ -18,7 +18,7 @@
             <label for="faceEmployee" class="form-label">Pegawai</label>
             <select id="faceEmployee" class="form-control" @if(!$faceReady) disabled @endif>
                 <option value="">Pilih nama pegawai</option>
-                @foreach ($employees as $employee)<option value="{{ $employee->id }}" data-enrolled="{{ $employee->enrolled ? '1' : '0' }}">{{ $employee->full_name }} · {{ $employee->role }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
+                @foreach ($employees as $employee)<option value="{{ $employee->id }}" data-enrolled="{{ $employee->enrolled ? '1' : '0' }}">{{ $employee->full_name }} · {{ ($employee->position ?: 'Pegawai') }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
             </select>
             @if ($employees->isEmpty())<p class="text-muted mt-2">Tidak ada pegawai aktif yang dapat didaftarkan.</p>@endif
             <span id="faceStatus" class="badge badge-secondary mt-3">Pilih pegawai terlebih dahulu</span>

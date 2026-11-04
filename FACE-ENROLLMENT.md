@@ -1,5 +1,7 @@
 # Pendaftaran wajah di aplikasi master
 
+> Sumber identitas absensi sekarang adalah tabel `employees`, terpisah dari user/trainer. Lihat [EMPLOYEES.md](EMPLOYEES.md) untuk SQL manual dan langkah perpindahan. Penjelasan sinkronisasi user di bagian historis sudah tidak berlaku.
+
 > Pembaruan: satu cabang kini dapat memiliki beberapa perangkat aktif. Lihat [FACE-MULTI-DEVICE.md](FACE-MULTI-DEVICE.md) untuk SQL manual dan deployment. Penjelasan satu perangkat pada bagian historis di bawah sudah digantikan.
 
 Halaman **GET /enroll** dan **POST /enroll** tersedia pada `new-level-fit-master`. Akses menggunakan login aplikasi yang sudah ada, middleware Management, dan hak Admin/Owner. Menu sidebar: **Staff → Pendaftaran Wajah**, di bawah **Staff List**.

@@ -15,18 +15,19 @@ class FaceEnrollmentTest extends TestCase
         ]]);
         DB::purge('face_enrollment');
         $schema=Schema::connection('face_enrollment');
-        $schema->create('users', function(Blueprint $t) {
-            $t->id();$t->string('full_name');$t->string('role');$t->integer('branch_store_id');$t->timestamp('deleted_at')->nullable();
-        });
+
         $schema->create('branch_stores', function(Blueprint $t) { $t->id();$t->string('name'); });
         DB::table('branch_stores')->insert([['id'=>1,'name'=>'Branch One'],['id'=>2,'name'=>'Branch Two']]);
-        DB::table('users')->insert([
-            ['id'=>10,'full_name'=>'Active One','role'=>'CS','branch_store_id'=>1,'deleted_at'=>null],
-            ['id'=>20,'full_name'=>'Active Two','role'=>'FC','branch_store_id'=>2,'deleted_at'=>null],
-            ['id'=>30,'full_name'=>'Deleted Account','role'=>'CS','branch_store_id'=>1,'deleted_at'=>'2026-01-01'],
+        require_once database_path('migrations/2026_11_04_000001_create_independent_employees.php');
+        (new \CreateIndependentEmployees)->up();
+        DB::table('employees')->insert([
+            ['id'=>10,'full_name'=>'Active One','employee_code'=>'EMP-10','position'=>'CS','is_active'=>true,'branch_store_id'=>1,'deleted_at'=>null],
+            ['id'=>20,'full_name'=>'Active Two','employee_code'=>'EMP-20','position'=>'FC','is_active'=>true,'branch_store_id'=>2,'deleted_at'=>null],
+            ['id'=>30,'full_name'=>'Deleted Account','employee_code'=>'EMP-30','position'=>'CS','is_active'=>true,'branch_store_id'=>1,'deleted_at'=>'2026-01-01'],
         ]);
         require_once database_path('migrations/2026_10_15_000001_create_face_enrollment_profiles.php');
         (new \CreateFaceEnrollmentProfiles)->up();
+        (new \CreateIndependentEmployees)->up();
     }
     private function actor(string $role='OWNER'): User
     {
@@ -52,16 +53,17 @@ class FaceEnrollmentTest extends TestCase
             $this->postJson('/enroll',$this->body())->assertForbidden();
         }
     }
-    public function test_owner_page_shows_active_users_and_sidebar_link(): void
+    public function test_owner_page_shows_active_employees_and_sidebar_link(): void
     {
         $response = $this->actingAs($this->actor())->get('/enroll')->assertOk()->assertSee('Active One')->assertDontSee('Active Two')
             ->assertDontSee('Deleted Account')->assertSee('Pendaftaran Wajah');
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $links = (new \DOMXPath($document))->query('//li[a/span[normalize-space(.)="Staff"]]/ul/li/a');
-        $this->assertCount(3, $links);
+        $this->assertCount(4, $links);
         $this->assertEquals('Staff List', trim($links->item(0)->textContent));
-        $this->assertEquals('Pendaftaran Wajah', trim($links->item(1)->textContent));
+        $this->assertEquals('Data Pegawai', trim($links->item(1)->textContent));
+        $this->assertEquals('Pendaftaran Wajah', trim($links->item(2)->textContent));
     }
     public function test_admin_is_limited_to_own_branch(): void
     {
@@ -75,11 +77,11 @@ class FaceEnrollmentTest extends TestCase
         $this->postJson('/enroll',$this->body())->assertOk();
         $this->postJson('/enroll',$this->body())->assertOk();
         $this->assertDatabaseCount('face_attendance_employees',1);
-        $this->assertDatabaseHas('face_attendance_employees',['source_user_id'=>10,'employee_code'=>'USER-10','name'=>'Active One','face_model'=>'opencv-sface-2021dec']);
+        $this->assertDatabaseHas('face_attendance_employees',['source_employee_id'=>10,'employee_code'=>'EMP-10','name'=>'Active One','face_model'=>'opencv-sface-2021dec']);
         $this->assertCount(128,json_decode(DB::table('face_attendance_employees')->value('face_embedding'),true));
-        $this->assertDatabaseCount('users',3);
+        $this->assertDatabaseCount('employees',3);
     }
-    public function test_deleted_user_and_bad_image_are_rejected_before_inference(): void
+    public function test_deleted_employee_and_bad_image_are_rejected_before_inference(): void
     {
         $this->actingAs($this->actor());Http::fake();
         $this->postJson('/enroll',$this->body(30))->assertNotFound();
@@ -99,6 +101,27 @@ class FaceEnrollmentTest extends TestCase
             $this->postJson('/enroll',$this->body())->assertStatus(422);
         }
         $this->assertEquals($before,DB::table('face_attendance_employees')->value('face_embedding'));
+    }
+    public function test_inactive_employee_and_login_users_are_not_enrollment_candidates(): void
+    {
+        Schema::create('users',function(Blueprint $t) { $t->id();$t->string('full_name'); });
+        DB::table('users')->insert(['id'=>99,'full_name'=>'Login Only']);
+        DB::table('employees')->where('id',10)->update(['is_active'=>false]);
+        $this->actingAs($this->actor())->get('/enroll')->assertOk()->assertDontSee('Active One')->assertDontSee('Login Only');
+        Http::fake();
+        $this->postJson('/enroll',$this->body(10))->assertNotFound();
+        $this->postJson('/enroll',$this->body(99))->assertNotFound();
+        Http::assertNothingSent();
+    }
+    public function test_deactivation_during_inference_does_not_save_profile(): void
+    {
+        $this->actingAs($this->actor());
+        Http::fake(function() {
+            DB::table('employees')->where('id',10)->update(['is_active'=>false]);
+            return Http::response(['success'=>true,'face_count'=>1,'embedding'=>array_fill(0,128,0.1),'model'=>config('face.model')]);
+        });
+        $this->postJson('/enroll',$this->body())->assertNotFound();
+        $this->assertDatabaseCount('face_attendance_employees',0);
     }
     public function test_service_offline_is_handled(): void
     {
@@ -127,7 +150,7 @@ class FaceEnrollmentTest extends TestCase
             Http::fake();$this->postJson('/enroll',$this->body(10))->assertNotFound();Http::assertNothingSent();
         }
     }
-    public function test_missing_branch_does_not_expose_users(): void
+    public function test_missing_branch_does_not_expose_employees(): void
     {
         $actor=$this->actor();$actor->branch_store_id=null;
         $this->actingAs($actor)->get('/enroll')->assertForbidden();

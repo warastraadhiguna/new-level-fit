@@ -136,6 +136,7 @@
                     <ul aria-expanded="false">
                         <li><a href="{{ route('staff.index', ['page' => 'cs']) }}">Staff List</a></li>
                         @if (optional(Auth::user()->branchStore)->face_enrollment_enabled)
+                            <li><a href="{{ route('employees.index') }}">Data Pegawai</a></li>
                             <li><a href="{{ route('face-enrollment.index') }}">Pendaftaran Wajah</a></li>
                         @endif
                         @if (Auth::user()->isOwner() && optional(Auth::user()->branchStore)->face_enrollment_enabled)
