@@ -14,15 +14,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.target === resultDialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) resultDialog.close();
     });
     const message = document.getElementById('faceCameraMessage');
+    const pose = document.getElementById('facePose'), sampleList = document.getElementById('faceSampleList');
+    const poseNames = {front:'Depan',left:'Sedikit kiri',right:'Sedikit kanan',additional:'Tambahan'};
+    let samples = [], samplesLoaded = false, loadVersion = 0;
     let stream = null, image = null, busy = false, starting = false;
     function update() {
-        const enrolled = employee.selectedOptions[0]?.dataset.enrolled === '1';
-        status.textContent = employee.value ? (enrolled ? 'Wajah sudah terdaftar' : 'Wajah belum terdaftar') : 'Pilih pegawai terlebih dahulu';
+        const enrolled = samples.some(sample => sample.compatible);
+        const count = samplesLoaded ? samples.length : Number(employee.selectedOptions[0]?.dataset.count || 0);
+        status.textContent = employee.value ? (samplesLoaded ? count + '/5 contoh · ' + (enrolled ? (count < 3 ? 'tambahkan hingga 3 contoh' : 'siap digunakan') : 'belum ada contoh model aktif') : 'Memuat contoh wajah…') : 'Pilih pegawai terlebih dahulu';
         status.className = 'badge mt-3 badge-' + (employee.value ? (enrolled ? 'success' : 'warning') : 'secondary');
         employee.disabled = busy || !faceEnrollmentConfig.ready;
-        submit.disabled = busy || !faceEnrollmentConfig.ready || !employee.value || !image;
+        submit.disabled = busy || !faceEnrollmentConfig.ready || !employee.value || !image || !samplesLoaded || count >= 5;
         capture.disabled = busy || !stream || video.readyState < 2;
         retry.disabled = busy || starting;
+        pose.disabled = busy;
+        sampleList.querySelectorAll('button').forEach(button => button.disabled = busy);
     }
     function reset() {
         image = null;
@@ -37,6 +43,47 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('faceResultTitle').textContent = ok ? 'Pendaftaran berhasil' : 'Pendaftaran belum berhasil';
         document.getElementById('faceResultIcon').textContent = ok ? '✓' : '!';
         if (!resultDialog.open) resultDialog.showModal();
+    }
+    function renderSamples(data) {
+        samples = data.samples;
+        samplesLoaded = true;
+        const option = employee.selectedOptions[0];
+        option.dataset.count = String(samples.length);
+        option.dataset.enrolled = samples.some(sample => sample.compatible) ? '1' : '0';
+        sampleList.replaceChildren();
+        for (const sample of samples) {
+            const row = document.createElement('div');row.className = 'd-flex justify-content-between align-items-center border-bottom py-2';
+            const label = document.createElement('span');label.textContent = 'Contoh ' + sample.slot + ' · ' + (poseNames[sample.pose] || sample.pose) + (sample.compatible ? '' : ' (model lama)');
+            const remove = document.createElement('button');remove.type = 'button';remove.className = 'btn btn-sm btn-outline-danger';remove.textContent = 'Hapus';
+            remove.addEventListener('click', () => removeSample(sample.id));row.append(label, remove);sampleList.append(row);
+        }
+        pose.value = ['front','left','right'].find(value => !samples.some(sample => sample.pose === value)) || 'additional';
+        update();
+    }
+    async function parseResponse(response) {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw Error(data?.errors ? Object.values(data.errors).flat().join(' ') : data?.message || 'Permintaan gagal. Periksa sesi login dan koneksi.');
+        if (!Array.isArray(data?.samples)) throw Error('Respons contoh wajah tidak valid. Muat ulang halaman.');
+        return data;
+    }
+    async function loadSamples() {
+        const version = ++loadVersion;
+        samples = [];samplesLoaded = false;sampleList.replaceChildren();update();
+        if (!employee.value || !faceEnrollmentConfig.ready) return;
+        try {
+            const response = await fetch(faceEnrollmentConfig.samplesUrl + '?employee_id=' + encodeURIComponent(employee.value), {headers:{Accept:'application/json'},cache:'no-store'});
+            const data = await parseResponse(response);
+            if (version === loadVersion) renderSamples(data);
+        } catch (error) { if (version === loadVersion) feedback(error.message, false); }
+    }
+    async function removeSample(id) {
+        if (busy || !window.confirm(samples.length === 1 ? 'Hapus contoh terakhir? Pegawai tidak dapat absen sampai wajah didaftarkan lagi.' : 'Hapus contoh wajah ini?')) return;
+        busy = true;update();
+        try {
+            const response = await fetch(faceEnrollmentConfig.samplesUrl + '/' + id,{method:'DELETE',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':faceEnrollmentConfig.csrf},body:JSON.stringify({employee_id:employee.value})});
+            const data = await parseResponse(response);renderSamples(data);feedback(data.message, true);reset();
+        } catch (error) { feedback(error.message, false); }
+        finally { busy = false;update(); }
     }
     async function camera() {
         if (starting || busy) return;
@@ -57,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
             message.classList.remove('d-none');
         } finally { starting = false; update(); }
     }
-    employee.addEventListener('change', function () { reset(); result.textContent = ''; });
+    employee.addEventListener('change', function () { reset(); result.textContent = ''; loadSamples(); });
     video.addEventListener('loadeddata', update);
     retry.addEventListener('click', camera);
     capture.addEventListener('click', function () {
@@ -76,20 +123,18 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     submit.addEventListener('click', async function () {
         if (submit.disabled || busy) return;
-        if (employee.selectedOptions[0]?.dataset.enrolled === '1' && !window.confirm('Ganti wajah yang sudah terdaftar untuk pegawai ini?')) return;
         busy = true;
         submit.textContent = 'Mendaftarkan…';
         update();
         try {
-            const response = await fetch(faceEnrollmentConfig.url,{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':faceEnrollmentConfig.csrf},body:JSON.stringify({employee_id:employee.value,photo:image})});
-            const data = await response.json().catch(() => null);
-            if (!response.ok) throw Error(data?.errors ? Object.values(data.errors).flat().join(' ') : data?.message || 'Pendaftaran gagal. Periksa sesi login dan koneksi, lalu coba lagi.');
+            const response = await fetch(faceEnrollmentConfig.url,{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':faceEnrollmentConfig.csrf},body:JSON.stringify({employee_id:employee.value,photo:image,pose:pose.value})});
+            const data = await parseResponse(response);
             if (!data?.message) throw Error('Respons server tidak valid. Silakan muat ulang halaman.');
-            employee.selectedOptions[0].dataset.enrolled = '1';
+            renderSamples(data);
             feedback(data.message,true);
             reset();
         } catch (error) { feedback(error.message,false); }
-        finally { busy = false; submit.textContent = 'Daftarkan Wajah'; update(); }
+        finally { busy = false; submit.textContent = 'Tambah Contoh Wajah'; update(); }
     });
     window.addEventListener('pagehide', () => stream?.getTracks().forEach(track => track.stop()));
     update();

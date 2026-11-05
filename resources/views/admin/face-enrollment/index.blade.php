@@ -1,6 +1,6 @@
 <div class="col-12">
-    <div class="mb-4"><h3>Pendaftaran Wajah</h3><p class="text-muted">Daftarkan wajah pegawai untuk absensi otomatis. Pilih nama yang benar sebelum mengambil foto.</p></div>
-    @if (!$faceReady)<div class="alert alert-warning">Tabel pendaftaran wajah belum tersedia. Hubungi administrator untuk menyiapkan enrollment.</div>@endif
+    <div class="mb-4"><h3>Pendaftaran Wajah</h3><p class="text-muted">Daftarkan wajah pegawai untuk absensi otomatis. Pilih pegawai, lalu tambahkan 3 contoh: depan, sedikit kiri, dan sedikit kanan. Maksimal 5 contoh.</p></div>
+    @if (!$faceReady)<div class="alert alert-warning">Tabel profil atau contoh wajah belum tersedia. Hubungi administrator untuk menyiapkan enrollment.</div>@endif
     <dialog id="faceResultDialog" class="face-result-dialog" aria-labelledby="faceResultTitle">
         <div id="faceResultIcon" class="face-result-icon" aria-hidden="true"></div>
         <h4 id="faceResultTitle" class="mt-3">Pendaftaran Wajah</h4>
@@ -18,14 +18,18 @@
             <label for="faceEmployee" class="form-label">Pegawai</label>
             <select id="faceEmployee" class="form-control" @if(!$faceReady) disabled @endif>
                 <option value="">Pilih nama pegawai</option>
-                @foreach ($employees as $employee)<option value="{{ $employee->id }}" data-enrolled="{{ $employee->enrolled ? '1' : '0' }}">{{ $employee->full_name }} · {{ ($employee->position ?: 'Pegawai') }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
+                @foreach ($employees as $employee)<option value="{{ $employee->id }}" data-enrolled="{{ $employee->enrolled ? '1' : '0' }}" data-count="{{ $employee->sample_count }}">{{ $employee->full_name }} · {{ ($employee->position ?: 'Pegawai') }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
             </select>
             @if ($employees->isEmpty())<p class="text-muted mt-2">Tidak ada pegawai aktif yang dapat didaftarkan.</p>@endif
             <span id="faceStatus" class="badge badge-secondary mt-3">Pilih pegawai terlebih dahulu</span>
+            <p id="faceSampleGuide" class="small text-muted mt-2">Disarankan 3 contoh. Foto pendaftaran tidak disimpan; hanya ciri wajah.</p>
+            <div id="faceSampleList" class="mt-3" aria-live="polite"></div>
+            <label for="facePose" class="form-label mt-3">Posisi wajah</label>
+            <select id="facePose" class="form-control"><option value="front">Menghadap depan</option><option value="left">Sedikit menoleh kiri</option><option value="right">Sedikit menoleh kanan</option><option value="additional">Contoh tambahan / penampilan baru</option></select>
             <h5 class="mt-4">Hasil capture</h5>
             <div class="face-preview"><img id="facePhoto" class="d-none" alt="Foto hasil capture"><span id="facePlaceholder" class="text-muted">Belum ada foto</span></div>
-            <button type="button" id="faceEnroll" class="btn btn-success mt-3 w-100" disabled>Daftarkan Wajah</button>
-            <p class="small text-muted mt-3 mb-0">Pendaftaran ulang mengganti wajah yang sebelumnya terdaftar untuk pegawai ini.</p>
+            <button type="button" id="faceEnroll" class="btn btn-success mt-3 w-100" disabled>Tambah Contoh Wajah</button>
+            <p class="small text-muted mt-3 mb-0">Contoh baru ditambahkan tanpa mengganti contoh lama. Pastikan identitas benar. Hapus contoh yang tidak sesuai; menghapus semuanya membuat pegawai tidak dapat absen sampai didaftarkan lagi.</p>
         </div></div></div>
     </div>
 </div>
@@ -38,6 +42,6 @@
 .face-camera{aspect-ratio:4/3;background:#15243b;border-radius:12px;position:relative;overflow:hidden}.face-camera video{width:100%;height:100%;object-fit:contain;transform:scaleX(-1)}#faceCameraMessage{position:absolute;top:40%;left:8%;right:8%;text-align:center;color:white}.face-preview{aspect-ratio:4/3;background:#f4f6fa;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden}.face-preview img{height:100%;width:100%;object-fit:contain}
 </style>
 <script>
-window.faceEnrollmentConfig = {url:@json(route('face-enrollment.store')),ready:@json($faceReady),csrf:@json(csrf_token())};
+window.faceEnrollmentConfig = {url:@json(route('face-enrollment.store')),samplesUrl:@json(route('face-enrollment.samples')),ready:@json($faceReady),csrf:@json(csrf_token())};
 </script>
-<script src="{{ asset('js/face-enrollment.js') }}" defer></script>
+<script src="{{ asset('js/face-enrollment.js') }}?v={{ filemtime(public_path('js/face-enrollment.js')) }}" defer></script>

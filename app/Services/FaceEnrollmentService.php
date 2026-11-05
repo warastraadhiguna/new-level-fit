@@ -10,13 +10,16 @@ class FaceEnrollmentService
         try {
             $response = Http::acceptJson()->withOptions(['connect_timeout' => 3])->timeout(config('face.timeout'))
                 ->attach('image', $image, 'capture.jpg')
-                ->post(rtrim(config('face.url'), '/').'/face/enroll');
+                ->post(rtrim(config('face.url'), '/').'/face/enroll',['check_quality'=>'true']);
         } catch (ConnectionException $e) {
             throw ValidationException::withMessages(['photo' => 'Service wajah sedang tidak tersedia. Silakan coba kembali.']);
         }
         $data = $response->json();
         if (!$response->successful() || !is_array($data) || ($data['success'] ?? false) !== true) {
             throw ValidationException::withMessages(['photo' => is_string($data['message'] ?? null) ? $data['message'] : 'Service wajah gagal memproses foto.']);
+        }
+        if (($data['quality_checked'] ?? false) !== true) {
+            throw ValidationException::withMessages(['photo'=>'Service wajah belum mendukung pemeriksaan kualitas. Perbarui service Python terlebih dahulu.']);
         }
         $embedding = $data['embedding'] ?? null;
         $valid = ($data['face_count'] ?? null) === 1 && ($data['model'] ?? null) === config('face.model')

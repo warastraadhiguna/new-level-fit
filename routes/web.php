@@ -362,6 +362,8 @@ Auth::routes();
 Route::middleware(['auth', 'admin', 'admin.only', \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
     Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','edit','update','destroy']);
     Route::get('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('face-enrollment.index');
+    Route::get('/enroll/samples', [\App\Http\Controllers\FaceEnrollmentController::class, 'samples'])->name('face-enrollment.samples');
+    Route::delete('/enroll/samples/{sample}', [\App\Http\Controllers\FaceEnrollmentController::class, 'destroySample'])->name('face-enrollment.samples.destroy');
     Route::post('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'store'])->middleware('throttle:20,1')->name('face-enrollment.store');
 });
 
