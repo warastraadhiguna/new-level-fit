@@ -24,8 +24,35 @@ class EmployeeController extends Controller
         }
         return view('admin.layouts.wrapper',[
             'title'=>'Data Pegawai','content'=>'admin.employees.index',
+            'birthdayMessages'=>$this->birthdayMessages($request),
             'employees'=>$query->orderBy('full_name')->paginate((int)$request->input('per_page',10))->withQueryString(),
         ]);
+    }
+
+    private function birthdayMessages(Request $request): array
+    {
+        $messages=[0=>[],1=>[],2=>[]];
+        $today=\Carbon\Carbon::today('Asia/Jakarta');
+        $dates=[];
+        for ($day=0;$day<=2;$day++) {
+            $date=$today->copy()->addDays($day);
+            $dates[$date->format('m-d')]=$day;
+            // Celebrate leap-day birthdays on March 1 in non-leap years.
+            if ($date->format('m-d')==='03-01' && !$date->isLeapYear()) $dates['02-29']=$day;
+        }
+        $employees=$this->employees($request)->where('is_active',true)->whereNotNull('born')
+            ->where(function($query) use($dates) {
+                foreach ($dates as $date=>$day) {
+                    [$month,$dateDay]=explode('-',$date);
+                    $query->orWhere(function($birthday) use($month,$dateDay) {
+                        $birthday->whereMonth('born',(int)$month)->whereDay('born',(int)$dateDay);
+                    });
+                }
+            })->orderBy('full_name')->get(['id','full_name','born']);
+        foreach ($employees as $employee) {
+            $messages[$dates[$employee->born->format('m-d')]][$employee->id]=$employee->full_name;
+        }
+        return $messages;
     }
 
     private function validated(Request $request, ?Employee $employee=null): array
@@ -33,6 +60,7 @@ class EmployeeController extends Controller
         return $request->validate([
             'employee_code'=>['required','string','max:50',Rule::unique('face_enrollment.employees','employee_code')->ignore($employee ? $employee->id : null)],
             'full_name'=>'required|string|max:150',
+            'born'=>['nullable','date_format:Y-m-d','before_or_equal:'.\Carbon\Carbon::today('Asia/Jakarta')->toDateString()],
             'position'=>'nullable|string|max:100','phone'=>'nullable|string|max:30',
             'is_active'=>'required|boolean',
         ]);

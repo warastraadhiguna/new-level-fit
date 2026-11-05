@@ -19,6 +19,7 @@ class EmployeeManagementTest extends TestCase
         (new \CreateFaceEnrollmentProfiles)->up();
         require_once database_path('migrations/2026_11_04_000001_create_independent_employees.php');
         (new \CreateIndependentEmployees)->up();
+        require_once database_path('migrations/2026_11_05_000001_add_born_to_employees.php');(new \AddBornToEmployees)->up();
     }
     private function actor(string $role='OWNER'): User
     {
@@ -70,6 +71,69 @@ class EmployeeManagementTest extends TestCase
         $this->postJson('/employees',['employee_code'=>'X','is_active'=>1])->assertStatus(422)->assertJsonValidationErrors('full_name');
         $this->get('/employees?search=EMP001&per_page=50')->assertOk()->assertSee('Pegawai baru');
         $this->get('/employees?search=missing')->assertOk()->assertDontSee('Pegawai baru');
+    }
+    public function test_birthday_can_be_saved_edited_and_cleared(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-05 10:00:00','Asia/Jakarta'));
+        $this->actingAs($this->actor())->post('/employees',$this->payload()+['born'=>'1995-11-05'])->assertRedirect()->assertSessionHasNoErrors();
+        $employee=Employee::firstOrFail();$this->assertEquals('1995-11-05',$employee->born->format('Y-m-d'));
+        $this->get('/employees/'.$employee->id.'/edit')->assertOk()->assertSee('1995-11-05');
+        $this->put('/employees/'.$employee->id,$this->payload()+['born'=>'1995-12-01'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertEquals('1995-12-01',$employee->fresh()->born->format('Y-m-d'));
+        $this->put('/employees/'.$employee->id,$this->payload()+['born'=>''])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertNull($employee->fresh()->born);
+    }
+    public function test_birthday_rejects_invalid_dates_and_future_dates(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-05 10:00:00','Asia/Jakarta'));
+        $this->actingAs($this->actor());
+        foreach(['2026-11-06','2001-02-29','not-a-date','31/12/2000'] as $born) {
+            $this->postJson('/employees',$this->payload()+['born'=>$born])->assertStatus(422)->assertJsonValidationErrors('born');
+        }
+        $this->assertDatabaseCount('employees',0);
+    }
+    public function test_birthday_alerts_cover_all_active_branch_employees_independent_of_search_and_page(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-12-31 10:00:00','Asia/Jakarta'));
+        foreach([
+            ['name'=>'Birthday Today','born'=>'1990-12-31','branch'=>1,'active'=>1,'deleted'=>null],
+            ['name'=>'Birthday Tomorrow','born'=>'1990-01-01','branch'=>1,'active'=>1,'deleted'=>null],
+            ['name'=>'Birthday Two Days','born'=>'1990-01-02','branch'=>1,'active'=>1,'deleted'=>null],
+            ['name'=>'Outside Window','born'=>'1990-01-03','branch'=>1,'active'=>1,'deleted'=>null],
+            ['name'=>'Inactive Birthday','born'=>'1990-12-31','branch'=>1,'active'=>0,'deleted'=>null],
+            ['name'=>'Other Branch Birthday','born'=>'1990-12-31','branch'=>2,'active'=>1,'deleted'=>null],
+            ['name'=>'Deleted Birthday','born'=>'1990-12-31','branch'=>1,'active'=>1,'deleted'=>'2026-12-01'],
+            ['name'=>'Unknown Birthday','born'=>null,'branch'=>1,'active'=>1,'deleted'=>null],
+        ] as $i=>$row) {
+            DB::table('employees')->insert(['employee_code'=>'E'.$i,'full_name'=>$row['name'],'born'=>$row['born'],
+                'branch_store_id'=>$row['branch'],'is_active'=>$row['active'],'deleted_at'=>$row['deleted']]);
+        }
+        $response=$this->actingAs($this->actor())->get('/employees?search=no-matching-name&per_page=10&page=2')->assertOk();
+        $response->assertViewHas('birthdayMessages',function($messages) {
+            return array_values($messages[0])===['Birthday Today'] && array_values($messages[1])===['Birthday Tomorrow']
+                && array_values($messages[2])===['Birthday Two Days'];
+        });
+        $response->assertSee('Hari ini ulang tahun')->assertSee('Birthday Today')->assertSee('Besok ulang tahun')
+            ->assertSee('Birthday Tomorrow')->assertSee('Birthday Two Days')->assertDontSee('Inactive Birthday')
+            ->assertDontSee('Other Branch Birthday')->assertDontSee('Deleted Birthday')->assertDontSee('Outside Window');
+    }
+    public function test_leap_day_birthdays_and_escaped_employee_names(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2027-02-28 10:00:00','Asia/Jakarta'));
+        $employee=Employee::create(array_merge($this->payload(),['full_name'=>'<script>alert(1)</script>','born'=>'2000-02-29','branch_store_id'=>1]));
+        $this->actingAs($this->actor())->get('/employees?search=missing')->assertOk()->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;',false)
+            ->assertDontSee('<script>alert(1)</script>',false)->assertViewHas('birthdayMessages',function($messages) use($employee) { return isset($messages[1][$employee->id]); });
+        $this->travelTo(\Carbon\Carbon::parse('2028-02-28 10:00:00','Asia/Jakarta'));
+        $this->get('/employees')->assertOk()->assertViewHas('birthdayMessages',function($messages) use($employee) { return isset($messages[1][$employee->id]); });
+        $this->travelTo(\Carbon\Carbon::parse('2028-03-01 10:00:00','Asia/Jakarta'));
+        $this->get('/employees')->assertOk()->assertViewHas('birthdayMessages',[0=>[],1=>[],2=>[]]);
+    }
+    public function test_birthday_migration_is_repeatable_and_preserves_existing_employee(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $migration=new \AddBornToEmployees;$migration->up();$migration->up();$migration->down();
+        $this->assertNull($employee->fresh()->born);
+        $this->assertDatabaseCount('employees',1);
     }
     public function test_migration_can_create_profiles_on_database_without_attendance_tables(): void
     {
