@@ -38,6 +38,17 @@
             text-align: center;
         }
 
+        .receipt-logo {
+            display: block;
+            width: auto;
+            max-width: 28mm;
+            height: auto;
+            max-height: 16mm;
+            margin: 0 auto 1.5mm;
+            object-fit: contain;
+            filter: grayscale(100%) contrast(120%);
+        }
+
         .branch-name {
             margin: 0 0 1mm;
             font-size: 14px;
@@ -166,6 +177,13 @@
 <body>
     <main class="receipt">
         <header class="center">
+            @if (optional($sale->branchStore)->admin_logo_url)
+                <img
+                    src="{{ $sale->branchStore->admin_logo_url }}"
+                    alt="Logo {{ $sale->branchStore->name }}"
+                    class="receipt-logo"
+                >
+            @endif
             <h1 class="branch-name">{{ optional($sale->branchStore)->name ?: config('app.name') }}</h1>
             @if (optional($sale->branchStore)->address)
                 <div>{{ $sale->branchStore->address }}</div>
