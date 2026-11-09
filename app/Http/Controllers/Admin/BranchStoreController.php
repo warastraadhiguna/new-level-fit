@@ -132,7 +132,7 @@ class BranchStoreController extends Controller
             'revenue_report_visible_roles' => ['required', 'array', 'min:1'],
             'revenue_report_visible_roles.*' => [
                 'required',
-                Rule::in($this->financeRoleOptions()),
+                Rule::in($this->financeRoleOptions(true)),
             ],
             'type' => ['required', Rule::in(['both', 'male', 'female'])],
             'admin_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,ico,webp', 'max:2048'],
@@ -150,14 +150,14 @@ class BranchStoreController extends Controller
         return $data;
     }
 
-    private function financeRoleOptions(): array
+    private function financeRoleOptions(bool $revenue=false): array
     {
         return array_merge(
             [
                 BranchStore::DASHBOARD_FINANCE_ALL_ROLES,
                 BranchStore::DASHBOARD_FINANCE_OWNER_ONLY,
             ],
-            array_keys(BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
+            array_keys($revenue ? BranchStore::revenueReportRoleOptions() : BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS)
         );
     }
 

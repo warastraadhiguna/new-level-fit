@@ -377,3 +377,8 @@ Route::get('/hrd', [\App\Http\Controllers\HrdAccountController::class,'home'])->
 Route::middleware(['auth','admin','admin.only'])->group(function () {
     Route::resource('hrd-accounts', \App\Http\Controllers\HrdAccountController::class)->only(['index','store','edit','update','destroy']);
 });
+
+Route::get('/finance', [\App\Http\Controllers\FinanceAccountController::class,'home'])->middleware(['auth','admin'])->name('finance.home');
+Route::middleware(['auth','admin','admin.only'])->group(function () {
+    Route::resource('finance-accounts', \App\Http\Controllers\FinanceAccountController::class)->only(['index','store','edit','update','destroy']);
+});

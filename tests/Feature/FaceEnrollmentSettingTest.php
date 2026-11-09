@@ -51,6 +51,18 @@ class FaceEnrollmentSettingTest extends TestCase
         $this->put(route('secret-branch-store.update',$branch),$this->payload()+['face_enrollment_enabled'=>0])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertFalse($branch->fresh()->face_enrollment_enabled);
     }
+    public function test_finance_is_selectable_for_revenue_without_giving_dashboard_access(): void
+    {
+        $payload=array_merge($this->payload(),['revenue_report_visible_roles'=>['FINANCE']]);
+        $this->post(route('secret-branch-store.store'),$payload)->assertRedirect()->assertSessionHasNoErrors();
+        $branch=BranchStore::where('slug','new-branch')->firstOrFail();$this->assertEquals(['FINANCE'],$branch->revenue_report_visible_roles);
+        $this->assertTrue($branch->canRoleViewRevenueReport('FINANCE'));
+        $html=(string)$this->view('admin.branch-store.partials.form-fields');$document=new \DOMDocument();@$document->loadHTML($html);
+        $xpath=new \DOMXPath($document);
+        $this->assertCount(1,$xpath->query('//input[@name="revenue_report_visible_roles[]" and @value="FINANCE"]'));
+        $this->assertCount(0,$xpath->query('//input[@name="dashboard_finance_visible_roles[]" and @value="FINANCE"]'));
+        $this->postJson(route('secret-branch-store.store'),array_merge($this->payload(),['dashboard_finance_visible_roles'=>['FINANCE']]))->assertStatus(422)->assertJsonValidationErrors('dashboard_finance_visible_roles.0');
+    }
     public function test_invalid_setting_is_not_saved(): void
     {
         $this->postJson(route('secret-branch-store.store'),$this->payload()+['face_enrollment_enabled'=>'invalid'])->assertStatus(422)->assertJsonValidationErrors('face_enrollment_enabled');

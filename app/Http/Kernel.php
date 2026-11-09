@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \App\Http\Middleware\PreventDuplicateFormSubmission::class,
             \App\Http\Middleware\RestrictHrdAccess::class,
+            \App\Http\Middleware\RestrictFinanceAccess::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 

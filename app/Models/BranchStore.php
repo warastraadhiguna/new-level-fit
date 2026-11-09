@@ -75,6 +75,11 @@ class BranchStore extends Model
         return $this->canRoleAccessFinance($role, $this->dashboard_finance_visible_roles);
     }
 
+    public static function revenueReportRoleOptions(): array
+    {
+        return self::DASHBOARD_FINANCE_ROLE_OPTIONS + ['FINANCE'=>'Finance'];
+    }
+
     public function canRoleViewRevenueReport(?string $role): bool
     {
         return $this->canRoleAccessFinance($role, $this->revenue_report_visible_roles);

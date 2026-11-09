@@ -314,7 +314,7 @@
                         </label>
                     </div>
                 </div>
-                @foreach (\App\Models\BranchStore::DASHBOARD_FINANCE_ROLE_OPTIONS as $roleCode => $roleLabel)
+                @foreach (\App\Models\BranchStore::revenueReportRoleOptions() as $roleCode => $roleLabel)
                     <div class="col-md-4 mb-2">
                         <div class="form-check">
                             <input class="form-check-input js-dashboard-finance-role" type="checkbox"

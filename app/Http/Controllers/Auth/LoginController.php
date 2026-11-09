@@ -44,7 +44,7 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         if (
-            ($user->isAdmin() || $user->isHrd())
+            ($user->isAdmin() || $user->isHrd() || $user->isFinance())
             && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
         ) {
             Auth::logout();
@@ -55,6 +55,7 @@ class LoginController extends Controller
                 'email' => 'Akun Anda tidak memiliki akses ke Management.',
             ]);
         }
+        if ($user->isFinance()) return redirect()->route('finance.home');
         if ($user->isHrd()) return redirect()->route('hrd.home');
     }
 }

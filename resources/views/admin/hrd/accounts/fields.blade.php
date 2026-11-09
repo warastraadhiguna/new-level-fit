@@ -1,7 +1,0 @@
-<div class="row">
-<div class="col-md-6 mb-3"><label for="hrdName">Nama lengkap</label><input id="hrdName" name="full_name" class="form-control" required maxlength="200" value="{{ old('full_name',isset($account) ? $account->full_name : '') }}"></div>
-<div class="col-md-6 mb-3"><label for="hrdEmail">Email login</label><input type="email" id="hrdEmail" name="email" class="form-control" required maxlength="255" autocomplete="off" value="{{ old('email',isset($account) ? $account->email : '') }}"></div>
-<div class="col-md-6 mb-3"><label for="hrdGender">Jenis kelamin</label><select id="hrdGender" name="gender" class="form-control" required><option value="">Pilih</option><option value="Male" {{ old('gender',isset($account) ? $account->gender : '')==='Male' ? 'selected':'' }}>Laki-laki</option><option value="Female" {{ old('gender',isset($account) ? $account->gender : '')==='Female' ? 'selected':'' }}>Perempuan</option></select></div>
-<div class="col-md-6 mb-3"><label for="hrdPassword">Password {{ isset($account) ? '(kosongkan jika tetap)' : '' }}</label><input type="password" id="hrdPassword" name="password" class="form-control" minlength="8" autocomplete="new-password" @if(!isset($account)) required @endif></div>
-<div class="col-md-6 mb-3"><label for="hrdPasswordConfirmation">Konfirmasi password</label><input type="password" id="hrdPasswordConfirmation" name="password_confirmation" class="form-control" autocomplete="new-password" @if(!isset($account)) required @endif></div>
-</div>

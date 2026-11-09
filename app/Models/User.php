@@ -76,6 +76,11 @@ class User extends Authenticatable
         return strtoupper((string) $this->role) === 'HRD';
     }
 
+    public function isFinance(): bool
+    {
+        return strtoupper((string) $this->role) === 'FINANCE';
+    }
+
     public function isPt(): bool
     {
         return strtoupper((string) $this->role) === 'PT';

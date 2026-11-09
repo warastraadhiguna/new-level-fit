@@ -25,7 +25,7 @@ class IsAdmin
         }
 
         if (
-            ($user->isAdmin() || $user->isHrd())
+            ($user->isAdmin() || $user->isHrd() || $user->isFinance())
             && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
         ) {
             Auth::logout();
@@ -37,7 +37,7 @@ class IsAdmin
             ]);
         }
 
-        if (in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC', 'PT', 'HRD'], true)) {
+        if (in_array(strtoupper((string) $user->role), ['OWNER', 'ADMIN', 'CS', 'CSPOS', 'FC', 'PT', 'HRD', 'FINANCE'], true)) {
             return $next($request);
         }
 
