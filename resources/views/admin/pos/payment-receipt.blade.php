@@ -16,6 +16,14 @@
             padding: 2mm 0 4mm; overflow: hidden;
         }
         .center { text-align: center; }
+        .receipt-logo {
+            display: block;
+            width: auto; max-width: 28mm;
+            height: auto; max-height: 16mm;
+            margin: 0 auto 1.5mm;
+            object-fit: contain;
+            filter: grayscale(100%) contrast(120%);
+        }
         .branch-name { margin: 0 0 1mm; font-size: 14px; font-weight: 700; }
         .receipt-title { margin-top: 1mm; font-weight: 700; }
         .separator { margin: 2mm 0; border-top: 1px dashed #000; }
@@ -49,6 +57,13 @@
     @endphp
     <main class="receipt">
         <header class="center">
+            @if (optional($branchStore)->admin_logo_url)
+                <img
+                    src="{{ $branchStore->admin_logo_url }}"
+                    alt="Logo {{ $branchStore->name }}"
+                    class="receipt-logo"
+                >
+            @endif
             <h1 class="branch-name">{{ optional($branchStore)->name ?: config('app.name') }}</h1>
             @if (optional($branchStore)->address)<div>{{ $branchStore->address }}</div>@endif
             @if (optional($branchStore)->phone)<div>Telp. {{ $branchStore->phone }}</div>@endif
