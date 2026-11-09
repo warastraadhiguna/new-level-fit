@@ -4,6 +4,9 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
+            @if(Auth::user()->isHrd())
+                @include('admin.hrd.sidebar')
+            @else
 
             @if (Auth::user()->isOwner() && optional(Auth::user()->branchStore)->tip_tap_transfer_enabled)
                 <li>
@@ -135,6 +138,7 @@
                     </a>
                     <ul aria-expanded="false">
                         <li><a href="{{ route('staff.index', ['page' => 'cs']) }}">Staff List</a></li>
+                        <li><a href="{{ route('hrd-accounts.index') }}">Akun HRD</a></li>
                         @if (optional(Auth::user()->branchStore)->face_enrollment_enabled)
                             <li><a href="{{ route('employees.index') }}">Data Pegawai</a></li>
                             <li><a href="{{ route('face-enrollment.index') }}">Pendaftaran Wajah</a></li>
@@ -255,6 +259,7 @@
                         <li><a href="{{ route('trainer-package.index') }}">Trainer Package</a></li>
                     </ul>
                 </li>
+            @endif
             @endif
         </ul>
         <div class="copyright">

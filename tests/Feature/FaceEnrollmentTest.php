@@ -61,10 +61,11 @@ class FaceEnrollmentTest extends TestCase
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $links = (new \DOMXPath($document))->query('//li[a/span[normalize-space(.)="Staff"]]/ul/li/a');
-        $this->assertCount(4, $links);
+        $this->assertCount(5, $links);
         $this->assertEquals('Staff List', trim($links->item(0)->textContent));
-        $this->assertEquals('Data Pegawai', trim($links->item(1)->textContent));
-        $this->assertEquals('Pendaftaran Wajah', trim($links->item(2)->textContent));
+        $this->assertEquals('Akun HRD', trim($links->item(1)->textContent));
+        $this->assertEquals('Data Pegawai', trim($links->item(2)->textContent));
+        $this->assertEquals('Pendaftaran Wajah', trim($links->item(3)->textContent));
     }
     public function test_admin_is_limited_to_own_branch(): void
     {

@@ -359,7 +359,7 @@ Auth::routes();
 // Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 // Face enrollment shares profiles with Face Attendance in level-fit.
-Route::middleware(['auth', 'admin', 'admin.only', \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
+Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagementAccess::class, \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
     Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','edit','update','destroy']);
     Route::get('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('face-enrollment.index');
     Route::get('/enroll/samples', [\App\Http\Controllers\FaceEnrollmentController::class, 'samples'])->name('face-enrollment.samples');
@@ -371,4 +371,9 @@ Route::middleware(['auth','admin'])->group(function () {
     Route::get('/attendance-device', [\App\Http\Controllers\AttendanceDeviceController::class,'index'])->name('attendance-device.index');
     Route::post('/attendance-device/pair', [\App\Http\Controllers\AttendanceDeviceController::class,'pair'])->middleware('throttle:10,1')->name('attendance-device.pair');
     Route::post('/attendance-device/revoke', [\App\Http\Controllers\AttendanceDeviceController::class,'revoke'])->name('attendance-device.revoke');
+});
+
+Route::get('/hrd', [\App\Http\Controllers\HrdAccountController::class,'home'])->middleware(['auth','admin'])->name('hrd.home');
+Route::middleware(['auth','admin','admin.only'])->group(function () {
+    Route::resource('hrd-accounts', \App\Http\Controllers\HrdAccountController::class)->only(['index','store','edit','update','destroy']);
 });

@@ -71,6 +71,11 @@ class User extends Authenticatable
         return in_array(strtoupper((string) $this->role), ['ADMIN', 'OWNER'], true);
     }
 
+    public function isHrd(): bool
+    {
+        return strtoupper((string) $this->role) === 'HRD';
+    }
+
     public function isPt(): bool
     {
         return strtoupper((string) $this->role) === 'PT';
