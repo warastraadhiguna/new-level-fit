@@ -6,7 +6,7 @@ class EnsureEmployeeManagementAccess
 {
     public function handle(Request $request, Closure $next)
     {
-        abort_unless($request->user() && ($request->user()->isAdmin() || $request->user()->isHrd()),403);
+        abort_unless($request->user() && app(\App\Support\RoleFeatureAccess::class)->allowsRoute($request->user(),$request->route()->getName()),403);
         return $next($request);
     }
 }

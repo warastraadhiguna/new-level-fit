@@ -49,3 +49,11 @@ SHOW COLUMNS FROM users LIKE 'role';
 
 Deploy hanya aplikasi utama dan bersihkan cache config/route/view. Tidak ada
 perubahan aplikasi absensi, Python, ataupun database bersama face_enrollment.
+
+## Pengaturan akses role
+
+Owner dapat menonaktifkan Revenue atau memberi Finance akses Data Pegawai dan
+Pendaftaran Wajah melalui Pengaturan Akses Role (`/role-feature-access`).
+Pengaturan berlaku per cabang; sakelar fitur cabang dan visibilitas Revenue
+masih berlaku. Hak Finance secara default tetap baca Revenue. Lihat
+ROLE-FEATURE-ACCESS.md untuk SQL dan rincian batas role.

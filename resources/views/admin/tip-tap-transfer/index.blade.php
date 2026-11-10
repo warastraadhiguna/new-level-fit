@@ -35,7 +35,7 @@
         </form>
 
         <p class="text-muted mb-0">
-            Export ini tidak mengubah database master. File hanya dapat dibuat oleh Owner dan dapat diimpor berulang kali
+            Export ini tidak mengubah database master. File hanya dapat dibuat oleh akun yang diberi izin dan dapat diimpor berulang kali
             di Tip-Tap tanpa menggandakan ID.
         </p>
     </div>

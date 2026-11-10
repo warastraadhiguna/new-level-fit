@@ -386,3 +386,9 @@ Route::middleware(['auth','admin','admin.only'])->group(function () {
     Route::post('/finance-accounts/{id}/restore', [\App\Http\Controllers\FinanceAccountController::class,'restore'])->name('finance-accounts.restore');
     Route::delete('/finance-accounts/{id}/force-delete', [\App\Http\Controllers\FinanceAccountController::class,'forceDelete'])->name('finance-accounts.force-delete');
 });
+
+// Role feature settings are scoped to the Owner's current login branch.
+Route::middleware(['auth','admin'])->group(function () {
+    Route::get('/role-feature-access', [\App\Http\Controllers\RoleFeatureAccessController::class,'index'])->name('role-feature-access.index');
+    Route::put('/role-feature-access', [\App\Http\Controllers\RoleFeatureAccessController::class,'update'])->name('role-feature-access.update');
+});

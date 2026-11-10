@@ -29,6 +29,12 @@ class EnsurePtReadOnlyAccess
             return $next($request);
         }
 
+        // Export creates a file without modifying business data; require an explicit grant.
+        if (in_array(optional($request->route())->getName(), ['tip-tap-transfer.index','tip-tap-transfer.export'], true)
+            && app(\App\Support\RoleFeatureAccess::class)->allows($user, 'tip_tap_transfer')) {
+            return $next($request);
+        }
+
         if (
             optional($request->route())->getName() === 'revenue-report.index'
             && optional($user->branchStore)->canRoleViewRevenueReport($user->role)

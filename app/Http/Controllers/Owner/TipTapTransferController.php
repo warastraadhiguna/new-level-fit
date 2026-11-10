@@ -13,7 +13,7 @@ class TipTapTransferController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            abort_unless($request->user() && $request->user()->isOwner(), 403);
+            abort_unless($request->user() && app(\App\Support\RoleFeatureAccess::class)->allows($request->user(), 'tip_tap_transfer'), 403);
 
             return $next($request);
         });

@@ -49,3 +49,11 @@ bersama. Jangan mengubah kolom ke ENUM atau mengeksekusi ulang migration lama.
 
 Deploy kode aplikasi utama saja, bersihkan cache route/config/view sesuai PHP
 aplikasi. Tidak ada perubahan database, Python, atau aplikasi kiosk absensi.
+
+## Pengaturan akses role
+
+Owner dapat membatasi fitur HRD melalui Pengaturan Akses Role
+(`/role-feature-access`) per cabang. Pengaturan awal tetap pegawai/enrollment;
+Owner juga dapat memberi akses Revenue jika visibilitas Revenue cabang
+mengizinkan HRD. Menu dan URL langsung mengikuti izin tersebut. Lihat
+ROLE-FEATURE-ACCESS.md untuk SQL dan batas akses khusus yang tetap berlaku.

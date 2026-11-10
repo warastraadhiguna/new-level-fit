@@ -11,9 +11,8 @@ class EnsureTipTapTransferEnabled
     {
         $user = $request->user();
 
-        // Authorization remains the controller's responsibility. This keeps
-        // non-owners receiving 403 instead of revealing the feature setting.
-        if (!$user || !$user->isOwner()) {
+        // Unauthorized roles receive 403 without revealing the branch setting.
+        if (!$user || !app(\App\Support\RoleFeatureAccess::class)->allows($user, 'tip_tap_transfer')) {
             return $next($request);
         }
 
