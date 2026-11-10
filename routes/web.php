@@ -376,9 +376,13 @@ Route::middleware(['auth','admin'])->group(function () {
 Route::get('/hrd', [\App\Http\Controllers\HrdAccountController::class,'home'])->middleware(['auth','admin'])->name('hrd.home');
 Route::middleware(['auth','admin','admin.only'])->group(function () {
     Route::resource('hrd-accounts', \App\Http\Controllers\HrdAccountController::class)->only(['index','store','edit','update','destroy']);
+    Route::post('/hrd-accounts/{id}/restore', [\App\Http\Controllers\HrdAccountController::class,'restore'])->name('hrd-accounts.restore');
+    Route::delete('/hrd-accounts/{id}/force-delete', [\App\Http\Controllers\HrdAccountController::class,'forceDelete'])->name('hrd-accounts.force-delete');
 });
 
 Route::get('/finance', [\App\Http\Controllers\FinanceAccountController::class,'home'])->middleware(['auth','admin'])->name('finance.home');
 Route::middleware(['auth','admin','admin.only'])->group(function () {
     Route::resource('finance-accounts', \App\Http\Controllers\FinanceAccountController::class)->only(['index','store','edit','update','destroy']);
+    Route::post('/finance-accounts/{id}/restore', [\App\Http\Controllers\FinanceAccountController::class,'restore'])->name('finance-accounts.restore');
+    Route::delete('/finance-accounts/{id}/force-delete', [\App\Http\Controllers\FinanceAccountController::class,'forceDelete'])->name('finance-accounts.force-delete');
 });

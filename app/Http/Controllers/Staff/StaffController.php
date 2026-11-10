@@ -27,6 +27,7 @@ class StaffController extends Controller
         $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
 
         $data = [
+            'roleAccounts'          => $this->roleAccounts(false),
             'title'                 => 'Staff List',
             'administrator'         => User::with("branchStore")->whereIn('role', $administratorRoles)->get(),
             'ptUsers'               => User::with('branchStore')->where('role', 'PT')->get(),
@@ -37,7 +38,7 @@ class StaffController extends Controller
             'classInstructors'      => ClassInstructor::get(),
             'users'                 => User::get(),
             'branch_stores'         => BranchStore::get(),
-            "page"                  => Request()->input('page'),
+            "page"                  => $this->staffPage(),
             "pageType"              => "new",
             'content'               => 'admin/staff/index'
         ];
@@ -50,6 +51,7 @@ class StaffController extends Controller
         $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
 
         $data = [
+            'roleAccounts'          => $this->roleAccounts(true),
             'title'                 => 'Old Staff List',
             'administrator'         => User::with("branchStore")->onlyTrashed()->whereIn('role', $administratorRoles)->get(),
             'ptUsers'               => User::with('branchStore')->onlyTrashed()->where('role', 'PT')->get(),
@@ -60,13 +62,28 @@ class StaffController extends Controller
             'classInstructors'      => ClassInstructor::onlyTrashed()->get(),
             'users'                 => User::get(),
             'branch_stores'         => BranchStore::get(),
-            "page"                  => Request()->input('page'),
+            "page"                  => $this->staffPage(),
             "pageType"              => "old",            
             'content'               => 'admin/staff/index'
         ];
 
         return view('admin.layouts.wrapper', $data);
     }    
+
+    private function staffPage(): ?string
+    {
+        $oldForm=(string)request()->old('_role_form','');
+        if (Auth::user()->isAdmin() && preg_match('/^(hrd|finance)-(create|edit-[0-9]+)$/D',$oldForm,$matches)) return $matches[1];
+        return Request()->input('page');
+    }
+    private function roleAccounts(bool $old)
+    {
+        if (!Auth::user()->isAdmin()) return collect();
+        $query=User::with('branchStore')->whereIn('role',['HRD','FINANCE'])
+            ->where('branch_store_id',Auth::user()->branch_store_id)->orderBy('full_name');
+        if ($old) $query->onlyTrashed();
+        return $query->get()->groupBy('role');
+    }
 
     public function ptTotalReport()
     {

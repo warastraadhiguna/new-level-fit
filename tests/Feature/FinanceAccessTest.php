@@ -86,13 +86,13 @@ class FinanceAccessTest extends TestCase
     }
     public function test_owner_can_manage_finance_accounts_without_role_or_branch_escalation(): void
     {
-        $this->actingAs($this->actor('OWNER'))->get('/finance-accounts')->assertOk();
-        $this->post('/finance-accounts',$this->payload()+['role'=>'OWNER','branch_store_id'=>2])->assertRedirect(route('finance-accounts.index'))->assertSessionHasNoErrors();
+        $this->actingAs($this->actor('OWNER'))->get('/finance-accounts')->assertRedirect(route('staff.index',['page'=>'finance']));
+        $this->post('/finance-accounts',$this->payload()+['role'=>'OWNER','branch_store_id'=>2])->assertRedirect(route('staff.index',['page'=>'finance']))->assertSessionHasNoErrors();
         $account=User::where('email','new.finance@example.com')->firstOrFail();
         $this->assertEquals('FINANCE',$account->role);$this->assertEquals(1,$account->branch_store_id);$this->assertTrue(Hash::check('SecretPass123',$account->password));
         $this->assertTrue($account->hasApplicationAccess('management'));$this->assertFalse($account->hasApplicationAccess('gym_landing'));
         $password=$account->password;$data=$this->payload();unset($data['password'],$data['password_confirmation']);
-        $this->get('/finance-accounts/'.$account->id.'/edit')->assertOk()->assertSee('New Finance');
+        $this->get('/finance-accounts/'.$account->id.'/edit')->assertRedirect(route('staff.index',['page'=>'finance','edit_account'=>$account->id]));
         $this->put('/finance-accounts/'.$account->id,$data+['role'=>'ADMIN','branch_store_id'=>2])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertEquals($password,$account->fresh()->password);$this->assertEquals('FINANCE',$account->fresh()->role);$this->assertEquals(1,$account->fresh()->branch_store_id);
         $this->delete('/finance-accounts/'.$account->id)->assertRedirect();$this->assertNotNull(User::withTrashed()->find($account->id)->deleted_at);
@@ -104,7 +104,7 @@ class FinanceAccessTest extends TestCase
         foreach([$other,$hrd,$admin] as $target) {
             $this->get('/finance-accounts/'.$target->id.'/edit')->assertNotFound();$this->put('/finance-accounts/'.$target->id,$this->payload())->assertNotFound();$this->delete('/finance-accounts/'.$target->id)->assertNotFound();
         }
-        $this->actingAs($admin)->get('/finance-accounts')->assertOk();
+        $this->actingAs($admin)->get('/finance-accounts')->assertRedirect(route('staff.index',['page'=>'finance']));
         foreach(['HRD','CS','FC','PT'] as $role) $this->actingAs($this->actor($role))->post('/finance-accounts',$this->payload())->assertForbidden();
     }
     public function test_duplicate_email_invalid_password_and_revoked_management_access_are_rejected(): void

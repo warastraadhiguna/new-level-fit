@@ -2,9 +2,9 @@
     <div class="page-title flex-wrap justify-content-end">
         {{-- <a href="{{ route('ptReportExcel') }}" class="btn btn-info">Download Excel</a> --}}
         @if ($pageType == "new")
-            <a href="{{ route('old-staff', ['page' => $page ?: 'cs']) }}" class="btn btn-secondary ms-3">Old Data</a>  
+            <a href="{{ route('old-staff', ['page' => $page ?: 'cs']) }}" id="staffDataSwitch" class="btn btn-secondary ms-3">Old Data</a>
         @else
-            <a href="{{ route('staff.index', ['page' => $page ?: 'cs']) }}" class="btn btn-primary ms-3">Current Data</a>              
+            <a href="{{ route('staff.index', ['page' => $page ?: 'cs']) }}" id="staffDataSwitch" class="btn btn-primary ms-3">Current Data</a>
         @endif
                 
     </div>
@@ -56,6 +56,10 @@
                             </a>
                         </li>
                     @endif
+                    @if(Auth::user()->isAdmin())
+                        <li class="nav-item"><a class="nav-link {{ $page==='hrd' ? 'show active' : '' }}" data-bs-toggle="tab" href="#hrdAccounts">HRD</a></li>
+                        <li class="nav-item"><a class="nav-link {{ $page==='finance' ? 'show active' : '' }}" data-bs-toggle="tab" href="#financeAccounts">Finance</a></li>
+                    @endif
                 </ul>
                 <div class="tab-content">
                     @include('admin.staff.customer-service.index')
@@ -63,7 +67,11 @@
                     @include('admin.staff.personal-trainer.index')
                     @include('admin.staff.pt-user.index')
                     @include('admin.staff.administrator.index')
-                    @include('admin.staff.class-instructor.index')                    
+                    @include('admin.staff.class-instructor.index')
+                    @if(Auth::user()->isAdmin())
+                        @include('admin.staff.role-accounts.index',['accountRole'=>'HRD','rolePrefix'=>'hrd','roleLabel'=>'HRD','tabId'=>'hrdAccounts','accounts'=>$roleAccounts->get('HRD',collect())])
+                        @include('admin.staff.role-accounts.index',['accountRole'=>'FINANCE','rolePrefix'=>'finance','roleLabel'=>'Finance','tabId'=>'financeAccounts','accounts'=>$roleAccounts->get('FINANCE',collect())])
+                    @endif
                 </div>
             </div>
         </div>
@@ -109,4 +117,25 @@
 
         window.open(window.location.href + '?excel=1&fromDate=' + fromDate + '&toDate=' + toDate, '_self');
     }
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+    const roleTables=[];
+    if(window.DataTable){
+        document.querySelectorAll('#staff-hrd-table, #staff-finance-table').forEach(function(table){
+            roleTables.push(new DataTable(table,{autoWidth:false,order:[[1,'asc']],columnDefs:[{targets:6,orderable:false}]}));
+        });
+    }
+    const pages={customerService:'cs',fitnessConsultant:'fc',personalTrainer:'pt',ptUser:'pt-user',administrator:'admin',hrdAccounts:'hrd',financeAccounts:'finance'};
+    document.querySelectorAll('.custom-tab-1 > .nav-tabs a[data-bs-toggle="tab"]').forEach(function(tab){
+        tab.addEventListener('shown.bs.tab',function(){
+            roleTables.forEach(function(table){table.columns.adjust();});
+            const page=pages[tab.getAttribute('href').slice(1)];if(!page)return;
+            const url=new URL(window.location.href);url.searchParams.set('page',page);url.searchParams.delete('edit_account');window.history.replaceState(null,'',url);
+            const switchLink=document.getElementById('staffDataSwitch');
+            if(switchLink){const target=new URL(switchLink.href);target.searchParams.set('page',page);switchLink.href=target.toString();}
+        });
+    });
+});
 </script>

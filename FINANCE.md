@@ -1,9 +1,13 @@
 # Role FINANCE
 
-Owner/Admin membuat akun dari Staff → Akun Finance (/finance-accounts), pada
+Owner/Admin membuat akun dari Staff → Staff List → tab Finance (/staff?page=finance), pada
 cabang login. Tambah, ubah/reset password dan hapus sementara memakai aturan yang
 sama dengan Akun HRD: email unik, password minimal 8 karakter + konfirmasi, role
 serta cabang ditentukan server. Akun tidak otomatis membuat data employees.
+
+Tambah/edit memakai modal dan format tabel Staff List. Old Data menyediakan
+restore/hapus permanen akun yang dihapus sementara, dengan pembatasan role dan
+cabang yang sama. URL /finance-accounts diarahkan ke tab Finance.
 
 Finance login ke /finance, bukan dashboard operasional. Menu Finance menampilkan
 Laporan Revenue jika cabang mengizinkan role tersebut. Finance dapat membaca

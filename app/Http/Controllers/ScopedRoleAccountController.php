@@ -40,8 +40,8 @@ abstract class ScopedRoleAccountController extends Controller
     }
     public function index(Request $request)
     {
-        return view('admin.layouts.wrapper',['title'=>'Akun '.$this->accountRole(),'content'=>'admin.'.$this->routePrefix().'.accounts.index',
-            'accounts'=>$this->accounts($request)->orderBy('full_name')->paginate(20)]);
+        $this->accounts($request);
+        return redirect()->route('staff.index',['page'=>$this->routePrefix()]);
     }
     public function store(Request $request)
     {
@@ -56,11 +56,12 @@ abstract class ScopedRoleAccountController extends Controller
             if (!$this->isDuplicateStaffEmailException($error)) throw $error;
             return back()->withErrors(['email'=>$this->duplicateStaffEmailMessage()])->withInput($request->except('password','password_confirmation'));
         }
-        return redirect()->route($this->routePrefix().'-accounts.index')->with('message','Akun '.$this->accountRole().' berhasil ditambahkan.');
+        return redirect()->route('staff.index',['page'=>$this->routePrefix()])->with('message','Akun '.$this->accountRole().' berhasil ditambahkan.');
     }
     public function edit(Request $request, $id)
     {
-        return view('admin.layouts.wrapper',['title'=>'Ubah Akun '.$this->accountRole(),'content'=>'admin.'.$this->routePrefix().'.accounts.edit','account'=>$this->accounts($request)->findOrFail($id)]);
+        $account=$this->accounts($request)->findOrFail($id);
+        return redirect()->route('staff.index',['page'=>$this->routePrefix(),'edit_account'=>$account->id]);
     }
     public function update(Request $request, $id)
     {
@@ -73,11 +74,31 @@ abstract class ScopedRoleAccountController extends Controller
             if (!$this->isDuplicateStaffEmailException($error)) throw $error;
             return back()->withErrors(['email'=>$this->duplicateStaffEmailMessage()])->withInput($request->except('password','password_confirmation'));
         }
-        return redirect()->route($this->routePrefix().'-accounts.index')->with('message','Akun '.$this->accountRole().' berhasil diubah.');
+        return redirect()->route('staff.index',['page'=>$this->routePrefix()])->with('message','Akun '.$this->accountRole().' berhasil diubah.');
     }
     public function destroy(Request $request, $id)
     {
         $this->accounts($request)->findOrFail($id)->delete();
-        return redirect()->route($this->routePrefix().'-accounts.index')->with('message','Akun '.$this->accountRole().' dihapus sementara dan tidak dapat login lagi.');
+        return redirect()->route('staff.index',['page'=>$this->routePrefix()])->with('message','Akun '.$this->accountRole().' dihapus sementara dan tidak dapat login lagi.');
     }
+    public function restore(Request $request, $id)
+    {
+        $this->accounts($request)->onlyTrashed()->findOrFail($id)->restore();
+        return redirect()->route('staff.index',['page'=>$this->routePrefix()])->with('message','Akun '.$this->accountRole().' berhasil di-restore.');
+    }
+    public function forceDelete(Request $request, $id)
+    {
+        $account=$this->accounts($request)->onlyTrashed()->findOrFail($id);
+        try {
+            DB::transaction(function() use($account) {
+                if (Schema::hasTable('user_application_access')) $account->applicationAccesses()->delete();
+                $account->forceDelete();
+            });
+        } catch (QueryException $error) {
+            if ((string)$error->getCode()!=='23000') throw $error;
+            return redirect()->route('old-staff',['page'=>$this->routePrefix()])->with('errorr','Akun masih terkait data lain dan tidak dapat dihapus permanen.');
+        }
+        return redirect()->route('old-staff',['page'=>$this->routePrefix()])->with('message','Akun '.$this->accountRole().' berhasil dihapus permanen.');
+    }
+
 }

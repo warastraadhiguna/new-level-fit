@@ -1,11 +1,16 @@
 # Akun HRD
 
-Owner/Admin membuka Staff → Akun HRD (/hrd-accounts) pada cabang login untuk
+Owner/Admin membuka Staff → Staff List → tab HRD (/staff?page=hrd) pada cabang login untuk
 menambah, mengubah/reset password, atau menghapus sementara akun HRD. Email unik
 terhadap semua akun termasuk yang dihapus sementara; password minimal 8 karakter
 beserta konfirmasi. Cabang dan role ditentukan server, bukan nilai dari form.
 Daftar akun dibatasi cabang login dan role HRD. Akun user/trainer lain tidak dapat
 diubah melalui halaman ini. Akun HRD tidak otomatis menjadi employees absensi.
+
+Tambah/edit memakai modal, tabel mengikuti format Staff List. Akun yang dihapus
+sementara tersedia di Old Data untuk restore atau hapus permanen. Penghapusan
+permanen ditolak jika akun masih terkait data lain. URL /hrd-accounts diarahkan
+ke tab HRD. Pengelolaan akun tetap hanya oleh Owner/Admin.
 
 Setelah login, HRD diarahkan ke /hrd. Menu HRD hanya berisi halaman awal serta
 Data Pegawai dan Pendaftaran Wajah jika fitur wajah cabang aktif. HRD dapat
@@ -39,7 +44,7 @@ SHOW COLUMNS FROM users LIKE 'role';
 ```
 
 Jika role bertipe VARCHAR seperti skema proyek, tidak perlu ALTER/INSERT manual;
-buat akun lewat Staff → Akun HRD agar hash password dan akses Management tersimpan
+buat akun lewat Staff → Staff List → tab HRD agar hash password dan akses Management tersimpan
 bersama. Jangan mengubah kolom ke ENUM atau mengeksekusi ulang migration lama.
 
 Deploy kode aplikasi utama saja, bersihkan cache route/config/view sesuai PHP

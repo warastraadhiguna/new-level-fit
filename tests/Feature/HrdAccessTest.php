@@ -82,14 +82,14 @@ class HrdAccessTest extends TestCase
     public function test_owner_can_create_update_and_soft_delete_hrd_without_creating_employee(): void
     {
         $this->actingAs($this->actor('OWNER'));
-        $this->get('/hrd-accounts')->assertOk();
-        $this->post('/hrd-accounts',$this->payload()+['role'=>'OWNER','branch_store_id'=>2])->assertRedirect(route('hrd-accounts.index'))->assertSessionHasNoErrors();
+        $this->get('/hrd-accounts')->assertRedirect(route('staff.index',['page'=>'hrd']));
+        $this->post('/hrd-accounts',$this->payload()+['role'=>'OWNER','branch_store_id'=>2])->assertRedirect(route('staff.index',['page'=>'hrd']))->assertSessionHasNoErrors();
         $hrd=User::where('email','new.hrd@example.com')->firstOrFail();
         $this->assertEquals('HRD',$hrd->role);$this->assertEquals(1,$hrd->branch_store_id);$this->assertTrue(Hash::check('SecretPass123',$hrd->password));
         $this->assertTrue($hrd->hasApplicationAccess('management'));$this->assertFalse($hrd->hasApplicationAccess('gym_landing'));
         $this->assertDatabaseCount('employees',0);
         $password=$hrd->password;
-        $this->get('/hrd-accounts/'.$hrd->id.'/edit')->assertOk()->assertSee('New HRD');
+        $this->get('/hrd-accounts/'.$hrd->id.'/edit')->assertRedirect(route('staff.index',['page'=>'hrd','edit_account'=>$hrd->id]));
         $data=$this->payload();unset($data['password'],$data['password_confirmation']);$data['full_name']='Updated HRD';
         $this->put('/hrd-accounts/'.$hrd->id,$data+['role'=>'ADMIN','branch_store_id'=>2])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertEquals($password,$hrd->fresh()->password);$this->assertEquals('HRD',$hrd->fresh()->role);$this->assertEquals(1,$hrd->fresh()->branch_store_id);
@@ -104,7 +104,7 @@ class HrdAccessTest extends TestCase
             $this->put('/hrd-accounts/'.$target->id,$this->payload())->assertNotFound();
             $this->delete('/hrd-accounts/'.$target->id)->assertNotFound();
         }
-        $this->actingAs($admin)->get('/hrd-accounts')->assertOk();
+        $this->actingAs($admin)->get('/hrd-accounts')->assertRedirect(route('staff.index',['page'=>'hrd']));
     }
     public function test_duplicate_email_and_bad_password_are_rejected_and_management_access_can_be_revoked(): void
     {
