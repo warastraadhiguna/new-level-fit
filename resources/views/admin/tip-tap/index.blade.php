@@ -2,6 +2,9 @@
     <div class="card-body">
         <h4>Tip-Tap versi 1 — Tempat Sampah</h4>
         <p>Data di sini tidak muncul dalam fitur operasional dan tidak dihitung dalam omzet. Restore mengembalikan history dan pembayaran seperti sebelum dihapus.</p>
+        @if (Auth::user()->isFinance())
+            <p class="text-muted">Finance dapat import dari master dan memindahkan data ke tempat sampah melalui Member List. Restore dan hapus permanen hanya dapat dilakukan oleh Owner.</p>
+        @endif
         <p>Restore member terlebih dahulu sebelum memulihkan registrasinya. Registrasi yang dihapus terpisah tetap perlu direstore terpisah. Hapus permanen member juga menghapus seluruh registrasinya yang ada di tempat sampah.</p>
         @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
@@ -41,7 +44,7 @@
                 </form>
             </div>
         </div>
-        @if ($entries->total() > 0)
+        @if (Auth::user()->isOwner() && $entries->total() > 0)
             <details class="mb-4">
                 <summary class="text-danger">Hapus permanen semua ({{ $entries->total() }} arsip)…</summary>
                 <form action="{{ route('tip-tap.purge-all') }}" method="POST" class="mt-2"
@@ -66,6 +69,7 @@
                             <td>{{ ['member' => 'Member + seluruh history', 'membership' => 'Membership', 'pt' => 'PT registration'][$entry->kind] }}</td>
                             <td>{{ $entry->deleted_at }}</td>
                             <td>
+                                @if (Auth::user()->isOwner())
                                 <form action="{{ route('tip-tap.restore', $entry->id) }}" method="POST" class="mb-2"
                                     onsubmit="return confirm('Restore data beserta history dan omzetnya?')">
                                     @csrf
@@ -82,6 +86,9 @@
                                         <button type="submit" class="btn btn-danger btn-sm">Hapus permanen</button>
                                     </form>
                                 </details>
+                                @else
+                                    <span class="text-muted">Khusus Owner</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -173,7 +173,7 @@ class AdministratorController extends Controller
 
     private function manageableRoles(): array
     {
-        return Auth::user()->isOwner() ? ['ADMIN', 'OWNER', 'PT'] : ['ADMIN', 'PT'];
+        return Auth::user()->isOwner() ? ['ADMIN', 'OWNER', 'PT', 'FINANCE'] : ['ADMIN', 'PT'];
     }
 
     private function ensureCanManage(User $user): void

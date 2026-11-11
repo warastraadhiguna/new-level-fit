@@ -1,6 +1,12 @@
 # Project tip-tap versi 1
 
-Branch `tip-tap` menyediakan simulasi penghapusan dua tahap, khusus role `OWNER`.
+Branch `tip-tap` menyediakan simulasi penghapusan dua tahap. Owner mengelola seluruh proses; Finance dapat import dari master dan memindahkan data ke tempat sampah.
+
+## Akun Finance
+
+Owner mengelola akun Finance melalui **Staff → Finance**, termasuk tambah, edit, hapus sementara, dan restore akun dari Old Data. Akun Finance memperoleh akses Management dan diarahkan ke **Tip-Tap / Tempat Sampah** setelah login. Tidak memerlukan migration tambahan.
+
+Finance dapat import ZIP transfer dari master, melihat Member List pada cabang akunnya beserta membership/PT history, serta memindahkan member beserta history atau registrasi membership/PT tertentu ke tempat sampah. Import tetap mengikuti cakupan file master, yang dapat berisi data seluruh cabang. Finance dapat melihat daftar arsip, tetapi **restore dan hapus permanen (termasuk hapus semua) tetap khusus Owner**. Akses edit data operasional, check-in, pengelolaan Staff, dan download Excel tidak diberikan kepada Finance.
 
 LGT dan One Day Visit sudah dihapus dari fitur branch ini: dashboard, menu, pilihan paket, registrasi, check-in, history, laporan, dan ekspor. URL khusus kedua fitur tersebut tidak lagi tersedia. Data lama tetap tersimpan di database, tetapi tidak ditampilkan atau dihitung dalam laporan aplikasi. Membership biasa, PT, dan PT Free tetap tersedia.
 

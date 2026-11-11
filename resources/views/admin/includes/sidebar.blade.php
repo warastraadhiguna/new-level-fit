@@ -4,6 +4,10 @@
 <div class="dlabnav">
     <div class="dlabnav-scroll">
         <ul class="metismenu" id="menu">
+            @if (Auth::user()->isFinance())
+                <li><a href="{{ route('tip-tap.index') }}"><i class="material-icons">delete</i><span class="nav-text">Tip-Tap / Tempat Sampah</span></a></li>
+                <li><a href="{{ route('members.index') }}"><i class="material-icons">people</i><span class="nav-text">Member List</span></a></li>
+            @else
             @if (Auth::user()->isOwner())
                 <li><a href="{{ route('tip-tap.index') }}"><i class="material-icons">delete</i><span class="nav-text">Tip-Tap / Tempat Sampah</span></a></li>
             @endif
@@ -229,6 +233,7 @@
                         <li><a href="{{ route('trainer-package.index') }}">Trainer Package</a></li>
                     </ul>
                 </li>
+            @endif
             @endif
         </ul>
         <div class="copyright">

@@ -46,7 +46,7 @@
                             <td>{{ $histories->firstItem() + $loop->index }}</td>
                             <td>
                                 <h6 class="mb-1">{{ $item->package_name ?? 'Deleted Package' }}</h6>
-                                @if (Auth::user()->isOwner())
+                                @if (Auth::user()->canManageTipTap())
                                     <form action="{{ route('tip-tap.trash', [$member->id, 'membership', $item->id]) }}" method="POST" class="mt-2"
                                         onsubmit="return confirm('Hapus sementara registrasi ini beserta history dan pembayarannya? Omzet akan berkurang. Data dapat direstore dari Tempat Sampah Tip-Tap.')">
                                         @csrf

@@ -95,7 +95,9 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if ($item->photos)
+                                        @if (Auth::user()->isFinance())
+                                            @if ($item->small_photos)<img src="{{ Storage::url($item->small_photos) }}" width="60" alt="Small photo">@else - @endif
+                                        @elseif ($item->photos)
                                             @if ($item->small_photos)
                                                 <a href="javascript:void(0)" class="text-success small-photo-link"
                                                     data-bs-toggle="modal" data-bs-target="#smallPhotoModal"
@@ -145,6 +147,7 @@
                                                 Action
                                             </button>
                                             <ul class="dropdown-menu member-actions-menu">
+                                                @unless (Auth::user()->isFinance())
                                                 <li>
                                                     <a href="{{ route('edit-member-sell', $item->id) }}"
                                                         class="btn light btn-warning btn-xs btn-block mb-1">Edit Member</a>
@@ -153,6 +156,7 @@
                                                     <a href="{{ route('members.show', $item->id) }}"
                                                         class="btn light btn-info btn-xs btn-block mb-1">Detail Member</a>
                                                 </li>
+                                                @endunless
                                                 <li>
                                                     <a href="{{ route('members.membership-history', $item->id) }}"
                                                         class="btn light btn-secondary btn-xs btn-block mb-1">Membership History</a>
@@ -167,6 +171,7 @@
                                                             class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
                                                     </li>
                                                 @endif
+                                                @unless (Auth::user()->isFinance())
                                                 <li>
                                                     @if ($item->lo_is_used == 0)
                                                         <a href="{{ route('useLayoutOrientation', $item->id) }}"
@@ -184,7 +189,8 @@
                                                         </button>
                                                     @endif
                                                 </li>
-                                                @if (Auth::user()->isOwner())
+                                                @endunless
+                                                @if (Auth::user()->canManageTipTap())
                                                     <li>
                                                         <form onsubmit="return confirm('Hapus sementara data beserta history dan omzet terkait? Data dapat direstore dari Tempat Sampah Tip-Tap.')" action="{{ route('member.destroy', array_merge([$item->id], request()->only(['per_page', 'search', 'sort', 'direction', 'page']))) }}" method="POST">
                                                             @method('delete')

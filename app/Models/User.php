@@ -76,6 +76,16 @@ class User extends Authenticatable
         return strtoupper((string) $this->role) === 'PT';
     }
 
+    public function isFinance(): bool
+    {
+        return strtoupper((string) $this->role) === 'FINANCE';
+    }
+
+    public function canManageTipTap(): bool
+    {
+        return $this->isOwner() || $this->isFinance();
+    }
+
     public function hasApplicationAccess($applicationCode)
     {
         if ($this->isOwner()) {

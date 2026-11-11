@@ -16,6 +16,9 @@
             <!-- Nav tabs -->
             <div class="custom-tab-1">
                 <ul class="nav nav-tabs">
+                    @if (Auth::user()->isOwner())
+                        <li class="nav-item"><a class="nav-link {{ $page == 'finance' ? 'show active' : '' }}" data-bs-toggle="tab" href="#financeUser">Finance</a></li>
+                    @endif
                     <li class="nav-item active">
                         <a class="nav-link {{ !$page || $page == 'cs' ? 'show active' : '' }}" data-bs-toggle="tab"
                             href="#customerService">
@@ -58,6 +61,9 @@
                     @endif
                 </ul>
                 <div class="tab-content">
+                    @if (Auth::user()->isOwner())
+                        @include('admin.staff.finance.index')
+                    @endif
                     @include('admin.staff.customer-service.index')
                     @include('admin.staff.fitness-consultant.index')
                     @include('admin.staff.personal-trainer.index')

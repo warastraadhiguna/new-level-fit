@@ -44,7 +44,7 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         if (
-            $user->isAdmin()
+            ($user->isAdmin() || $user->isFinance())
             && !$user->hasApplicationAccess(ApplicationAccess::MANAGEMENT)
         ) {
             Auth::logout();
@@ -55,5 +55,6 @@ class LoginController extends Controller
                 'email' => 'Akun Anda tidak memiliki akses ke Management.',
             ]);
         }
+        if ($user->isFinance()) return redirect()->route('tip-tap.index');
     }
 }

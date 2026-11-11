@@ -40,7 +40,7 @@ class TipTapService
 
     public function trash(User $actor, string $kind, int $id, ?int $memberId = null): void
     {
-        $this->authorize($actor);
+        abort_unless($actor->canManageTipTap(), 403, 'Tip-Tap hanya untuk Owner dan Finance.');
         abort_unless(isset(self::ROOTS[$kind]), 404);
 
         DB::transaction(function () use ($kind, $id, $memberId) {

@@ -16,7 +16,10 @@ class TipTapController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            abort_unless($request->user() && $request->user()->isOwner(), 403);
+            abort_unless($request->user() && $request->user()->canManageTipTap(), 403);
+            if (in_array(optional($request->route())->getName(), ['tip-tap.restore', 'tip-tap.purge', 'tip-tap.purge-all'], true)) {
+                abort_unless($request->user()->isOwner(), 403);
+            }
             return $next($request);
         });
     }

@@ -254,6 +254,34 @@ class TipTapTest extends TestCase
         $this->assertDatabaseHas('trashes', ['kind' => 'member', 'original_id' => 1]);
     }
 
+    public function test_finance_can_trash_member_membership_and_pt_but_owner_must_restore_or_purge(): void
+    {
+        $finance = new User(['role'=>'FINANCE']);
+        $finance->id = 2;
+        $this->actingAs($finance);
+        $this->delete(route('tip-tap.trash', [1, 'membership', 1]))->assertRedirect();
+        $this->assertDatabaseHas('trashes', ['kind'=>'membership','original_id'=>1]);
+        $this->delete(route('tip-tap.trash', [1, 'pt', 1]))->assertRedirect();
+        $this->delete(route('member.destroy', 2))->assertRedirect();
+        $this->assertDatabaseMissing('members', ['id'=>2]);
+        $id = $this->trashId('membership');
+        $this->post(route('tip-tap.restore', $id))->assertForbidden();
+        $this->delete(route('tip-tap.purge', $id), ['confirmation'=>'HAPUS PERMANEN'])->assertForbidden();
+        $this->delete(route('tip-tap.purge-all'), ['confirmation'=>'HAPUS SEMUA PERMANEN'])->assertForbidden();
+        foreach (['restore', 'purge', 'purgeAll'] as $method) {
+            try {
+                $method === 'purgeAll' ? $this->service->$method($finance) : $this->service->$method($finance, $id);
+                $this->fail('Owner action must reject Finance at service level.');
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) {
+                $this->assertSame(403, $error->getStatusCode());
+            }
+        }
+        $this->assertDatabaseCount('trashes', 3);
+        $this->service->restore($this->owner, $this->trashId('pt'));
+        $this->service->restore($this->owner, $id);
+        $this->assertDatabaseHas('member_registrations', ['id'=>1]);
+    }
+
     public function test_guests_cannot_access_tip_tap(): void
     {
         $this->delete(route('tip-tap.purge-all'))->assertRedirect(route('login'));
