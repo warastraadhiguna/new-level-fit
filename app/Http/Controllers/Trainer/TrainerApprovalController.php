@@ -21,6 +21,10 @@ class TrainerApprovalController extends Controller
 
         $branchId = (int) Auth::user()->branch_store_id;
         $search = trim((string) $request->input('search', ''));
+        $status = $request->input('status', 'all');
+        $paymentStatus = $request->input('payment_status', 'all');
+        if (!in_array($status, ['all', 'active', 'pending', 'expired'], true)) $status = 'all';
+        if (!in_array($paymentStatus, ['all', 'paid', 'unpaid'], true)) $paymentStatus = 'all';
         $perPage = (int) $request->input('per_page', 10);
         $sort = (string) $request->input('sort', 'created_at');
         $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -80,6 +84,40 @@ class TrainerApprovalController extends Controller
                 });
             });
 
+        $duration = '(trainer_sessions.days + COALESCE((SELECT SUM(days) FROM pt_leave_days WHERE pt_leave_days.trainer_session_id = trainer_sessions.id), 0))';
+        $expiry = DB::connection()->getDriverName() === 'sqlite'
+            ? "datetime(trainer_sessions.start_date, '+' || $duration || ' days')"
+            : "DATE_ADD(trainer_sessions.start_date, INTERVAL $duration DAY)";
+        // Match the table's session total, including the package fallback for legacy rows.
+        $totalSessions = 'COALESCE(NULLIF(trainer_sessions.number_of_session, 0), (SELECT number_of_session FROM trainer_packages WHERE trainer_packages.id = trainer_sessions.trainer_package_id), 0)';
+        $usedSessions = '(SELECT COUNT(*) FROM check_in_trainer_sessions WHERE check_in_trainer_sessions.trainer_session_id = trainer_sessions.id AND check_out_time IS NOT NULL)';
+        $now = now()->toDateTimeString();
+        if ($status === 'expired') {
+            $query->where(function ($query) use ($expiry, $now, $usedSessions, $totalSessions) {
+                $query->whereRaw("$expiry < ?", [$now])->orWhereRaw("$usedSessions >= $totalSessions");
+            });
+        } elseif ($status === 'active' || $status === 'pending') {
+            $query->whereRaw("$usedSessions < $totalSessions");
+            if ($status === 'active') {
+                $query->whereNotNull('trainer_sessions.trainer_id')
+                    ->where('trainer_sessions.start_date', '<=', $now)->whereRaw("$expiry >= ?", [$now]);
+            } else {
+                $query->where(function ($query) use ($expiry, $now) {
+                    $query->whereNull('trainer_sessions.start_date')->orWhereRaw("$expiry >= ?", [$now]);
+                })->where(function ($query) use ($now) {
+                    $query->whereNull('trainer_sessions.trainer_id')->orWhereNull('trainer_sessions.start_date')
+                        ->orWhere('trainer_sessions.start_date', '>', $now);
+                });
+            }
+        }
+        if ($paymentStatus !== 'all') {
+            $paid = 'COALESCE((SELECT SUM(value) FROM trainer_session_payments WHERE trainer_session_payments.trainer_session_id = trainer_sessions.id), 0)';
+            $payable = '(COALESCE(package_price, 0) + COALESCE(admin_price, 0) - COALESCE(discount_amount, 0))';
+            $payable = "CASE WHEN $payable > 0 THEN $payable ELSE 0 END";
+            $operator = $paymentStatus === 'paid' ? '>=' : '<';
+            $query->whereRaw("$paid $operator ($payable)");
+        }
+
         switch ($sort) {
             case 'member_name':
                 $query->orderBy(
@@ -123,12 +161,14 @@ class TrainerApprovalController extends Controller
         $trainerSessions = $query
             ->orderByDesc('trainer_sessions.id')
             ->paginate($perPage)
-            ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
+            ->appends($request->only(['search', 'per_page', 'sort', 'direction', 'status', 'payment_status']));
 
         return view('admin.layouts.wrapper', [
             'title' => 'PT Approval',
             'trainerSessions' => $trainerSessions,
             'search' => $search,
+            'status' => $status,
+            'paymentStatus' => $paymentStatus,
             'perPage' => $perPage,
             'sort' => $sort,
             'direction' => $direction,

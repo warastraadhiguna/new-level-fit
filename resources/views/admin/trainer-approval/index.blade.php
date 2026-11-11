@@ -1,10 +1,12 @@
 <div class="row">
     @php
-        $sortLink = function ($column) use ($sort, $direction, $search, $perPage) {
+        $sortLink = function ($column) use ($sort, $direction, $search, $perPage, $status, $paymentStatus) {
             $nextDirection = $sort === $column && $direction === 'asc' ? 'desc' : 'asc';
 
             return route('trainer-approval.index', array_filter([
                 'search' => $search,
+                'status' => $status,
+                'payment_status' => $paymentStatus,
                 'per_page' => $perPage,
                 'sort' => $column,
                 'direction' => $nextDirection,
@@ -28,9 +30,9 @@
                             <input type="hidden" name="sort" value="{{ $sort }}">
                             <input type="hidden" name="direction" value="{{ $direction }}">
                             <div class="d-flex justify-content-end align-items-center mb-4">
-                                @if ($search)
+                                @if ($search || $status !== 'all' || $paymentStatus !== 'all')
                                     <a href="{{ route('trainer-approval.index') }}" class="btn btn-danger light">
-                                        Reset Search
+                                        Reset Filter
                                     </a>
                                 @endif
                             </div>
@@ -46,6 +48,22 @@
                                         @endforeach
                                     </select>
                                     <span class="text-muted">entries</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="text-muted mb-0" for="approvalStatus">Status PT</label>
+                                    <select id="approvalStatus" name="status" class="form-control" onchange="this.form.submit()">
+                                        @foreach (['all' => 'Semua Status', 'active' => 'Active', 'pending' => 'Pending (Belum Mulai / Belum Ada Trainer)', 'expired' => 'Expired / Sesi Habis'] as $value => $label)
+                                            <option value="{{ $value }}" {{ $status === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="text-muted mb-0" for="approvalPaymentStatus">Pembayaran</label>
+                                    <select id="approvalPaymentStatus" name="payment_status" class="form-control" onchange="this.form.submit()">
+                                        @foreach (['all' => 'Semua Pembayaran', 'paid' => 'Paid (Lunas)', 'unpaid' => 'Unpaid (Belum Lunas)'] as $value => $label)
+                                            <option value="{{ $value }}" {{ $paymentStatus === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-muted">Search:</span>
@@ -180,12 +198,18 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($isFrozen)
+                                        @if ($expiredDate && $now->gt($expiredDate))
+                                            <span class="badge badge-danger badge-lg">Expired</span>
+                                        @elseif ($remainingSessions <= 0)
+                                            <span class="badge badge-danger badge-lg">Sesi Habis</span>
+                                        @elseif (!$item->start_date || !$item->trainer_id || $now->lt(\Carbon\Carbon::parse($item->start_date)))
+                                            <span class="badge badge-info badge-lg">Pending</span>
+                                        @elseif ($isFrozen)
                                             <span class="badge badge-secondary badge-lg">Freeze</span>
                                         @elseif ($latestCheckIn && !$latestCheckIn->check_out_time)
                                             <span class="badge badge-primary badge-lg">Running</span>
                                         @else
-                                            <span class="badge badge-info badge-lg">Not Start</span>
+                                            <span class="badge badge-success badge-lg">Active</span>
                                         @endif
                                     </td>
                                     <td><h6>{{ optional($item->personalTrainers)->full_name ?: '-' }}</h6></td>

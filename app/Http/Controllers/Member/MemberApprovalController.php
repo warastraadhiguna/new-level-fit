@@ -20,6 +20,10 @@ class MemberApprovalController extends Controller
 
         $branchId = (int) Auth::user()->branch_store_id;
         $search = trim((string) $request->input('search', ''));
+        $status = $request->input('status', 'all');
+        $paymentStatus = $request->input('payment_status', 'all');
+        if (!in_array($status, ['all', 'active', 'pending', 'expired'], true)) $status = 'all';
+        if (!in_array($paymentStatus, ['all', 'paid', 'unpaid'], true)) $paymentStatus = 'all';
         $perPage = (int) $request->input('per_page', 10);
         $sort = (string) $request->input('sort', 'created_at');
         $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -71,6 +75,27 @@ class MemberApprovalController extends Controller
                 });
             });
 
+        // Use the same freeze extension as the expiry date shown in the table.
+        $duration = '(member_registrations.days + COALESCE((SELECT SUM(days) FROM leave_days WHERE leave_days.member_registration_id = member_registrations.id), 0))';
+        $expiry = DB::connection()->getDriverName() === 'sqlite'
+            ? "datetime(member_registrations.start_date, '+' || $duration || ' days')"
+            : "DATE_ADD(member_registrations.start_date, INTERVAL $duration DAY)";
+        $now = now()->toDateTimeString();
+        if ($status === 'active') {
+            $query->where('member_registrations.start_date', '<=', $now)->whereRaw("$expiry >= ?", [$now]);
+        } elseif ($status === 'pending') {
+            $query->where('member_registrations.start_date', '>', $now);
+        } elseif ($status === 'expired') {
+            $query->whereRaw("$expiry < ?", [$now]);
+        }
+        if ($paymentStatus !== 'all') {
+            $paid = 'COALESCE((SELECT SUM(value) FROM member_registration_payments WHERE member_registration_payments.member_registration_id = member_registrations.id), 0)';
+            $payable = '(COALESCE(package_price, 0) + COALESCE(admin_price, 0) - COALESCE(discount_amount, 0))';
+            $payable = "CASE WHEN $payable > 0 THEN $payable ELSE 0 END";
+            $operator = $paymentStatus === 'paid' ? '>=' : '<';
+            $query->whereRaw("$paid $operator ($payable)");
+        }
+
         switch ($sort) {
             case 'member_name':
                 $query->orderBy(
@@ -106,12 +131,14 @@ class MemberApprovalController extends Controller
         $memberRegistrations = $query
             ->orderByDesc('member_registrations.id')
             ->paginate($perPage)
-            ->appends($request->only(['search', 'per_page', 'sort', 'direction']));
+            ->appends($request->only(['search', 'per_page', 'sort', 'direction', 'status', 'payment_status']));
 
         return view('admin.layouts.wrapper', [
             'title' => 'Member Approval',
             'memberRegistrations' => $memberRegistrations,
             'search' => $search,
+            'status' => $status,
+            'paymentStatus' => $paymentStatus,
             'perPage' => $perPage,
             'sort' => $sort,
             'direction' => $direction,
