@@ -1,5 +1,6 @@
 <div class="col-12"><div class="card"><div class="card-header"><h4 class="card-title">Pengaturan Akses Role</h4></div><div class="card-body">
     <p>Pengaturan untuk <strong>{{ optional(Auth::user()->branchStore)->name }}</strong>. Centang fitur yang boleh diakses setiap role. Hanya Owner yang dapat mengubah pengaturan ini.</p>
+    <p class="text-muted">Hanya fitur yang diizinkan di Secret Branch Store untuk cabang ini yang dapat diatur.</p>
     <p class="text-muted">Owner selalu memiliki akses. PT tetap hanya dapat melihat; unduh Excel dan perangkat absensi tetap khusus Owner. Tanda — berarti fitur tidak tersedia untuk role tersebut.</p>
     @unless($ready)<div class="alert alert-warning">Tabel pengaturan belum tersedia. Jalankan migration atau SQL pengaturan akses role sebelum menyimpan.</div>@endunless
     <form method="POST" action="{{ route('role-feature-access.update') }}">@csrf @method('PUT')

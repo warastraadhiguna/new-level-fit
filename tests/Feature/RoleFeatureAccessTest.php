@@ -17,6 +17,7 @@ class RoleFeatureAccessTest extends TestCase
         Schema::create('branch_stores',function(Blueprint $t) {
             $t->id();$t->string('name');$t->text('revenue_report_visible_roles')->nullable();
             $t->boolean('tip_tap_transfer_enabled')->default(false);$t->boolean('pos_inventory_enabled')->default(false);$t->boolean('face_enrollment_enabled')->default(false);
+            $t->boolean('pt_free_enabled')->default(false);
         });
         Schema::create('user_application_access',function(Blueprint $t) {
             $t->id();$t->unsignedInteger('user_id');$t->string('application_code');$t->boolean('is_active');$t->timestamps();$t->unique(['user_id','application_code']);
@@ -41,6 +42,7 @@ class RoleFeatureAccessTest extends TestCase
     }
     public function test_only_owner_can_open_and_save_settings_for_login_branch(): void
     {
+        DB::table('branch_stores')->where('id',1)->update(['face_enrollment_enabled'=>true]);
         $this->get('/role-feature-access')->assertRedirect('/login');
         foreach(['ADMIN','CS','CSPOS','FC','PT','HRD','FINANCE'] as $role) {
             $this->actingAs($this->actor($role))->get('/role-feature-access')->assertForbidden();
@@ -162,8 +164,10 @@ class RoleFeatureAccessTest extends TestCase
     }
     public function test_tip_tap_grant_can_be_saved_revoked_and_never_bypasses_branch_switch(): void
     {
+        DB::table('branch_stores')->where('id',1)->update(['tip_tap_transfer_enabled'=>true]);
         $owner=$this->actor('OWNER');
         $this->actingAs($owner)->put('/role-feature-access',['permissions'=>['HRD'=>['tip_tap_transfer'=>1]]])->assertRedirect(route('role-feature-access.index'));
+        DB::table('branch_stores')->where('id',1)->update(['tip_tap_transfer_enabled'=>false]);
         $hrd=$this->actor('HRD');$this->actingAs($hrd)->get('/tip-tap-transfer')->assertNotFound();
         DB::table('branch_stores')->where('id',1)->update(['tip_tap_transfer_enabled'=>true]);$hrd->unsetRelation('branchStore');
         $this->get('/tip-tap-transfer')->assertOk();
@@ -174,6 +178,60 @@ class RoleFeatureAccessTest extends TestCase
         $this->get('/hrd')->assertOk()->assertDontSee('href="'.route('tip-tap-transfer.index').'"',false);
         $this->get('/role-feature-access')->assertForbidden();
     }
+    public function test_disabled_branch_features_are_hidden_and_cannot_be_granted(): void
+    {
+        // Another branch's enabled features must not affect the login branch.
+        DB::table('branch_stores')->where('id',2)->update([
+            'tip_tap_transfer_enabled'=>true,'pos_inventory_enabled'=>true,
+            'face_enrollment_enabled'=>true,'pt_free_enabled'=>true,
+        ]);
+        $this->allow('ADMIN','pos_inventory',true);
+        $this->actingAs($this->actor('OWNER'));
+        $response=$this->get('/role-feature-access')->assertOk()->assertSee('permissions[ADMIN][members]',false);
+        foreach(['tip_tap_transfer','pos_sales','pos_inventory','employees','enrollment','pt_free'] as $feature) {
+            $response->assertDontSee('permissions[ADMIN]['.$feature.']',false);
+            $this->put('/role-feature-access',['permissions'=>['ADMIN'=>[$feature=>1]]])->assertSessionHasErrors();
+        }
+        // An invalid submission must not change existing permissions.
+        $this->assertTrue((bool)DB::table('role_feature_permissions')->where('feature_key','pos_inventory')->value('is_allowed'));
+        $this->put('/role-feature-access',['permissions'=>['ADMIN'=>['members'=>1]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertFalse((bool)DB::table('role_feature_permissions')->where('feature_key','pos_inventory')->value('is_allowed'));
+    }
+
+    public function test_enabled_branch_features_appear_and_can_be_saved(): void
+    {
+        DB::table('branch_stores')->where('id',1)->update([
+            'tip_tap_transfer_enabled'=>true,'pos_inventory_enabled'=>true,
+            'face_enrollment_enabled'=>true,'pt_free_enabled'=>true,
+        ]);
+        $this->actingAs($this->actor('OWNER'));
+        $response=$this->get('/role-feature-access')->assertOk();
+        $grants=[];
+        foreach(['tip_tap_transfer','pos_sales','pos_inventory','employees','enrollment','pt_free'] as $feature) {
+            $response->assertSee('permissions[ADMIN]['.$feature.']',false);
+            $grants[$feature]=1;
+        }
+        $this->put('/role-feature-access',['permissions'=>['ADMIN'=>$grants]])->assertSessionHasNoErrors()->assertRedirect();
+        foreach(array_keys($grants) as $feature) $this->assertDatabaseHas('role_feature_permissions',[
+            'branch_store_id'=>1,'role'=>'ADMIN','feature_key'=>$feature,'is_allowed'=>1,
+        ]);
+    }
+
+    public function test_revenue_settings_follow_branch_role_visibility(): void
+    {
+        DB::table('branch_stores')->where('id',1)->update(['revenue_report_visible_roles'=>json_encode(['ADMIN','FINANCE'])]);
+        $owner=$this->actor('OWNER');$this->actingAs($owner);
+        $this->get('/role-feature-access')->assertOk()->assertSee('permissions[ADMIN][revenue]',false)
+            ->assertSee('permissions[FINANCE][revenue]',false)->assertDontSee('permissions[CS][revenue]',false);
+        $this->put('/role-feature-access',['permissions'=>['CS'=>['revenue'=>1]]])->assertSessionHasErrors();
+        $this->put('/role-feature-access',['permissions'=>['FINANCE'=>['revenue'=>1]]])->assertSessionHasNoErrors()->assertRedirect();
+        DB::table('branch_stores')->where('id',1)->update(['revenue_report_visible_roles'=>json_encode(['OWNER_ONLY'])]);
+        $owner->unsetRelation('branchStore');
+        $this->get('/role-feature-access')->assertOk()->assertDontSee('permissions[ADMIN][revenue]',false)
+            ->assertDontSee('permissions[FINANCE][revenue]',false);
+        $this->put('/role-feature-access',['permissions'=>['FINANCE'=>['revenue'=>1]]])->assertSessionHasErrors();
+    }
+
     public function test_migration_is_repeatable_and_route_catalog_covers_all_protected_endpoints(): void
     {
         (new \CreateRoleFeaturePermissions())->up();

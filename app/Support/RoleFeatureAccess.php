@@ -1,7 +1,7 @@
 <?php
 namespace App\Support;
 
-use App\Models\User;
+use App\Models\{User,BranchStore};
 use Illuminate\Support\Facades\{DB,Schema};
 use Illuminate\Support\Str;
 
@@ -35,6 +35,27 @@ class RoleFeatureAccess
             'classes'=>['label'=>'Kelas & Studio','roles'=>$operations,'defaults'=>$operations],
             'other'=>['label'=>'Fitur Operasional Lain','roles'=>$operations,'defaults'=>$operations],
         ];
+    }
+
+    public function featuresForBranch(?BranchStore $branch): array
+    {
+        $features=self::features();
+        $switches=[
+            'tip_tap_transfer'=>'tip_tap_transfer_enabled',
+            'pt_free'=>'pt_free_enabled',
+            'pos_sales'=>'pos_inventory_enabled',
+            'pos_inventory'=>'pos_inventory_enabled',
+            'employees'=>'face_enrollment_enabled',
+            'enrollment'=>'face_enrollment_enabled',
+        ];
+        foreach($switches as $feature=>$flag) {
+            if (!$branch || !$branch->$flag) unset($features[$feature]);
+        }
+        $features['revenue']['roles']=array_values(array_filter($features['revenue']['roles'],function($role) use($branch) {
+            return $branch && $branch->canRoleViewRevenueReport($role);
+        }));
+        if (!$features['revenue']['roles']) unset($features['revenue']);
+        return $features;
     }
 
     public function ready(): bool
