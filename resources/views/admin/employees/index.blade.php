@@ -1,13 +1,64 @@
-<div class="col-12">
-@include('admin.employees.birthdays')
-<div class="card"><div class="card-body"><h3>Data Pegawai</h3><p>Cabang: {{ optional(Auth::user()->branchStore)->name }}. Data pegawai absensi terpisah dari akun user dan trainer.</p>
-@if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<details @if($errors->any()) open @endif><summary class="mb-3">Tambah Pegawai</summary><form method="POST" action="{{ route('employees.store') }}">@csrf @include('admin.employees.fields')<button class="btn btn-primary">Simpan Pegawai</button></form></details>
-</div></div>
-<div class="card"><div class="card-body">
-<form method="GET" class="d-flex flex-wrap mb-3" style="gap:10px"><input name="search" class="form-control" style="max-width:280px" placeholder="Cari nama atau kode" value="{{ request('search') }}"><select name="per_page" class="form-control" style="max-width:100px">@foreach([10,25,50,100] as $size)<option value="{{ $size }}" {{ (int)request('per_page',10)===$size ? 'selected':'' }}>{{ $size }}</option>@endforeach</select><button class="btn btn-primary">Cari</button></form>
-<div class="table-responsive"><table class="table"><thead><tr><th>Kode</th><th>Nama</th><th>Tanggal lahir</th><th>Jabatan</th><th>Telepon</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-@forelse($employees as $employee)<tr><td>{{ $employee->employee_code }}</td><td>{{ $employee->full_name }}</td><td>{{ $employee->born ? $employee->born->format('d M Y') : '-' }}</td><td>{{ $employee->position ?: '-' }}</td><td>{{ $employee->phone ?: '-' }}</td><td>{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</td><td><a class="btn btn-sm btn-primary" href="{{ route('employees.edit',$employee->id) }}">Ubah</a><form class="d-inline" method="POST" action="{{ route('employees.destroy',$employee->id) }}" onsubmit="return confirm('Hapus sementara pegawai ini? Pegawai tidak dapat absen setelah dihapus.')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Hapus Sementara</button></form></td></tr>
-@empty<tr><td colspan="7">Belum ada data pegawai.</td></tr>@endforelse
-</tbody></table></div>{{ $employees->links() }}
-</div></div></div>
+<div class="col-xl-12">
+    @include('admin.employees.birthdays')
+    <div class="page-title flex-wrap justify-content-between">
+        <div><h4>Data Pegawai</h4><p class="text-muted mb-0">Cabang: {{ optional(Auth::user()->branchStore)->name }}</p></div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddEmployee">+ Tambah Pegawai</button>
+    </div>
+    <div class="card"><div class="card-body">
+        <form method="GET" action="{{ route('employees.index') }}" class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <label for="employeePageSize" class="text-muted mb-0">Show</label>
+                <select id="employeePageSize" name="per_page" class="form-control" style="width:90px" onchange="this.form.submit()">
+                    @foreach([10,25,50,100] as $size)<option value="{{ $size }}" {{ (int)request('per_page',10)===$size ? 'selected':'' }}>{{ $size }}</option>@endforeach
+                </select><span class="text-muted">entries</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <label for="employeeSearch" class="text-muted mb-0">Search:</label>
+                <input id="employeeSearch" name="search" class="form-control" style="max-width:280px" placeholder="Cari nama atau kode" value="{{ request('search') }}">
+                <button class="btn btn-primary">Cari</button>
+                @if(request('search'))<a href="{{ route('employees.index') }}" class="btn btn-danger light">Reset Search</a>@endif
+            </div>
+        </form>
+        <div class="table-responsive full-data">
+            <table class="table table-responsive-lg display dataTablesCard student-tab dataTable no-footer">
+                <thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>Tanggal lahir</th><th>Jabatan</th><th>Telepon</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                    @forelse($employees as $employee)
+                        <tr>
+                            <td>{{ $employees->firstItem() + $loop->index }}</td><td>{{ $employee->employee_code }}</td><td>{{ $employee->full_name }}</td>
+                            <td>{{ $employee->born ? $employee->born->format('d M Y') : '-' }}</td><td>{{ $employee->position ?: '-' }}</td><td>{{ $employee->phone ?: '-' }}</td>
+                            <td><span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span></td>
+                            <td>
+                                <button type="button" class="btn light btn-warning btn-xs mb-1" data-bs-toggle="modal" data-bs-target="#modalEditEmployee{{ $employee->id }}">Ubah</button>
+                                <form class="d-inline" method="POST" action="{{ route('employees.destroy',$employee->id) }}" onsubmit="return confirm('Hapus sementara pegawai ini? Pegawai tidak dapat absen setelah dihapus.')">
+                                    @csrf @method('DELETE')<button class="btn light btn-danger btn-xs">Hapus Sementara</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty<tr><td colspan="8" class="text-center">Belum ada data pegawai.</td></tr>@endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 d-flex flex-wrap justify-content-between align-items-center">
+            <div class="text-muted mb-2">Showing {{ $employees->firstItem() ?? 0 }} to {{ $employees->lastItem() ?? 0 }} of {{ $employees->total() }} data</div>
+            {{ $employees->links('pagination::bootstrap-4') }}
+        </div>
+    </div></div>
+</div>
+
+@php
+    $modalEmployees = $employees->getCollection();
+    if ($editingEmployee && !$modalEmployees->contains('id', $editingEmployee->id)) $modalEmployees = $modalEmployees->concat([$editingEmployee]);
+    $openModal = $errors->any() && !old('_employee_id') ? 'modalAddEmployee' : ($editingEmployee ? 'modalEditEmployee'.$editingEmployee->id : null);
+@endphp
+@include('admin.employees.modal', ['formEmployee'=>null, 'formId'=>'modalAddEmployee', 'restoreInput'=>$errors->any() && !old('_employee_id')])
+@foreach($modalEmployees as $modalEmployee)
+    @include('admin.employees.modal', ['formEmployee'=>$modalEmployee, 'formId'=>'modalEditEmployee'.$modalEmployee->id, 'restoreInput'=>$errors->any() && (string)old('_employee_id')===(string)$modalEmployee->id])
+@endforeach
+@if($openModal)
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new bootstrap.Modal(document.getElementById(@json($openModal))).show();
+        });
+    </script>
+@endif

@@ -16,16 +16,19 @@ class EmployeeController extends Controller
 
     public function index(Request $request)
     {
-        $request->validate(['search'=>'nullable|string|max:150','per_page'=>'nullable|in:10,25,50,100']);
+        $request->validate(['search'=>'nullable|string|max:150','per_page'=>'nullable|in:10,25,50,100','edit_employee'=>'nullable|integer|min:1']);
         $query=$this->employees($request);
         if ($request->filled('search')) {
             $search=$request->input('search');
             $query->where(function($q) use($search) { $q->where('full_name','like','%'.$search.'%')->orWhere('employee_code','like','%'.$search.'%'); });
         }
+        $employees=$query->orderBy('full_name')->paginate((int)$request->input('per_page',10))->withQueryString();
+        $editId=$request->input('edit_employee') ?: $request->session()->getOldInput('_employee_id');
+        $editingEmployee=$editId ? $this->employees($request)->findOrFail($editId) : null;
         return view('admin.layouts.wrapper',[
             'title'=>'Data Pegawai','content'=>'admin.employees.index',
             'birthdayMessages'=>$this->birthdayMessages($request),
-            'employees'=>$query->orderBy('full_name')->paginate((int)$request->input('per_page',10))->withQueryString(),
+            'employees'=>$employees,'editingEmployee'=>$editingEmployee,
         ]);
     }
 
@@ -75,10 +78,9 @@ class EmployeeController extends Controller
 
     public function edit(Request $request, $id)
     {
-        return view('admin.layouts.wrapper',[
-            'title'=>'Ubah Pegawai','content'=>'admin.employees.edit',
-            'employee'=>$this->employees($request)->findOrFail($id),
-        ]);
+        $this->employees($request)->findOrFail($id);
+        $request->merge(['edit_employee'=>$id]);
+        return $this->index($request);
     }
 
     public function update(Request $request, $id)

@@ -48,6 +48,7 @@ class EmployeeManagementTest extends TestCase
         $other=Employee::create($this->payload()+['branch_store_id'=>2]);
         $this->actingAs($this->actor())->get('/employees?branch_store_id=2')->assertOk()->assertDontSee('Pegawai baru');
         $this->get('/employees/'.$other->id.'/edit')->assertNotFound();
+        $this->get('/employees?edit_employee='.$other->id)->assertNotFound();
         $this->put('/employees/'.$other->id,$this->payload())->assertNotFound();
         $this->delete('/employees/'.$other->id)->assertNotFound();
         $this->assertNull($other->fresh()->deleted_at);
@@ -72,6 +73,36 @@ class EmployeeManagementTest extends TestCase
         $this->get('/employees?search=EMP001&per_page=50')->assertOk()->assertSee('Pegawai baru');
         $this->get('/employees?search=missing')->assertOk()->assertDontSee('Pegawai baru');
     }
+    public function test_failed_create_reopens_add_modal_without_overwriting_edit_fields(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $this->actingAs($this->actor())->from('/employees')->post('/employees',array_merge($this->payload(),[
+            'employee_code'=>'NEW-CODE','full_name'=>'','_employee_id'=>'',
+        ]))->assertRedirect('/employees')->assertSessionHasErrors('full_name');
+        $response=$this->get('/employees')->assertOk()->assertSee('document.getElementById("modalAddEmployee")',false);
+        $dom=new \DOMDocument();@$dom->loadHTML($response->getContent());
+        $this->assertSame('NEW-CODE',$dom->getElementById('modalAddEmployeeCode')->getAttribute('value'));
+        $this->assertSame('EMP001',$dom->getElementById('modalEditEmployee'.$employee->id.'Code')->getAttribute('value'));
+        $this->assertSame('Pegawai baru',$dom->getElementById('modalEditEmployee'.$employee->id.'Name')->getAttribute('value'));
+    }
+
+    public function test_failed_update_reopens_correct_modal_even_when_employee_is_filtered_out(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $this->actingAs($this->actor())->from('/employees?search=missing')->put('/employees/'.$employee->id,array_merge($this->payload(),[
+            'employee_code'=>'EDITED-CODE','full_name'=>'','born'=>'1995-05-06','_employee_id'=>$employee->id,
+        ]))->assertRedirect('/employees?search=missing')->assertSessionHasErrors('full_name');
+        $response=$this->get('/employees?search=missing')->assertOk()
+            ->assertSee('document.getElementById("modalEditEmployee'.$employee->id.'")',false);
+        $this->assertCount(0,$response->viewData('employees')->items());
+        $dom=new \DOMDocument();@$dom->loadHTML($response->getContent());
+        $this->assertSame('EDITED-CODE',$dom->getElementById('modalEditEmployee'.$employee->id.'Code')->getAttribute('value'));
+        $this->assertSame('',$dom->getElementById('modalEditEmployee'.$employee->id.'Name')->getAttribute('value'));
+        $this->assertSame('1995-05-06',$dom->getElementById('modalEditEmployee'.$employee->id.'Born')->getAttribute('value'));
+        $this->assertSame('',$dom->getElementById('modalAddEmployeeCode')->getAttribute('value'));
+        $this->assertDatabaseHas('employees',['id'=>$employee->id,'employee_code'=>'EMP001','full_name'=>'Pegawai baru']);
+    }
+
     public function test_birthday_can_be_saved_edited_and_cleared(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-11-05 10:00:00','Asia/Jakarta'));
