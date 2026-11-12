@@ -16,7 +16,7 @@ class RoleFeatureAccessController extends Controller
         $this->authorizeOwner($request);
         return view('admin.layouts.wrapper',[
             'title'=>'Pengaturan Akses Role','content'=>'admin.role-feature-access.index',
-            'roles'=>RoleFeatureAccess::roles(),'features'=>$access->featuresForBranch($request->user()->branchStore),
+            'roles'=>$access->rolesForBranch($request->user()->branchStore),'features'=>$access->featuresForBranch($request->user()->branchStore),
             'matrix'=>$access->matrix((int)$request->user()->branch_store_id),'ready'=>$access->ready(),
         ]);
     }
@@ -24,7 +24,7 @@ class RoleFeatureAccessController extends Controller
     {
         $this->authorizeOwner($request);abort_unless($access->ready(),503,'Jalankan SQL pengaturan akses role terlebih dahulu.');
         $data=$request->validate(['permissions'=>'sometimes|array','permissions.*'=>'array','permissions.*.*'=>'boolean']);
-        $permissions=$data['permissions'] ?? [];$roles=RoleFeatureAccess::roles();$features=$access->featuresForBranch($request->user()->branchStore);
+        $permissions=$data['permissions'] ?? [];$roles=$access->rolesForBranch($request->user()->branchStore);$features=$access->featuresForBranch($request->user()->branchStore);
         foreach($permissions as $role=>$values) {
             if (!isset($roles[$role])) throw ValidationException::withMessages(['permissions'=>'Role tidak valid.']);
             foreach($values as $feature=>$allowed) {
@@ -34,9 +34,9 @@ class RoleFeatureAccessController extends Controller
             }
         }
         $branch=(int)$request->user()->branch_store_id;
-        DB::transaction(function() use($permissions,$roles,$branch,$request) {
+        DB::transaction(function() use($permissions,$branch,$request) {
             // One complete matrix per branch; partial saves cannot leave stale grants behind.
-            foreach($roles as $role=>$label) foreach(RoleFeatureAccess::features() as $feature=>$definition) {
+            foreach(RoleFeatureAccess::roles() as $role=>$label) foreach(RoleFeatureAccess::features() as $feature=>$definition) {
                 if (!in_array($role,$definition['roles'],true)) continue;
                 DB::table('role_feature_permissions')->updateOrInsert([
                     'branch_store_id'=>$branch,'role'=>$role,'feature_key'=>$feature,

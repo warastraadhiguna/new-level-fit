@@ -198,6 +198,37 @@ class RoleFeatureAccessTest extends TestCase
         $this->assertFalse((bool)DB::table('role_feature_permissions')->where('feature_key','pos_inventory')->value('is_allowed'));
     }
 
+    public function test_cspos_settings_are_hidden_and_rejected_when_branch_pos_is_disabled(): void
+    {
+        DB::table('branch_stores')->where('id',2)->update(['pos_inventory_enabled'=>true]);
+        $this->allow('CSPOS','members',true);
+        $this->actingAs($this->actor('OWNER'));
+        $response=$this->get('/role-feature-access')->assertOk()->assertDontSee('CS POS')
+            ->assertDontSee('permissions[CSPOS]',false)->assertSee('permissions[CS][members]',false);
+        $this->assertArrayNotHasKey('CSPOS',$response->viewData('roles'));
+        foreach([1,0] as $allowed) {
+            $this->put('/role-feature-access',['permissions'=>['CSPOS'=>['members'=>$allowed]]])->assertSessionHasErrors();
+        }
+        $this->assertDatabaseHas('role_feature_permissions',['branch_store_id'=>1,'role'=>'CSPOS','feature_key'=>'members','is_allowed'=>1]);
+        $this->put('/role-feature-access',['permissions'=>['CS'=>['members'=>1]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('role_feature_permissions',['branch_store_id'=>1,'role'=>'CSPOS','feature_key'=>'members','is_allowed'=>0]);
+        $this->assertDatabaseHas('role_feature_permissions',['branch_store_id'=>1,'role'=>'CS','feature_key'=>'members','is_allowed'=>1]);
+    }
+
+    public function test_cspos_settings_can_be_managed_when_login_branch_pos_is_enabled(): void
+    {
+        DB::table('branch_stores')->where('id',2)->update(['pos_inventory_enabled'=>true]);
+        $this->actingAs($this->actor('OWNER',2));
+        $this->get('/role-feature-access')->assertOk()->assertSee('CS POS')
+            ->assertSee('permissions[CSPOS][members]',false)->assertSee('permissions[CSPOS][pos_sales]',false);
+        $this->put('/role-feature-access',['permissions'=>['CSPOS'=>['members'=>1,'pos_sales'=>1]]])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        foreach(['members','pos_sales'] as $feature) $this->assertDatabaseHas('role_feature_permissions',[
+            'branch_store_id'=>2,'role'=>'CSPOS','feature_key'=>$feature,'is_allowed'=>1,
+        ]);
+        $this->assertEquals(0,DB::table('role_feature_permissions')->where('branch_store_id',1)->count());
+    }
+
     public function test_enabled_branch_features_appear_and_can_be_saved(): void
     {
         DB::table('branch_stores')->where('id',1)->update([

@@ -37,6 +37,13 @@ class RoleFeatureAccess
         ];
     }
 
+    public function rolesForBranch(?BranchStore $branch): array
+    {
+        $roles=self::roles();
+        if (!$branch || !$branch->pos_inventory_enabled) unset($roles['CSPOS']);
+        return $roles;
+    }
+
     public function featuresForBranch(?BranchStore $branch): array
     {
         $features=self::features();
