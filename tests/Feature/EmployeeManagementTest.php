@@ -344,7 +344,7 @@ class EmployeeManagementTest extends TestCase
     public function test_employee_details_show_enrollment_link_and_protect_other_branches(): void
     {
         $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
-        $this->actingAs($this->actor())->get('/employees')->assertOk()->assertSee(route('employees.show',$employee->id),false);
+        $this->actingAs($this->actor())->get('/employees')->assertOk()->assertSee(route('employees.show',$employee->id),false)->assertSee(route('employee-schedules.calendar',$employee->id),false);
         $this->get('/employees/'.$employee->id)->assertOk()->assertSee('Detail Employee')->assertSee(route('face-enrollment.index',['employee_id'=>$employee->id]),false);
         $employee->update(['is_active'=>false]);
         $this->get('/employees/'.$employee->id)->assertOk()->assertDontSee(route('face-enrollment.index',['employee_id'=>$employee->id]),false);

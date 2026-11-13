@@ -367,6 +367,9 @@ Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagemen
     Route::put('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'updateTemplate'])->name('employee-shifts.update');
     Route::delete('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'destroyTemplate'])->name('employee-shifts.destroy');
     Route::get('employee-schedules', [\App\Http\Controllers\EmployeeAttendanceController::class,'schedules'])->name('employee-schedules.index');
+    Route::get('employee-schedules/employee/{employee}', [\App\Http\Controllers\EmployeeCalendarController::class,'index'])->name('employee-schedules.calendar');
+    Route::post('employee-schedules/employee/{employee}', [\App\Http\Controllers\EmployeeCalendarController::class,'schedule'])->name('employee-schedules.calendar.store');
+    Route::post('employee-leaves/employee/{employee}', [\App\Http\Controllers\EmployeeCalendarController::class,'leave'])->name('employee-leaves.calendar.store');
     Route::post('employee-schedules', [\App\Http\Controllers\EmployeeAttendanceController::class,'storeSchedules'])->name('employee-schedules.store');
     Route::delete('employee-schedules/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'destroySchedule'])->name('employee-schedules.destroy');
     Route::get('employee-leaves', [\App\Http\Controllers\EmployeeAttendanceController::class,'leaves'])->name('employee-leaves.index');

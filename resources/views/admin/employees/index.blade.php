@@ -59,6 +59,9 @@
                             </td>
                             <td><div class="d-flex flex-column align-items-start gap-1">
                                 <a class="btn light btn-info btn-xs mb-1" href="{{ route('employees.show',$employee->id) }}">Detail</a>
+                                @if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'employee-schedules.calendar'))
+                                <a class="btn light btn-primary btn-xs mb-1" href="{{ route('employee-schedules.calendar',$employee->id) }}">Schedule</a>
+                                @endif
                                 <button type="button" class="btn light btn-warning btn-xs mb-1" data-bs-toggle="modal" data-bs-target="#modalEditEmployee{{ $employee->id }}">Ubah</button>
                                 <form class="d-inline" method="POST" action="{{ route('employees.destroy',$employee->id) }}" onsubmit="return confirm('Hapus sementara pegawai ini? Pegawai tidak dapat absen setelah dihapus.')">
                                     @csrf @method('DELETE')<button class="btn light btn-danger btn-xs">Hapus Sementara</button>

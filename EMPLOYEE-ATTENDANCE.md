@@ -130,6 +130,34 @@ Sebelum migration tersedia, form pegawai tetap memakai empat pilihan lama.
 Fitur Kategori Jabatan Pegawai memiliki izin CRUD terpisah pada role access,
 default Owner/Admin/HRD, serta mengikuti switch face_enrollment_enabled.
 
+## Kalender jadwal per pegawai
+
+Tombol **Schedule** di daftar Employees membuka
+`/employee-schedules/employee/{id}?month=YYYY-MM`. Kalender bulanan dimulai Senin,
+dengan navigasi bulan sebelumnya/berikutnya, centang tanggal, Pilih semua, dan
+Kosongkan. Tabel di bawah kalender menampilkan jadwal serta izin/cuti aktif bulan itu,
+termasuk cabang jadwal untuk pegawai mobile.
+
+Setelah memilih tanggal, **Pilih Aksi** membuka modal. Shift memakai template aktif
+cabang login; Libur tidak memakai template. Menyimpan shift/libur membutuhkan Create
+Jadwal Shift Pegawai. Mengganti jadwal yang sudah ada juga membutuhkan Delete;
+penggantian diproses atomik dan tidak mengubah tanggal lain. Snapshot template dan
+aturan shift malam/tumpang tindih tetap berlaku.
+
+Izin, cuti, atau sakit memakai izin Create Izin & Cuti Pegawai dan harus disertai
+alasan. Pengajuan berstatus pending dan mengikuti persetujuan Day Off yang sudah ada.
+Tanggal terpisah dikelompokkan menjadi rentang berurutan saja: memilih 1, 2, 5
+membuat pengajuan 1–2 dan 5, tanpa memasukkan tanggal 3–4.
+
+Tanggal yang sudah memiliki absensi, pengajuan pending/approved, atau jadwal cabang
+lain dikunci. Pegawai nonaktif hanya bisa dilihat. Scope pegawai tetap mengikuti
+cabang login atau all_branch. Semua endpoint mengikuti pengaktifan fitur wajah cabang.
+Link dan kalender hanya memerlukan Read Jadwal Shift; pilihan aksi mengikuti grant
+masing-masing, tanpa menambah izin role secara otomatis.
+
+Fitur memakai tabel jadwal/izin yang sudah ada. Tidak ada migration/SQL baru dan
+tidak ada perubahan di repositori Face Attendance.
+
 Tidak ada akun pegawai self-service baru, kuota cuti, koreksi jam manual,
 atau pemrosesan payroll pada perubahan ini. Kamera/perangkat asli tetap perlu
 dicoba setelah deployment; tes otomatis menggunakan foto fixture dan service wajah tiruan.

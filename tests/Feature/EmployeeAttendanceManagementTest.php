@@ -236,4 +236,71 @@ class EmployeeAttendanceManagementTest extends TestCase
         $this->get('/employee-schedules')->assertOk()->assertSee("new bootstrap.Modal(document.getElementById('createSchedule')).show()",false)->assertSee('Remember me');
         $this->assertDatabaseCount('employee_shift_schedules',1);
     }
+
+    private function calendarData(array $dates, string $operation='shift', ?int $template=null): array
+    {
+        return ['month'=>'2026-11','dates'=>$dates,'operation'=>$operation,'template_id'=>$template,'note'=>'Calendar note','_calendar_form'=>1];
+    }
+    public function test_employee_calendar_renders_month_and_sets_only_selected_dates(): void
+    {
+        $template=$this->template();
+        $response=$this->get('/employee-schedules/employee/1?month=2026-11')->assertOk()->assertSee('November 2026')->assertSee('Andi');
+        $this->assertCount(30,$response->viewData('days'));
+        $dom=new \DOMDocument();@$dom->loadHTML($response->getContent());
+        $choices=(new \DOMXPath($dom))->query('//input[@name="dates[]"]');$this->assertCount(30,$choices);
+        $this->assertSame('employeeCalendarForm',$choices->item(0)->getAttribute('form'));
+        $this->post('/employee-schedules/employee/1',$this->calendarData(['2026-11-01','2026-11-03'],'shift',$template))->assertSessionHasNoErrors()->assertRedirect(route('employee-schedules.calendar',[1,'month'=>'2026-11']));
+        $this->assertDatabaseCount('employee_shift_schedules',2);
+        $this->assertDatabaseMissing('employee_shift_schedules',['work_date'=>'2026-11-02']);
+        $this->post('/employee-schedules/employee/1',$this->calendarData(['2026-11-03'],'libur'))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('employee_shift_schedules',['work_date'=>'2026-11-03','is_day_off'=>1,'shift_name'=>'Libur']);
+        $this->assertDatabaseHas('employee_shift_schedules',['work_date'=>'2026-11-01','template_id'=>$template]);
+    }
+    public function test_calendar_leave_groups_only_consecutive_selected_dates_and_requires_approval(): void
+    {
+        $this->actingAs($this->actor());
+        $this->post('/employee-leaves/employee/1',$this->calendarData(['2026-11-05','2026-11-02','2026-11-01'],'izin'))->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('employee_attendance_leaves',2);
+        $this->assertDatabaseHas('employee_attendance_leaves',['start_date'=>'2026-11-01','end_date'=>'2026-11-02','status'=>'pending','type'=>'izin']);
+        $this->assertDatabaseHas('employee_attendance_leaves',['start_date'=>'2026-11-05','end_date'=>'2026-11-05','status'=>'pending']);
+        $response=$this->get('/employee-schedules/employee/1?month=2026-11')->assertOk()->assertSee('Menunggu');
+        $days=collect($response->viewData('days'))->keyBy('date');$this->assertTrue($days['2026-11-01']['locked']);$this->assertFalse($days['2026-11-03']['locked']);
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-01'],'libur'))->assertStatus(422);
+        $this->postJson('/employee-leaves/employee/1',$this->calendarData(['2026-11-05'],'cuti'))->assertStatus(422);
+        $this->postJson('/employee-leaves/employee/1',array_merge($this->calendarData(['2026-11-06'],'sakit'),['note'=>'']))->assertStatus(422);
+        $this->assertDatabaseCount('employee_attendance_leaves',2);
+    }
+    public function test_calendar_batch_is_atomic_for_attendance_foreign_branch_and_night_overlap(): void
+    {
+        $template=$this->template();$this->attendanceRecords();
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-12','2026-11-13'],'shift',$template))->assertStatus(422);
+        $this->assertDatabaseCount('employee_shift_schedules',0);
+        Employee::find(1)->update(['all_branch'=>true]);
+        $this->actingAs($this->actor('OWNER',2))->post('/employee-schedules/employee/1',$this->calendarData(['2026-11-15'],'libur'))->assertSessionHasNoErrors();
+        $this->actingAs($this->actor())->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-14','2026-11-15'],'libur'))->assertStatus(422);
+        $this->postJson('/employee-leaves/employee/1',$this->calendarData(['2026-11-15'],'izin'))->assertStatus(422);
+        $this->assertDatabaseCount('employee_shift_schedules',1);
+        $night=$this->template('22:00','06:00');$early=$this->template('05:00','13:00');
+        $this->post('/employee-schedules/employee/1',$this->calendarData(['2026-11-20'],'shift',$night))->assertSessionHasNoErrors();
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-19','2026-11-21'],'shift',$early))->assertStatus(422);
+        $this->assertDatabaseCount('employee_shift_schedules',2);
+        $this->assertDatabaseMissing('employee_shift_schedules',['work_date'=>'2026-11-19']);
+    }
+    public function test_calendar_enforces_scope_month_and_granular_actions(): void
+    {
+        $this->actingAs($this->actor())->get('/employee-schedules/employee/2?month=2026-11')->assertNotFound();
+        $this->getJson('/employee-schedules/employee/1?month=invalid')->assertStatus(422);
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-12-01'],'libur'))->assertStatus(422);
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-01'],'izin'))->assertStatus(422);
+        $this->actingAs($this->actor('CS'))->get('/employee-schedules/employee/1')->assertForbidden();
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'CS','feature_key'=>'attendance_schedules','is_allowed'=>1,
+            'can_read'=>1,'can_create'=>1,'can_update'=>0,'can_delete'=>0]);
+        $this->get('/employee-schedules/employee/1?month=2026-11')->assertOk()->assertDontSee('Ajukan izin');
+        $this->post('/employee-schedules/employee/1',$this->calendarData(['2026-11-01'],'libur'))->assertSessionHasNoErrors();
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-01'],'libur'))->assertStatus(422);
+        $this->postJson('/employee-leaves/employee/1',$this->calendarData(['2026-11-02'],'izin'))->assertForbidden();
+        $actor=$this->actor();$actor->branchStore->face_enrollment_enabled=false;
+        $this->actingAs($actor)->get('/employee-schedules/employee/1')->assertNotFound();
+        $this->postJson('/employee-schedules/employee/1',$this->calendarData(['2026-11-02'],'libur'))->assertNotFound();
+    }
 }
