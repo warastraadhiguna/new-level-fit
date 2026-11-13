@@ -52,9 +52,12 @@
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'admin' ? 'show active' : '' }}" data-bs-toggle="tab"
                                 href="#administrator">
-                                Adminstrator
+                                Administrator
                             </a>
                         </li>
+                    @endif
+                    @if(Auth::user()->isOwner())
+                        <li class="nav-item"><a class="nav-link {{ $page==='owner' ? 'show active' : '' }}" data-bs-toggle="tab" href="#ownerAccounts">Owner</a></li>
                     @endif
                     @if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <li class="nav-item"><a class="nav-link {{ $page==='hrd' ? 'show active' : '' }}" data-bs-toggle="tab" href="#hrdAccounts">HRD</a></li>
@@ -66,7 +69,10 @@
                     @include('admin.staff.fitness-consultant.index')
                     @include('admin.staff.personal-trainer.index')
                     @include('admin.staff.pt-user.index')
-                    @include('admin.staff.administrator.index')
+                    @include('admin.staff.administrator.index',['accountRole'=>'ADMIN','accountLabel'=>'Administrator','accountPage'=>'admin','accountTab'=>'administrator'])
+                    @if(Auth::user()->isOwner())
+                        @include('admin.staff.administrator.index',['administrator'=>$owners,'accountRole'=>'OWNER','accountLabel'=>'Owner','accountPage'=>'owner','accountTab'=>'ownerAccounts'])
+                    @endif
                     @include('admin.staff.class-instructor.index')
                     @if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         @include('admin.staff.role-accounts.index',['accountRole'=>'HRD','rolePrefix'=>'hrd','roleLabel'=>'HRD','tabId'=>'hrdAccounts','accounts'=>$roleAccounts->get('HRD',collect())])
@@ -127,7 +133,7 @@ document.addEventListener('DOMContentLoaded',function(){
             roleTables.push(new DataTable(table,{autoWidth:false,order:[[1,'asc']],columnDefs:[{targets:6,orderable:false}]}));
         });
     }
-    const pages={customerService:'cs',fitnessConsultant:'fc',personalTrainer:'pt',ptUser:'pt-user',administrator:'admin',hrdAccounts:'hrd',financeAccounts:'finance'};
+    const pages={customerService:'cs',fitnessConsultant:'fc',personalTrainer:'pt',ptUser:'pt-user',administrator:'admin',ownerAccounts:'owner',hrdAccounts:'hrd',financeAccounts:'finance'};
     document.querySelectorAll('.custom-tab-1 > .nav-tabs a[data-bs-toggle="tab"]').forEach(function(tab){
         tab.addEventListener('shown.bs.tab',function(){
             roleTables.forEach(function(table){table.columns.adjust();});

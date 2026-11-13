@@ -1,13 +1,13 @@
 <!-- Modal Add -->
-<div class="modal fade" id="modalAddAdministrator" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="modalAdd{{ $accountLabel }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-center">
         <div class="modal-content">
             <form action="{{ route('administrator.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="page" value="admin">
+                <input type="hidden" name="page" value="{{ $accountPage }}">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">
-                        Create {{ Auth::user()->isOwner() ? 'Administrator / Owner' : 'Administrator' }}
+                        Create {{ $accountLabel }}
                     </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -46,15 +46,8 @@
                         <div class="col-xl-6">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Role</label>
-                                <select name="role" class="form-control" aria-label="Default select example">
-                                    {{-- <option disabled selected value>
-                                        <- Choose ->
-                                    </option> --}}
-                                    <option value="ADMIN" {{ old('role') === 'ADMIN' ? 'selected' : '' }}>Admin</option>
-                                    @if (Auth::user()->isOwner())
-                                        <option value="OWNER" {{ old('role') === 'OWNER' ? 'selected' : '' }}>Owner</option>
-                                    @endif
-                                </select>
+                                <input type="hidden" name="role" value="{{ $accountRole }}">
+                                <input type="text" class="form-control" value="{{ $accountLabel }}" disabled>
                             </div>
                         </div>
                         <div class="col-xl-6">
@@ -83,18 +76,18 @@
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox"
                                         name="application_access[]" value="management"
-                                        id="createAdministratorManagementAccess"
+                                        id="create{{ $accountLabel }}ManagementAccess"
                                         {{ in_array('management', old('application_access', ['management']), true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="createAdministratorManagementAccess">
+                                    <label class="form-check-label" for="create{{ $accountLabel }}ManagementAccess">
                                         Management
                                     </label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox"
                                         name="application_access[]" value="gym_landing"
-                                        id="createAdministratorGymLandingAccess"
+                                        id="create{{ $accountLabel }}GymLandingAccess"
                                         {{ in_array('gym_landing', old('application_access', []), true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="createAdministratorGymLandingAccess">
+                                    <label class="form-check-label" for="create{{ $accountLabel }}GymLandingAccess">
                                         Member
                                     </label>
                                 </div>
@@ -116,7 +109,7 @@
 
 <!-- Modal Edit -->
 @foreach ($administrator as $item)
-    <div class="modal fade" id="modalEditAdministrator{{ $item->id }}" tabindex="-1"
+    <div class="modal fade" id="modalEdit{{ $accountLabel }}{{ $item->id }}" tabindex="-1"
         aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-center">
             <div class="modal-content">
@@ -124,9 +117,9 @@
                     enctype="multipart/form-data">
                     @method('PUT')
                     @csrf
-                    <input type="hidden" name="page" value="admin">
+                    <input type="hidden" name="page" value="{{ $accountPage }}">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalLabel">Edit {{ $item->isOwner() ? 'Owner' : 'Administrator' }}</h1>
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Edit {{ $accountLabel }}</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -223,11 +216,11 @@
 
 
 
-<div class="tab-pane fade {{ $page == 'admin' ? 'show active' : '' }}" id="administrator" role="tabpanel">
+<div class="tab-pane fade {{ $page == $accountPage ? 'show active' : '' }}" id="{{ $accountTab }}" role="tabpanel">
     <div class="card">
         <div class="card-body">
             <div class="col-xl-12">
-                <h4>{{ Auth::user()->isOwner() ? 'Administrator & Owner List' : 'Administrator List' }}</h4>
+                <h4>{{ $accountLabel }} List</h4>
             </div>
         </div>
     </div>
@@ -239,8 +232,8 @@
                     <div class="page-title flex-wrap">
                         <div>
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                data-bs-target="#modalAddAdministrator">
-                                + New {{ Auth::user()->isOwner() ? 'Administrator / Owner' : 'Administrator' }}
+                                data-bs-target="#modalAdd{{ $accountLabel }}">
+                                + New {{ $accountLabel }}
                             </button>
                         </div>
                     </div>
@@ -250,7 +243,7 @@
                 <div class="col-xl-12">
                     <div class="table-responsive full-data">
                         <table class="table-responsive-lg table display dataTablesCard student-tab dataTable no-footer"
-                            id="#">
+                            id="staff-{{ $accountPage }}-table">
                             <thead>
                                 <tr>
                                     <th>Branch</th>                                             
@@ -306,14 +299,14 @@
                                                     <button type="button"
                                                         class="btn light btn-warning btn-xs mb-1 btn-block"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#modalEditAdministrator{{ $item->id }}">
+                                                        data-bs-target="#modalEdit{{ $accountLabel }}{{ $item->id }}">
                                                         Edit
                                                     </button>
                                                     <form action="{{ route('administrator.destroy', $item->id) }}"
                                                         onclick="return confirm('Delete Data ? ')" method="POST">
                                                         @method('delete')
                                                         @csrf
-                                                        <input type="hidden" name="page" value="admin">
+                                                        <input type="hidden" name="page" value="{{ $accountPage }}">
                                                         <button type="submit"
                                                             class="btn light btn-danger btn-xs btn-block">Delete</button>
                                                     </form>

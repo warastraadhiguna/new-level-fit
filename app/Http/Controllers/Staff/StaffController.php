@@ -24,12 +24,12 @@ class StaffController extends Controller
 {
     public function index()
     {
-        $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
 
         $data = [
             'roleAccounts'          => $this->roleAccounts(false),
             'title'                 => 'Staff List',
-            'administrator'         => User::with("branchStore")->whereIn('role', $administratorRoles)->get(),
+            'administrator'         => User::with('branchStore')->where('role','ADMIN')->get(),
+            'owners'                => Auth::user()->isOwner() ? User::with('branchStore')->where('role','OWNER')->get() : collect(),
             'ptUsers'               => User::with('branchStore')->where('role', 'PT')->get(),
             'customerService'       => User::with("branchStore")->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->where('role', 'CSPOS')->get(),
@@ -48,12 +48,12 @@ class StaffController extends Controller
 
     public function showOldStaff()
     {
-        $administratorRoles = Auth::user()->isOwner() ? ['ADMIN', 'OWNER'] : ['ADMIN'];
 
         $data = [
             'roleAccounts'          => $this->roleAccounts(true),
             'title'                 => 'Old Staff List',
-            'administrator'         => User::with("branchStore")->onlyTrashed()->whereIn('role', $administratorRoles)->get(),
+            'administrator'         => User::with('branchStore')->onlyTrashed()->where('role','ADMIN')->get(),
+            'owners'                => Auth::user()->isOwner() ? User::with('branchStore')->onlyTrashed()->where('role','OWNER')->get() : collect(),
             'ptUsers'               => User::with('branchStore')->onlyTrashed()->where('role', 'PT')->get(),
             'customerService'       => User::with("branchStore")->onlyTrashed()->where('role', 'CS')->get(),
             'customerServicePos'    => User::with("branchStore")->onlyTrashed()->where('role', 'CSPOS')->get(),
@@ -74,7 +74,9 @@ class StaffController extends Controller
     {
         $oldForm=(string)request()->old('_role_form','');
         if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()) && preg_match('/^(hrd|finance)-(create|edit-[0-9]+)$/D',$oldForm,$matches)) return $matches[1];
-        return Request()->input('page');
+        $page=Request()->input('page');
+        if ($page==='owner') abort_unless(Auth::user()->isOwner(),403);
+        return $page;
     }
     private function roleAccounts(bool $old)
     {

@@ -51,6 +51,36 @@ class StaffRoleAccountsTest extends TestCase
                 return $groups->flatten()->pluck('id')->all()===[$deleted->id];
             });
     }
+    public function test_administrator_and_owner_have_separate_current_and_old_lists_and_create_forms(): void
+    {
+        $owner=$this->actor('OWNER');$admin=$this->actor('ADMIN');
+        $oldOwner=$this->actor('OWNER');$oldOwner->delete();
+        $oldAdmin=$this->actor('ADMIN');$oldAdmin->delete();
+        $this->actingAs($owner);
+        foreach(['admin','owner'] as $page) {
+            $response=$this->get('/staff?page='.$page)->assertOk()->assertDontSee('Administrator &amp; Owner List',false);
+            $this->assertSame([$admin->id],$response->viewData('administrator')->pluck('id')->all());
+            $this->assertSame([$owner->id],$response->viewData('owners')->pluck('id')->all());
+            $dom=new \DOMDocument();@$dom->loadHTML($response->getContent());$xpath=new \DOMXPath($dom);
+            $adminTable=$dom->getElementById('staff-admin-table')->textContent;
+            $ownerTable=$dom->getElementById('staff-owner-table')->textContent;
+            $this->assertStringContainsString($admin->email,$adminTable);
+            $this->assertStringNotContainsString($owner->email,$adminTable);
+            $this->assertStringContainsString($owner->email,$ownerTable);
+            $this->assertStringNotContainsString($admin->email,$ownerTable);
+            $this->assertSame('ADMIN',$xpath->query('//*[@id="modalAddAdministrator"]//input[@name="role"]')->item(0)->getAttribute('value'));
+            $this->assertSame('OWNER',$xpath->query('//*[@id="modalAddOwner"]//input[@name="role"]')->item(0)->getAttribute('value'));
+            $this->assertStringContainsString('show active',$dom->getElementById($page==='admin' ? 'administrator':'ownerAccounts')->getAttribute('class'));
+        }
+        $response=$this->get('/old-staff?page=owner')->assertOk();
+        $this->assertSame([$oldAdmin->id],$response->viewData('administrator')->pluck('id')->all());
+        $this->assertSame([$oldOwner->id],$response->viewData('owners')->pluck('id')->all());
+        $this->actingAs($admin)->get('/staff?page=admin')->assertOk()->assertDontSee('id="ownerAccounts"',false)
+            ->assertViewHas('owners',function($owners) { return $owners->isEmpty(); });
+        $this->get('/staff?page=owner')->assertForbidden();
+        $this->get('/old-staff?page=owner')->assertForbidden();
+    }
+
     public function test_failed_validation_reopens_only_the_originating_role_form(): void
     {
         $owner=$this->actor('OWNER');$this->actingAs($owner);
