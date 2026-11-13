@@ -134,7 +134,7 @@
             @endif
 
             @if (Auth::user()->isAdmin())
-                <li @unless(app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'staff') || app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'employees') || app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'enrollment')) style="display:none" @endunless>
+                <li @unless(app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'staff') || app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'employees') || app(\App\Support\RoleFeatureAccess::class)->allows(Auth::user(),'enrollment') || collect(['attendance_shifts','attendance_schedules','attendance_leaves','attendance_reports'])->contains(fn($feature)=>app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),['attendance_shifts'=>'employee-shifts.index','attendance_schedules'=>'employee-schedules.index','attendance_leaves'=>'employee-leaves.index','attendance_reports'=>'employee-attendance.report'][$feature]))) style="display:none" @endunless>
                     <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
                         <i class="material-symbols-outlined">person</i>
                         <span class="nav-text">Staff</span>
@@ -142,6 +142,7 @@
                     <ul aria-expanded="false">
                         <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'staff.index'))<a href="{{ route('staff.index', ['page' => 'cs']) }}">Staff List</a>@endif</li>
                         @if (optional(Auth::user()->branchStore)->face_enrollment_enabled)
+                            @include('admin.employee-attendance.sidebar')
                             <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'employees.index'))<a href="{{ route('employees.index') }}">Data Pegawai</a>@endif</li>
                             <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'face-enrollment.index'))<a href="{{ route('face-enrollment.index') }}">Pendaftaran Wajah</a>@endif</li>
                         @endif

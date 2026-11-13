@@ -33,6 +33,10 @@ class RoleFeatureAccess
             'pt_free'=>['label'=>'PT Free','roles'=>$withPt,'defaults'=>$withPt],
             'staff'=>['label'=>'Staff List & Akun Staff','roles'=>['ADMIN'],'defaults'=>['ADMIN']],
             'employees'=>['label'=>'Data Pegawai','roles'=>['ADMIN','HRD','FINANCE'],'defaults'=>['ADMIN','HRD']],
+            'attendance_shifts'=>['label'=>'Template Shift Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
+            'attendance_schedules'=>['label'=>'Jadwal Shift Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
+            'attendance_leaves'=>['label'=>'Izin & Cuti Pegawai (Update: persetujuan)','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
+            'attendance_reports'=>['label'=>'Rekap Kehadiran Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
             'enrollment'=>['label'=>'Pendaftaran Wajah','roles'=>['ADMIN','HRD','FINANCE'],'defaults'=>['ADMIN','HRD']],
             'pos_sales'=>['label'=>'POS Kasir & Penjualan','roles'=>['ADMIN','CS','CSPOS'],'defaults'=>['ADMIN','CS','CSPOS']],
             'pos_inventory'=>['label'=>'POS Produk, Pembelian & Stok','roles'=>['ADMIN'],'defaults'=>['ADMIN']],
@@ -68,6 +72,11 @@ class RoleFeatureAccess
             'pos_inventory'=>'pos_inventory_enabled',
             'employees'=>'face_enrollment_enabled',
             'enrollment'=>'face_enrollment_enabled',
+            'attendance_shifts'=>'face_enrollment_enabled',
+            'attendance_schedules'=>'face_enrollment_enabled',
+            'attendance_leaves'=>'face_enrollment_enabled',
+            'attendance_reports'=>'face_enrollment_enabled',
+
         ];
     }
 
@@ -118,6 +127,9 @@ class RoleFeatureAccess
         if (!$definition || !in_array($role,$definition['roles'],true)) return [];
         if (in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
         if (in_array($feature,['membership_approval','pt_approval','lo_cancel'],true)) return ['read','update'];
+        if ($feature==='attendance_reports') return ['read'];
+        if ($feature==='attendance_schedules') return ['create','read','delete'];
+        if ($feature==='attendance_leaves') return ['create','read','update'];
         if ($feature==='pos_sales') return ['create','read'];
         if (in_array($feature,['enrollment','membership_checkin','pt_checkin','membership_payments','pt_payments'],true)) return ['create','read','delete'];
         return array_keys(self::actions());
@@ -228,6 +240,8 @@ class RoleFeatureAccess
         if (Str::is('secret-branch-store.*',$name)) return null;
         if (Str::startsWith($route->uri(),'api/gate/')) return in_array('POST',$route->methods(),true) ? 'membership_checkin' : 'membership';
         $patterns=[
+            'attendance_shifts'=>['employee-shifts.*'], 'attendance_schedules'=>['employee-schedules.*'],
+            'attendance_leaves'=>['employee-leaves.*'], 'attendance_reports'=>['employee-attendance.*'],
             'lo_cancel'=>['cancelLayoutOrientation'],
             'membership_approval'=>['member-approval.*'], 'pt_approval'=>['trainer-approval.*'],
             'membership_payments'=>['member-registration-payment.*','member-payment.*'],

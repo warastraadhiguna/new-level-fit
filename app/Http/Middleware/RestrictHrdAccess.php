@@ -12,7 +12,7 @@ class RestrictHrdAccess
         if ($access->hasExplicitRouteGrant($request->user(),$request->route())) return $next($request);
         if ($route==='dashboard' && $request->isMethod('GET')) return redirect()->route('hrd.home');
         $feature=$access->featureForRoute($request->route());
-        if (in_array($feature,['employees','enrollment','revenue','tip_tap_transfer'],true) && $access->allows($request->user(),$feature)) return $next($request);
+        if (in_array($feature,['employees','enrollment','revenue','tip_tap_transfer','attendance_shifts','attendance_schedules','attendance_leaves','attendance_reports'],true) && $access->allows($request->user(),$feature)) return $next($request);
         abort_unless(in_array($route,[
             'hrd.home','login','logout',
             'employees.index','employees.store','employees.edit','employees.update','employees.destroy',

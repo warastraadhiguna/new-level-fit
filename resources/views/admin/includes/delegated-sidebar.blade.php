@@ -25,3 +25,5 @@
         <li><a href="{{ route($routeName) }}"><span class="nav-text">{{ $label }}</span></a></li>
     @endif
 @endforeach
+
+@include('admin.employee-attendance.sidebar')

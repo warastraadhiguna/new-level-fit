@@ -1,5 +1,6 @@
 <?php
 return [
+    'attendance_timezone' => env('ATTENDANCE_TIMEZONE', 'Asia/Jakarta'),
     'attendance_url' => env('FACE_ATTENDANCE_URL', 'http://localhost:8000/activate'),
     'url' => env('FACE_SERVICE_URL', 'http://127.0.0.1:8001'),
     'timeout' => (int) env('FACE_SERVICE_TIMEOUT', 30),

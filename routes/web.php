@@ -361,6 +361,18 @@ Auth::routes();
 
 // Face enrollment shares profiles with Face Attendance in level-fit.
 Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagementAccess::class, \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
+    Route::get('employee-shifts', [\App\Http\Controllers\EmployeeAttendanceController::class,'templates'])->name('employee-shifts.index');
+    Route::post('employee-shifts', [\App\Http\Controllers\EmployeeAttendanceController::class,'storeTemplate'])->name('employee-shifts.store');
+    Route::put('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'updateTemplate'])->name('employee-shifts.update');
+    Route::delete('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'destroyTemplate'])->name('employee-shifts.destroy');
+    Route::get('employee-schedules', [\App\Http\Controllers\EmployeeAttendanceController::class,'schedules'])->name('employee-schedules.index');
+    Route::post('employee-schedules', [\App\Http\Controllers\EmployeeAttendanceController::class,'storeSchedules'])->name('employee-schedules.store');
+    Route::delete('employee-schedules/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'destroySchedule'])->name('employee-schedules.destroy');
+    Route::get('employee-leaves', [\App\Http\Controllers\EmployeeAttendanceController::class,'leaves'])->name('employee-leaves.index');
+    Route::post('employee-leaves', [\App\Http\Controllers\EmployeeAttendanceController::class,'storeLeave'])->name('employee-leaves.store');
+    Route::put('employee-leaves/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'reviewLeave'])->name('employee-leaves.update');
+    Route::get('employee-attendance', [\App\Http\Controllers\EmployeeAttendanceController::class,'report'])->name('employee-attendance.report');
+    Route::get('employee-attendance/export', [\App\Http\Controllers\EmployeeAttendanceController::class,'report'])->name('employee-attendance.report.export');
     Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','edit','update','destroy']);
     Route::get('employees/{id}/photos/{kind}', [\App\Http\Controllers\EmployeeController::class,'photo'])->where('kind','photo|ktp')->name('employees.photo');
     Route::get('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('face-enrollment.index');
