@@ -1,5 +1,31 @@
 # Data pegawai absensi terpisah
 
+## Pegawai mobile / semua cabang
+
+Centang **Semua cabang (pegawai mobile)** pada form pegawai untuk menyimpan
+`all_branch=1`. Default `0` mempertahankan pegawai lama hanya di cabang asal.
+Pegawai mobile tampil dan dapat dikelola pada Data Pegawai di seluruh cabang,
+termasuk akses foto serta enrollment wajah sesuai izin role dan aktivasi fitur cabang.
+Cabang asal tidak berubah saat pegawai diedit dari cabang lain.
+
+Perbarui kode aplikasi utama **dan** `face-attendance/laravel` untuk mengaktifkan
+absensi lintas cabang. Tetap gunakan satu pegawai dan satu profil wajah. Catatan
+absensi mengikuti cabang perangkat tempat absen; masuk di cabang A dan pulang
+di cabang B diperbolehkan. Batas satu masuk/pulang per hari tetap berlaku secara
+global per pegawai. Perangkat harus tetap diaktivasi. Pegawai nonaktif/dihapus
+sementara tetap tidak dapat absen, meskipun `all_branch=1`.
+
+Jalankan satu kali pada database bersama absensi / `face_enrollment`:
+
+```sql
+ALTER TABLE `employees` ADD COLUMN `all_branch` TINYINT(1) NOT NULL DEFAULT 0;
+```
+
+File SQL: `database/sql/2026_11_13_employee_all_branch.sql`. Alternatif migration
+`2026_11_13_000002_add_all_branch_to_employees.php` tersedia di kedua aplikasi;
+gunakan salah satu cara pada database yang sama. Migration melewati kolom yang
+sudah ada. Terapkan kolom sebelum kode baru dipakai.
+
 ## Foto dan informasi pekerjaan
 
 Form tambah/edit memakai modal seperti Staff. Tersedia foto pegawai, foto KTP,

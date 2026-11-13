@@ -11,7 +11,9 @@ class FaceEnrollmentController extends Controller
         $branchId=$request->user()->branch_store_id;
         abort_unless($branchId,403,'Cabang aktif belum ditentukan.');
         return DB::connection('face_enrollment')->table('employees as u')
-            ->whereNull('u.deleted_at')->where('u.is_active',true)->where('u.branch_store_id',$branchId);
+            ->whereNull('u.deleted_at')->where('u.is_active',true)->where(function($scope) use($branchId) {
+                $scope->where('u.branch_store_id',$branchId)->orWhere('u.all_branch',true);
+            });
     }
     private function ready(): bool
     {

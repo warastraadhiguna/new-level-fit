@@ -20,6 +20,7 @@ class FaceEnrollmentTest extends TestCase
         DB::table('branch_stores')->insert([['id'=>1,'name'=>'Branch One'],['id'=>2,'name'=>'Branch Two']]);
         require_once database_path('migrations/2026_11_04_000001_create_independent_employees.php');
         (new \CreateIndependentEmployees)->up();
+        require_once database_path('migrations/2026_11_13_000002_add_all_branch_to_employees.php');(new \AddAllBranchToEmployees)->up();
         DB::table('employees')->insert([
             ['id'=>10,'full_name'=>'Active One','employee_code'=>'EMP-10','position'=>'CS','is_active'=>true,'branch_store_id'=>1,'deleted_at'=>null],
             ['id'=>20,'full_name'=>'Active Two','employee_code'=>'EMP-20','position'=>'FC','is_active'=>true,'branch_store_id'=>2,'deleted_at'=>null],
@@ -72,6 +73,34 @@ class FaceEnrollmentTest extends TestCase
         Http::fake();
         $this->postJson('/enroll',$this->body(20))->assertNotFound();Http::assertNothingSent();
     }
+    public function test_mobile_employee_can_be_enrolled_from_another_branch_using_one_profile(): void
+    {
+        DB::table('employees')->where('id',20)->update(['all_branch'=>true]);
+        $this->actingAs($this->actor());$this->fakeModel();
+        $this->get('/enroll')->assertOk()->assertSee('Active Two');
+        $this->postJson('/enroll',$this->body(20))->assertOk();
+        $this->postJson('/enroll',$this->body(20))->assertOk();
+        $this->assertDatabaseCount('face_attendance_employees',1);
+        $this->assertDatabaseCount('face_attendance_samples',2);
+        $this->assertDatabaseHas('employees',['id'=>20,'branch_store_id'=>2,'all_branch'=>true]);
+        $this->assertDatabaseHas('face_attendance_employees',['source_employee_id'=>20,'department'=>'FC · Branch Two']);
+        DB::table('employees')->where('id',20)->update(['all_branch'=>false]);
+        $this->postJson('/enroll',$this->body(20))->assertNotFound();
+    }
+
+    public function test_mobile_employee_revocation_during_enrollment_blocks_save(): void
+    {
+        DB::table('employees')->where('id',20)->update(['all_branch'=>true]);
+        Http::fake(function() {
+            DB::table('employees')->where('id',20)->update(['all_branch'=>false]);
+            return Http::response(['success'=>true,'quality_checked'=>true,'face_count'=>1,
+                'embedding'=>array_fill(0,128,0.1),'model'=>'opencv-sface-2021dec']);
+        });
+        $this->actingAs($this->actor())->postJson('/enroll',$this->body(20))->assertNotFound();
+        $this->assertDatabaseCount('face_attendance_employees',0);
+        $this->assertDatabaseCount('face_attendance_samples',0);
+    }
+
     public function test_enrollment_adds_samples_without_replacing_old_ones(): void
     {
         $this->actingAs($this->actor());$this->fakeModel();

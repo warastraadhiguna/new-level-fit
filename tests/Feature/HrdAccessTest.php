@@ -20,6 +20,7 @@ class HrdAccessTest extends TestCase
         });
         DB::table('branch_stores')->insert([['id'=>1,'name'=>'One'],['id'=>2,'name'=>'Two']]);
         require_once database_path('migrations/2026_11_04_000001_create_independent_employees.php');(new \CreateIndependentEmployees)->up();
+        require_once database_path('migrations/2026_11_13_000002_add_all_branch_to_employees.php');(new \AddAllBranchToEmployees)->up();
         require_once database_path('migrations/2026_11_04_000002_create_face_attendance_samples.php');(new \CreateFaceAttendanceSamples)->up();
         require_once database_path('migrations/2026_11_05_000001_add_born_to_employees.php');(new \AddBornToEmployees)->up();
     }

@@ -13,7 +13,7 @@ class EmployeeController extends Controller
     private function employees(Request $request)
     {
         abort_unless($request->user()->branch_store_id,403,'Cabang aktif belum ditentukan.');
-        return Employee::where('branch_store_id',$request->user()->branch_store_id);
+        return Employee::availableInBranch((int)$request->user()->branch_store_id);
     }
 
     public function index(Request $request)
@@ -68,6 +68,7 @@ class EmployeeController extends Controller
             'born'=>['nullable','date_format:Y-m-d','before_or_equal:'.\Carbon\Carbon::today('Asia/Jakarta')->toDateString()],
             'position'=>'nullable|string|max:100','phone'=>'nullable|string|max:30',
             'is_active'=>'required|boolean',
+            'all_branch'=>'sometimes|boolean',
             'position_category'=>['nullable',Rule::in(array_keys(Employee::POSITION_CATEGORIES))],
             'employment_start_date'=>'nullable|date_format:Y-m-d',
             'resign_date'=>'nullable|date_format:Y-m-d',
@@ -121,7 +122,7 @@ class EmployeeController extends Controller
                     $data[$column]=$path;
                 }
                 $current->fill($data);
-                $current->branch_store_id=$request->user()->branch_store_id;
+                if (!$employee) $current->branch_store_id=$request->user()->branch_store_id;
                 $current->save();
                 if (!$employee) return;
                 $branch=DB::connection('face_enrollment')->table('branch_stores')->where('id',$current->branch_store_id)->value('name');

@@ -109,7 +109,7 @@ class RoleFeatureAccessTest extends TestCase
         Schema::connection('face_enrollment')->create('employees',function(Blueprint $t) {
             $t->id();$t->unsignedInteger('branch_store_id');$t->string('employee_code')->unique();
             $t->string('full_name');$t->date('born')->nullable();$t->string('position')->nullable();$t->string('phone')->nullable();
-            $t->boolean('is_active')->default(true);$t->timestamps();$t->softDeletes();
+            $t->boolean('is_active')->default(true);$t->boolean('all_branch')->default(false);$t->timestamps();$t->softDeletes();
         });
         DB::connection('face_enrollment')->table('employees')->insert([
             ['branch_store_id'=>1,'employee_code'=>'ONE','full_name'=>'Own employee'],

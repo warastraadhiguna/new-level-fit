@@ -3,10 +3,19 @@
         $value = $formEmployee ? $formEmployee->$field : $default;
         if (in_array($field, ['born','employment_start_date','resign_date'], true) && $value) $value = $value->format('Y-m-d');
         if ($field === 'is_active') $value = (int) $value;
+        if ($field === 'all_branch') $value = (int) $value;
         return $restoreInput ? old($field, $value) : $value;
     };
 @endphp
 <div class="row">
+    <div class="col-12 mb-3">
+        <input type="hidden" name="all_branch" value="0">
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="{{ $formId }}AllBranch" name="all_branch" value="1" {{ (int)$fieldValue('all_branch',0) === 1 ? 'checked':'' }}>
+            <label class="form-check-label" for="{{ $formId }}AllBranch">Semua cabang (pegawai mobile)</label>
+        </div>
+        <small class="text-muted">Pegawai dapat dikelola dan absen di semua cabang. Jika tidak dicentang, hanya berlaku di cabang asal.</small>
+    </div>
     <div class="col-xl-6 mb-3">
         <label class="form-label" for="{{ $formId }}Photo">Foto pegawai</label>
         @if($formEmployee && $formEmployee->photo_path)<img src="{{ route('employees.photo',[$formEmployee->id,'photo']) }}" alt="Foto pegawai" class="d-block rounded mb-2" width="100" loading="lazy">@endif

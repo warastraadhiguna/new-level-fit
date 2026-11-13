@@ -23,6 +23,7 @@ class EmployeeManagementTest extends TestCase
         (new \CreateIndependentEmployees)->up();
         require_once database_path('migrations/2026_11_05_000001_add_born_to_employees.php');(new \AddBornToEmployees)->up();
         require_once database_path('migrations/2026_11_13_000001_add_employment_details_to_employees.php');(new \AddEmploymentDetailsToEmployees)->up();
+        require_once database_path('migrations/2026_11_13_000002_add_all_branch_to_employees.php');(new \AddAllBranchToEmployees)->up();
     }
     private function actor(string $role='OWNER'): User
     {
@@ -56,6 +57,34 @@ class EmployeeManagementTest extends TestCase
         $this->delete('/employees/'.$other->id)->assertNotFound();
         $this->assertNull($other->fresh()->deleted_at);
     }
+    public function test_mobile_employees_can_be_managed_across_branches_without_changing_home_branch(): void
+    {
+        $mobile=Employee::create($this->payload()+['branch_store_id'=>1,'all_branch'=>true]);
+        $fixed=Employee::create(array_merge($this->payload(),['employee_code'=>'FIXED','full_name'=>'Only One','branch_store_id'=>1]));
+        $actor=$this->actor();$actor->branch_store_id=2;
+        $this->actingAs($actor)->get('/employees')->assertOk()->assertSee('Pegawai baru')->assertSee('Semua cabang')->assertDontSee('Only One');
+        $this->get('/employees?search=not-found')->assertOk()->assertDontSee('Pegawai baru');
+        $this->get('/employees/'.$mobile->id.'/edit')->assertOk();
+        $this->put('/employees/'.$mobile->id,$this->payload()+['all_branch'=>1,'branch_store_id'=>2])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(1,$mobile->fresh()->branch_store_id);
+        $this->put('/employees/'.$mobile->id,$this->payload()+['all_branch'=>0])->assertRedirect()->assertSessionHasNoErrors();
+        $this->get('/employees/'.$mobile->id.'/edit')->assertNotFound();
+        $this->delete('/employees/'.$fixed->id)->assertNotFound();
+        $this->assertFalse($fixed->fresh()->all_branch);
+        $this->assertFalse($mobile->fresh()->all_branch);
+        $this->assertSame(1,$mobile->fresh()->branch_store_id);
+    }
+
+    public function test_mobile_flag_is_validated_and_migration_keeps_existing_employees_local(): void
+    {
+        $this->actingAs($this->actor())->postJson('/employees',$this->payload()+['all_branch'=>'yes'])->assertUnprocessable()->assertJsonValidationErrors('all_branch');
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $migration=new \AddAllBranchToEmployees;$migration->up();$migration->up();
+        $this->assertFalse($employee->fresh()->all_branch);
+        $employee->update(['all_branch'=>true]);$migration->up();
+        $this->assertTrue($employee->fresh()->all_branch);
+    }
+
     public function test_only_enabled_branch_owner_and_admin_can_manage_employees(): void
     {
         $this->get('/employees')->assertRedirect(route('login'));
@@ -160,6 +189,8 @@ class EmployeeManagementTest extends TestCase
         $other=Employee::create(array_merge($this->payload(),['employee_code'=>'OTHER','branch_store_id'=>2,'ktp_photo_path'=>$employee->ktp_photo_path]));
         $this->get(route('employees.photo',[$employee->id,'ktp']))->assertRedirect(route('login'));
         $this->actingAs($this->actor())->get(route('employees.photo',[$other->id,'ktp']))->assertNotFound();
+        $other->update(['all_branch'=>true]);
+        $this->get(route('employees.photo',[$other->id,'ktp']))->assertOk();
         $this->get(route('employees.photo',[$employee->id,'photo']))->assertNotFound();
         $this->get('/employees/'.$employee->id.'/photos/invalid')->assertNotFound();
         $this->actingAs($this->actor('CS'))->get(route('employees.photo',[$employee->id,'ktp']))->assertForbidden();
