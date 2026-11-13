@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\EmployeePositionCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +41,7 @@ class EmployeeController extends Controller
             'birthdayMessages'=>$this->birthdayMessages($request),
             'employees'=>$employees,'editingEmployee'=>$editingEmployee,
             'faceEnrollmentReady'=>$faceEnrollmentReady,'faceStatuses'=>$faceStatuses,
+            'positionCategories'=>EmployeePositionCategory::catalog(),
         ]);
     }
 
@@ -48,6 +50,7 @@ class EmployeeController extends Controller
         return view('admin.layouts.wrapper',[
             'title'=>'Detail Employee','content'=>'admin.employees.show',
             'employee'=>$this->employees($request)->findOrFail($id),
+            'positionCategories'=>EmployeePositionCategory::catalog(),
         ]);
     }
 
@@ -86,7 +89,11 @@ class EmployeeController extends Controller
             'position'=>'nullable|string|max:100','phone'=>'nullable|string|max:30',
             'is_active'=>'required|boolean',
             'all_branch'=>'sometimes|boolean',
-            'position_category'=>['nullable',Rule::in(array_keys(Employee::POSITION_CATEGORIES))],
+            'position_category'=>['nullable','string','max:20',EmployeePositionCategory::ready()
+                ? Rule::exists('face_enrollment.employee_position_categories','code')->where(function($q) use($employee) {
+                    $q->where('is_active',true);
+                    if ($employee && $employee->position_category) $q->orWhere('code',$employee->position_category);
+                }) : Rule::in(array_keys(Employee::POSITION_CATEGORIES))],
             'employment_start_date'=>'nullable|date_format:Y-m-d',
             'resign_date'=>'nullable|date_format:Y-m-d',
             'note'=>'nullable|string|max:5000',
@@ -130,6 +137,12 @@ class EmployeeController extends Controller
         try {
             DB::connection('face_enrollment')->transaction(function() use($request,$data,$employee,&$uploaded,&$replaced) {
                 $current=$employee ? $this->employees($request)->where('id',$employee->id)->lockForUpdate()->firstOrFail() : new Employee();
+                if (!empty($data['position_category']) && EmployeePositionCategory::ready()) {
+                    $category=EmployeePositionCategory::where('code',$data['position_category'])->lockForUpdate()->first();
+                    if (!$category || (!$category->is_active && $current->position_category!==$category->code)) {
+                        throw ValidationException::withMessages(['position_category'=>'Kategori jabatan tidak tersedia. Pilih kategori aktif.']);
+                    }
+                }
                 foreach (['photo'=>'photo_path','ktp_photo'=>'ktp_photo_path'] as $input=>$column) {
                     if (!$request->hasFile($input)) continue;
                     $path=$request->file($input)->store('employees/'.$input,'local');

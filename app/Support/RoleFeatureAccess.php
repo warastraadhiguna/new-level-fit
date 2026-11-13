@@ -34,6 +34,7 @@ class RoleFeatureAccess
             'staff'=>['label'=>'Staff List & Akun Staff','roles'=>['ADMIN'],'defaults'=>['ADMIN']],
             'employees'=>['label'=>'Data Pegawai','roles'=>['ADMIN','HRD','FINANCE'],'defaults'=>['ADMIN','HRD']],
             'attendance_shifts'=>['label'=>'Template Shift Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
+            'attendance_positions'=>['label'=>'Kategori Jabatan Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
             'attendance_schedules'=>['label'=>'Jadwal Shift Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
             'attendance_leaves'=>['label'=>'Izin & Cuti Pegawai (Update: persetujuan)','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
             'attendance_reports'=>['label'=>'Rekap Kehadiran Pegawai','roles'=>['ADMIN','HRD'],'defaults'=>['ADMIN','HRD']],
@@ -73,6 +74,7 @@ class RoleFeatureAccess
             'employees'=>'face_enrollment_enabled',
             'enrollment'=>'face_enrollment_enabled',
             'attendance_shifts'=>'face_enrollment_enabled',
+            'attendance_positions'=>'face_enrollment_enabled',
             'attendance_schedules'=>'face_enrollment_enabled',
             'attendance_leaves'=>'face_enrollment_enabled',
             'attendance_reports'=>'face_enrollment_enabled',
@@ -242,6 +244,7 @@ class RoleFeatureAccess
         if (Str::is('secret-branch-store.*',$name)) return null;
         if (Str::startsWith($route->uri(),'api/gate/')) return in_array('POST',$route->methods(),true) ? 'membership_checkin' : 'membership';
         $patterns=[
+            'attendance_positions'=>['employee-positions.*'],
             'attendance_shifts'=>['employee-shifts.*'], 'attendance_schedules'=>['employee-schedules.*'],
             'attendance_leaves'=>['employee-leaves.*'], 'attendance_reports'=>['employee-attendance.*'],
             'lo_cancel'=>['cancelLayoutOrientation'],

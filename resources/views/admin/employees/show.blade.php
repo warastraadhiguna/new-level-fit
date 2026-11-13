@@ -12,7 +12,7 @@
                 @foreach([
                     'Kode'=>$employee->employee_code,'Nama'=>$employee->full_name,
                     'Tanggal lahir'=>$employee->born ? $employee->born->format('d M Y') : '-',
-                    'Jabatan'=>\App\Models\Employee::POSITION_CATEGORIES[$employee->position_category] ?? '-',
+                    'Jabatan'=>optional($positionCategories->get($employee->position_category))->name ?? ($employee->position_category ?: '-'),
                     'Telepon'=>$employee->phone ?: '-',
                     'Mulai kerja'=>$employee->employment_start_date ? $employee->employment_start_date->format('d M Y') : '-',
                     'Resign'=>$employee->resign_date ? $employee->resign_date->format('d M Y') : '-',

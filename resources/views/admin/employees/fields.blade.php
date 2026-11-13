@@ -32,8 +32,10 @@
         <label class="form-label" for="{{ $formId }}Category">Kategori jabatan</label>
         <select name="position_category" id="{{ $formId }}Category" class="form-control">
             <option value="">Pilih kategori jabatan</option>
-            @foreach(\App\Models\Employee::POSITION_CATEGORIES as $value=>$label)
-                <option value="{{ $value }}" {{ $fieldValue('position_category') === $value ? 'selected':'' }}>{{ $label }}</option>
+            @foreach($positionCategories as $value=>$category)
+                @if($category->is_active || $fieldValue('position_category')===$value)
+                <option value="{{ $value }}" {{ $fieldValue('position_category') === $value ? 'selected':'' }}>{{ $category->name }}{{ !$category->is_active ? ' (Nonaktif)':'' }}</option>
+                @endif
             @endforeach
         </select>
     </div>

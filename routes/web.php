@@ -362,6 +362,7 @@ Auth::routes();
 // Face enrollment shares profiles with Face Attendance in level-fit.
 Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagementAccess::class, \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
     Route::get('employee-shifts', [\App\Http\Controllers\EmployeeAttendanceController::class,'templates'])->name('employee-shifts.index');
+    Route::resource('employee-positions', \App\Http\Controllers\EmployeePositionCategoryController::class)->only(['index','store','update','destroy']);
     Route::post('employee-shifts', [\App\Http\Controllers\EmployeeAttendanceController::class,'storeTemplate'])->name('employee-shifts.store');
     Route::put('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'updateTemplate'])->name('employee-shifts.update');
     Route::delete('employee-shifts/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'destroyTemplate'])->name('employee-shifts.destroy');

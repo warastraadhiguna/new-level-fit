@@ -3,7 +3,7 @@
     $staffUser=Auth::user();
     $staffListVisible=$staffAccess->allowsRoute($staffUser,'staff.index');
     $attendanceMenuActive=request()->routeIs('employees.*','employee-schedules.*','employee-leaves.*','employee-attendance.*','face-enrollment.*');
-    $attendanceSettingActive=request()->routeIs('attendance-device.*','employee-shifts.*');
+    $attendanceSettingActive=request()->routeIs('attendance-device.*','employee-shifts.*','employee-positions.*');
     $staffMenuActive=$attendanceMenuActive || $attendanceSettingActive || request()->routeIs('staff.*');
     $attendanceLinks=collect([
         'employees.index'=>'Employees',
@@ -14,6 +14,7 @@
     $attendanceSettingLinks=collect([
         'attendance-device.index'=>'Perangkat absensi',
         'employee-shifts.index'=>'Shift template',
+        'employee-positions.index'=>'Kategori Jabatan',
     ])->filter(fn($label,$route)=>$staffAccess->allowsRoute($staffUser,$route)
         && ($route!=='attendance-device.index' || ($staffUser->isOwner() && optional($staffUser->branchStore)->face_enrollment_enabled)));
 @endphp

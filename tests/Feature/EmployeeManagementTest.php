@@ -368,4 +368,70 @@ class EmployeeManagementTest extends TestCase
         DB::table('face_attendance_samples')->delete();
         $this->get('/employees')->assertOk()->assertSee('Belum terdaftar')->assertDontSee('Sudah terdaftar');
     }
+
+    private function positionMigration()
+    {
+        $migration=require database_path('migrations/2026_11_14_000002_create_employee_position_categories.php');$migration->up();return $migration;
+    }
+    public function test_position_category_crud_is_used_by_employee_forms_and_preserves_existing_values(): void
+    {
+        $migration=$this->positionMigration();
+        $this->assertDatabaseCount('employee_position_categories',4);
+        $this->actingAs($this->actor())->get('/employee-positions')->assertOk()->assertSee('Kategori Jabatan')->assertSee('Finance');
+        $this->post('/employee-positions',['code'=>'security','name'=>'Security','is_active'=>1])->assertSessionHasNoErrors()->assertRedirect(route('employee-positions.index'));
+        $category=DB::table('employee_position_categories')->where('code','SECURITY')->first();$this->assertNotNull($category);
+        $this->get('/employees')->assertOk()->assertSee('Security');
+        $this->post('/employees',$this->payload()+['position_category'=>'SECURITY'])->assertSessionHasNoErrors();
+        $employee=Employee::first();$this->assertSame('SECURITY',$employee->position_category);
+        $this->put('/employee-positions/'.$category->id,['name'=>'Petugas Keamanan','is_active'=>1])->assertSessionHasNoErrors();
+        $migration->up();$this->assertSame('Petugas Keamanan',DB::table('employee_position_categories')->where('id',$category->id)->value('name'));
+        $this->get('/employees/'.$employee->id)->assertOk()->assertSee('Petugas Keamanan');
+        $this->delete('/employee-positions/'.$category->id)->assertSessionHasErrors('category');
+        $this->put('/employee-positions/'.$category->id,['name'=>'Petugas Keamanan','is_active'=>0])->assertSessionHasNoErrors();
+        $this->postJson('/employees',array_merge($this->payload(),['employee_code'=>'NEW','position_category'=>'SECURITY']))->assertStatus(422)->assertJsonValidationErrors('position_category');
+        $this->put('/employees/'.$employee->id,array_merge($this->payload(),['full_name'=>'Updated','position_category'=>'SECURITY']))->assertSessionHasNoErrors();
+        $this->get('/employees')->assertSee('Petugas Keamanan (Nonaktif)');
+        $this->put('/employees/'.$employee->id,array_merge($this->payload(),['position_category'=>'PT']))->assertSessionHasNoErrors();
+        $this->delete('/employee-positions/'.$category->id)->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('employee_position_categories',['id'=>$category->id]);
+    }
+    public function test_position_migration_retains_legacy_categories_and_used_categories_cannot_be_deleted(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>2,'position_category'=>'LEGACY']);$employee->delete();
+        $migration=$this->positionMigration();$migration->up();
+        $this->assertDatabaseHas('employee_position_categories',['code'=>'LEGACY','name'=>'LEGACY']);
+        $category=DB::table('employee_position_categories')->where('code','LEGACY')->first();
+        $this->actingAs($this->actor())->delete('/employee-positions/'.$category->id)->assertSessionHasErrors('category');
+        $this->putJson('/employee-positions/'.$category->id,['code'=>'RENAME','name'=>'Legacy renamed','is_active'=>1])->assertStatus(422);
+        $this->assertDatabaseHas('employees',['id'=>$employee->id,'position_category'=>'LEGACY']);
+    }
+    public function test_position_category_validation_and_branch_gate(): void
+    {
+        $this->get('/employee-positions')->assertRedirect(route('login'));
+        $this->actingAs($this->actor())->get('/employee-positions')->assertStatus(503);
+        $this->positionMigration();
+        $this->postJson('/employee-positions',['code'=>'PT','name'=>'Duplicate','is_active'=>1])->assertStatus(422);
+        $this->postJson('/employee-positions',['code'=>'INVALID CODE','name'=>'Invalid','is_active'=>1])->assertStatus(422);
+        foreach (['CS','FINANCE','PT'] as $role) $this->actingAs($this->actor($role))->get('/employee-positions')->assertForbidden();
+        $this->actingAs($this->actor('HRD'))->get('/employee-positions')->assertOk();
+        $this->view('admin.includes.sidebar')->assertSee(route('employee-positions.index'),false);
+        $actor=$this->actor();$actor->branchStore->face_enrollment_enabled=false;
+        $this->actingAs($actor)->get('/employee-positions')->assertNotFound();
+        $this->postJson('/employee-positions',['code'=>'DENIED','name'=>'Denied','is_active'=>1])->assertNotFound();
+        $this->view('admin.includes.sidebar')->assertDontSee(route('employee-positions.index'),false);
+    }
+    public function test_position_category_crud_respects_granular_permissions(): void
+    {
+        $this->positionMigration();
+        require_once database_path('migrations/2026_11_10_000001_create_role_feature_permissions.php');(new \CreateRoleFeaturePermissions)->up();
+        require_once database_path('migrations/2026_11_13_000003_add_crud_to_role_feature_permissions.php');(new \AddCrudToRoleFeaturePermissions)->up();
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'FINANCE','feature_key'=>'attendance_positions','is_allowed'=>1,
+            'can_read'=>1,'can_create'=>0,'can_update'=>1,'can_delete'=>0]);
+        $id=DB::table('employee_position_categories')->where('code','CS')->value('id');
+        $this->actingAs($this->actor('FINANCE'))->get('/employee-positions')->assertOk()->assertDontSee('+ Tambah Jabatan')->assertSee('Ubah');
+        $this->postJson('/employee-positions',['code'=>'DENIED','name'=>'Denied','is_active'=>1])->assertForbidden();
+        $this->put('/employee-positions/'.$id,['name'=>'Customer Service','is_active'=>1])->assertSessionHasNoErrors();
+        $this->deleteJson('/employee-positions/'.$id)->assertForbidden();
+        $this->assertDatabaseHas('employee_position_categories',['id'=>$id,'name'=>'Customer Service']);
+    }
 }

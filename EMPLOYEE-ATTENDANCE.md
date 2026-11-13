@@ -6,7 +6,7 @@ Pengaturan berada di Master melalui menu bertingkat **Staff**:
 - Attendance: Employees (`/employees`), Schedules (`/employee-schedules`),
   Day Off (`/employee-leaves`), Attendance Report (`/employee-attendance`).
 - Attendance Setting: Perangkat absensi (`/attendance-device`, Owner saja),
-  Shift template (`/employee-shifts`).
+  Shift template (`/employee-shifts`), Kategori Jabatan (`/employee-positions`).
 
 Pendaftaran wajah dibuka dari **Employees ? Detail ? Pendaftaran Wajah**.
 Link membawa pegawai yang dipilih langsung ke halaman enrollment, dengan validasi
@@ -102,6 +102,33 @@ Penghapusan permanen dicatat pada log aplikasi (pelaku, cabang, pegawai, tanggal
 kerja, snapshot catatan). Foto audit privat yang disimpan aplikasi Face Attendance
 tetap berada di storage aplikasi tersebut; Master tidak menghapus file lintas aplikasi.
 Tidak ada migration/SQL tambahan untuk fitur hapus ini.
+
+## Kategori jabatan dinamis
+
+Kategori jabatan dikelola di Staff → Attendance Setting → Kategori Jabatan.
+Migration Master `2026_11_14_000002_create_employee_position_categories.php`
+memakai koneksi `face_enrollment`. Alternatif SQL:
+`database/sql/2026_11_14_employee_position_categories.sql`. Jalankan pada database
+FACE masing-masing instalasi (level-fit, fitbull, gelora-gym); tabel employees
+dan kolom position_category harus sudah tersedia. Tidak perlu ALTER employees.
+Tidak ada perubahan kode aplikasi Face Attendance untuk fitur ini.
+
+PT, CS, HR, FINANCE otomatis dimasukkan dengan kode lama sehingga data pegawai
+tetap cocok. Kategori lama lain yang tersimpan juga diimpor, termasuk dari pegawai
+soft-delete. Menjalankan ulang migration tidak mengubah nama/status kategori yang ada.
+Kode tetap (maksimal 20 karakter, huruf besar/angka/garis bawah); nama dan status
+bisa diubah. Daftar kategori dipakai bersama seluruh cabang dalam database FACE
+yang sama, agar jabatan pegawai mobile konsisten.
+
+Form Employees membaca kategori aktif dari tabel baru. Kategori nonaktif yang
+sudah dipakai pegawai tetap ditampilkan dan bisa dipertahankan saat edit; tidak
+bisa ditetapkan ke pegawai lain. Perubahan nama langsung tampil pada daftar dan
+Detail Employee. Hapus ditolak selama kategori dipakai pegawai mana pun, termasuk
+pegawai soft-delete; gunakan Nonaktif atau pindahkan kategori pegawai dahulu.
+Sebelum migration tersedia, form pegawai tetap memakai empat pilihan lama.
+
+Fitur Kategori Jabatan Pegawai memiliki izin CRUD terpisah pada role access,
+default Owner/Admin/HRD, serta mengikuti switch face_enrollment_enabled.
 
 Tidak ada akun pegawai self-service baru, kuota cuti, koreksi jam manual,
 atau pemrosesan payroll pada perubahan ini. Kamera/perangkat asli tetap perlu

@@ -37,7 +37,7 @@
                                 <small class="d-block"><span class="text-muted">Mulai:</span> {{ $employee->employment_start_date ? $employee->employment_start_date->format('d M Y') : '-' }}</small>
                                 <small class="d-block"><span class="text-muted">Resign:</span> {{ $employee->resign_date ? $employee->resign_date->format('d M Y') : '-' }}</small>
                             </td>
-                            <td>@if($employee->position_category)<span class="badge badge-primary">{{ \App\Models\Employee::POSITION_CATEGORIES[$employee->position_category] ?? $employee->position_category }}</span>@else - @endif</td>
+                            <td>@if($employee->position_category)<span class="badge badge-primary">{{ optional($positionCategories->get($employee->position_category))->name ?? $employee->position_category }}</span>@else - @endif</td>
                             <td>{{ $employee->phone ?: '-' }}</td>
                             <td>
                                 <span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span>
