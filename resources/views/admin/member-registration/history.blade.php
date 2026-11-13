@@ -10,6 +10,9 @@
                 <button type="button" onclick="reloadPage()" class="btn btn-info mx-1" data-bs-toggle="modal">
                     Filter
                 </button>
+                @if(optional(Auth::user()->branchStore)->member_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'member-approval.index'))
+                    <a href="{{ route('member-approval.index') }}" class="btn btn-primary">Member Approval</a>
+                @endif
                 {{-- <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info" data-bs-toggle="modal">
                     PDF
                 </button> --}}

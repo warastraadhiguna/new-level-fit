@@ -10,6 +10,9 @@
                 <button type="button" onclick="reloadPage()" class="btn btn-info mx-1" data-bs-toggle="modal">
                     Filter
                 </button>
+                @if(optional(Auth::user()->branchStore)->trainer_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'trainer-approval.index'))
+                    <a href="{{ route('trainer-approval.index') }}" class="btn btn-primary">PT Approval</a>
+                @endif
             </div>
         </div>
         <div class="row">
