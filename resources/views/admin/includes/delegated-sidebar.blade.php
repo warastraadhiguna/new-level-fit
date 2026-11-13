@@ -2,10 +2,10 @@
     $featureAccess=app(\App\Support\RoleFeatureAccess::class);
     $navigation=[
         'dashboard'=>'Dashboard','add-data'=>'Lead & Appointment','members.index'=>'Data Member',
-        'history-member-registration'=>'History Leading',
+        'history-member-registration'=>'Leading History',
         'member-active.index'=>'Membership','member-approval.index'=>'Approval Membership',
         'member-check-in.index'=>'Check-in Membership','member-payment.index'=>'Pembayaran Membership',
-        'pt-history'=>'PT History Leading',
+        'pt-history'=>'PT Leading History',
         'trainer-session.index'=>'PT','trainer-approval.index'=>'Approval PT',
         'trainer-session-check-in.index'=>'Check-in PT','pt-free.active'=>'PT Free',
         'staff.index'=>'Staff List & Akun Staff','employees.index'=>'Data Pegawai',

@@ -1,3 +1,4 @@
+@php $canApproveLeading = (bool)optional(Auth::user()->branchStore)->member_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'member-approval.update'); @endphp
 <div class="row">
     <div class="col-xl-12">
         <div class="col-xl-12">
@@ -10,9 +11,6 @@
                 <button type="button" onclick="reloadPage()" class="btn btn-info mx-1" data-bs-toggle="modal">
                     Filter
                 </button>
-                @if(optional(Auth::user()->branchStore)->member_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'member-approval.index'))
-                    <a href="{{ route('member-approval.index') }}" class="btn btn-primary">Member Approval</a>
-                @endif
                 {{-- <button type="button" onclick="reloadPage(1)" class="btn btn-outline-info" data-bs-toggle="modal">
                     PDF
                 </button> --}}
@@ -143,6 +141,13 @@
                                     <td>
                                         <a href="{{ route('detail-history-member-registration', $item->id) }}" class="btn light btn-info btn-xs btn-block mb-1">Detail
                                             Member</a>
+                                        @if($canApproveLeading && (int)($item->member_registration_days ?? $item->days) > 1)
+                                            @if($item->is_approved)
+                                                <span class="badge badge-success">Approved</span>
+                                            @else
+                                                <button type="button" class="btn btn-primary btn-xs btn-block" data-bs-toggle="modal" data-bs-target="#leadingApproval-member-{{ $item->id }}">Member Approval</button>
+                                            @endif
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -154,6 +159,14 @@
         </div>
     </div>
 </div>
+
+@if($canApproveLeading)
+    @foreach($memberRegistrations as $approvalRecord)
+        @if(!$approvalRecord->is_approved && (int)($approvalRecord->member_registration_days ?? $approvalRecord->days) > 1)
+            @include('admin.partials.leading-approval-modal',['approvalRecord'=>$approvalRecord,'approvalKind'=>'member','approvalRoute'=>'member-approval.update','approvalTitle'=>'Member Approval'])
+        @endif
+    @endforeach
+@endif
 
 <script>
     function reloadPage() {

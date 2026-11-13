@@ -130,6 +130,29 @@ class TrainerApprovalFilterTest extends TestCase
         $this->get('/trainer-approval?status=pending')->assertOk()->assertSee('badge-info badge-lg">Pending', false);
     }
 
+    public function test_leading_history_approval_targets_the_selected_pt_and_respects_branch_switch(): void
+    {
+        $row=(object)array_merge((array)DB::table('trainer_sessions')->where('id',1)->first(),[
+            'member_name'=>'Member 1','member_code'=>'M1','photos'=>null,'expired_date'=>'2026-12-01',
+            'expired_leave_days'=>null,'leave_day_status'=>'No Leave Days','check_in_time'=>null,'check_out_time'=>null,
+            'trainer_name'=>'Trainer','ts_number_of_session'=>2,'remaining_sessions'=>2,
+        ]);
+        $data=['fromDate'=>'2026-11-01','toDate'=>'2026-11-30','trainerSessions'=>collect([$row]),'errors'=>new \Illuminate\Support\ViewErrorBag()];
+        $this->view('admin.trainer-session.history',$data)->assertSee('data-bs-target="#leadingApproval-pt-1"',false)
+            ->assertSee('action="'.route('trainer-approval.update',1).'"',false)
+            ->assertDontSee('href="'.route('trainer-approval.index').'"',false);
+        DB::table('branch_stores')->where('id',1)->update(['trainer_approval_enabled'=>false]);auth()->user()->unsetRelation('branchStore');
+        $this->view('admin.trainer-session.history',$data)->assertDontSee('data-bs-target="#leadingApproval-pt-1"',false);
+        DB::table('branch_stores')->where('id',1)->update(['trainer_approval_enabled'=>true]);auth()->user()->unsetRelation('branchStore');
+        $this->from('/pt-history?fromDate=2026-11-01&toDate=2026-11-30')->put('/trainer-approval/1',[
+            'is_approved'=>1,'description'=>'Approved from PT leading history','_leading_approval'=>'leadingApproval-pt-1',
+        ])->assertSessionHasNoErrors()->assertRedirect('/pt-history?fromDate=2026-11-01&toDate=2026-11-30');
+        $this->assertDatabaseHas('trainer_sessions',['id'=>1,'is_approved'=>true,'description'=>'Approved from PT leading history']);
+        $this->assertDatabaseHas('trainer_sessions',['id'=>2,'is_approved'=>false]);
+        $row->is_approved=true;
+        $this->view('admin.trainer-session.history',$data)->assertSee('Approved')->assertDontSee('data-bs-target="#leadingApproval-pt-1"',false);
+    }
+
     public function test_combined_filters_apply_before_pagination(): void
     {
         for ($id=16; $id<=27; $id++) $this->seedSession($id, '2026-11-01 00:00:00', 50);

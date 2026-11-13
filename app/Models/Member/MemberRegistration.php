@@ -710,7 +710,7 @@ class MemberRegistration extends Model
 
     public static function history($card_number = "", $member_id = "", $fromDate, $toDate, $branchStoreId = "")
     {
-        $sql = "SELECT mbr_reg.id, mbr_reg.start_date, mbr_reg.days as member_registration_days,
+        $sql = "SELECT mbr_reg.id, mbr_reg.is_approved, mbr_reg.description, mbr_reg.start_date, mbr_reg.days as member_registration_days,
             mbr_reg.package_price as mr_package_price,  mbr_reg.admin_price as mr_admin_price,
             mbr.id as member_id, mbr.full_name as member_name, mbr.nickname, mbr.email, mbr.ig, mbr.emergency_contact, mbr.ec_name,
             mbr.address, mbr.member_code, mbr_reg.days,

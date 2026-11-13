@@ -1,3 +1,4 @@
+@php $canApproveLeading = (bool)optional(Auth::user()->branchStore)->trainer_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'trainer-approval.update'); @endphp
 <div class="row">
     <div class="col-xl-12">
         <div class="col-xl-12">
@@ -10,9 +11,6 @@
                 <button type="button" onclick="reloadPage()" class="btn btn-info mx-1" data-bs-toggle="modal">
                     Filter
                 </button>
-                @if(optional(Auth::user()->branchStore)->trainer_approval_enabled && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'trainer-approval.index'))
-                    <a href="{{ route('trainer-approval.index') }}" class="btn btn-primary">PT Approval</a>
-                @endif
             </div>
         </div>
         <div class="row">
@@ -130,6 +128,13 @@
                                     <td>
                                         <a href="{{ route('detail-pt-history', $item->id) }}" class="btn light btn-info btn-xs btn-block mb-1">Detail
                                             Member</a>
+                                        @if($canApproveLeading)
+                                            @if($item->is_approved)
+                                                <span class="badge badge-success">Approved</span>
+                                            @else
+                                                <button type="button" class="btn btn-primary btn-xs btn-block" data-bs-toggle="modal" data-bs-target="#leadingApproval-pt-{{ $item->id }}">PT Approval</button>
+                                            @endif
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -141,6 +146,14 @@
         </div>
     </div>
 </div>
+
+@if($canApproveLeading)
+    @foreach($trainerSessions as $approvalRecord)
+        @if(!$approvalRecord->is_approved)
+            @include('admin.partials.leading-approval-modal',['approvalRecord'=>$approvalRecord,'approvalKind'=>'pt','approvalRoute'=>'trainer-approval.update','approvalTitle'=>'PT Approval'])
+        @endif
+    @endforeach
+@endif
 
 <script>
     function reloadPage() {
