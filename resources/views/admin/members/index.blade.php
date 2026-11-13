@@ -184,6 +184,20 @@
                                                         </button>
                                                     @endif
                                                 </li>
+                                                @if($item->lo_is_used && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'cancelLayoutOrientation'))
+                                                    <li>
+                                                        <form action="{{ route('cancelLayoutOrientation',$item->id) }}" method="POST"
+                                                            onsubmit="return confirm('Batalkan LO member ini? Status LO kembali belum digunakan dan PT dapat dipilih ulang.')">
+                                                            @csrf @method('PUT')
+                                                            <input type="hidden" name="search" value="{{ $search }}">
+                                                            <input type="hidden" name="per_page" value="{{ $perPage }}">
+                                                            <input type="hidden" name="sort" value="{{ $sort }}">
+                                                            <input type="hidden" name="direction" value="{{ $direction }}">
+                                                            <input type="hidden" name="page" value="{{ request('page',1) }}">
+                                                            <button type="submit" class="btn btn-outline-danger btn-xs mb-1 btn-block">Cancel LO</button>
+                                                        </form>
+                                                    </li>
+                                                @endif
                                                 @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <form action="{{ route('member.destroy', $item->id) }}"

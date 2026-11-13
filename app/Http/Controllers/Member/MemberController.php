@@ -19,6 +19,8 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 
 HeadingRowFormatter::default('none');
@@ -761,9 +763,10 @@ class MemberController extends Controller
 
     public function layoutOrientation($id)
     {
+        $member=$this->loMemberQuery(request())->findOrFail($id);
         $data = [
             'title'                 => 'Layout Orientation',
-            'members'               => Member::find($id),
+            'members'               => $member,
             'memberLastCode'        => Member::latest('id')->first(),
             'memberPackage'         => MemberPackage::get(),
             'methodPayment'         => MethodPayment::get(),
@@ -777,7 +780,7 @@ class MemberController extends Controller
 
     public function updateLO(Request $request, string $id)
     {
-        $item = Member::find($id);
+        $this->loMemberQuery($request)->findOrFail($id);
         $data = $request->validate([
             'lo_pt_by'  => 'required|exists:personal_trainers,id',
         ]);
@@ -785,18 +788,44 @@ class MemberController extends Controller
         $data['lo_is_used'] = 1;
         $data['lo_start_date'] = Carbon::now()->tz('Asia/Jakarta');
 
-        $item->update($data);
+        DB::transaction(function() use($request,$id,$data) {
+            $item=$this->loMemberQuery($request)->lockForUpdate()->findOrFail($id);
+            if ($item->lo_is_used) throw ValidationException::withMessages(['lo_pt_by'=>'LO sudah digunakan. Batalkan LO terlebih dahulu jika ada kesalahan.']);
+            $item->update($data+['lo_end'=>null]);
+        });
         return redirect()->route('members.index')->with('success', 'LO digunakan');
     }
 
     public function stopLO(Request $request, string $id)
     {
-        $item = Member::find($id);
-        // dd($item);
-        
-        $data['lo_end'] = Carbon::now()->tz('Asia/Jakarta');
-
-        $item->update($data);
+        DB::transaction(function() use($request,$id) {
+            $item=$this->loMemberQuery($request)->lockForUpdate()->findOrFail($id);
+            if (!$item->lo_is_used || !$item->lo_start_date || $item->lo_end) {
+                throw ValidationException::withMessages(['lo'=>'LO tidak sedang berjalan.']);
+            }
+            $item->update(['lo_end'=>Carbon::now()->tz('Asia/Jakarta')]);
+        });
         return redirect()->route('members.index')->with('success', 'LO sudah dihentikan');
+    }
+
+    private function loMemberQuery(Request $request)
+    {
+        abort_unless($request->user()->branch_store_id,403,'Cabang login belum ditentukan.');
+        return Member::where('branch_store_id',$request->user()->branch_store_id);
+    }
+
+    public function cancelLO(Request $request, string $id)
+    {
+        $previous=DB::transaction(function() use($request,$id) {
+            $member=$this->loMemberQuery($request)->lockForUpdate()->findOrFail($id);
+            if (!$member->lo_is_used) throw ValidationException::withMessages(['lo'=>'LO belum digunakan atau sudah dibatalkan.']);
+            $previous=$member->only(['lo_is_used','lo_start_date','lo_pt_by','lo_end']);
+            $member->update(['lo_is_used'=>0,'lo_start_date'=>null,'lo_pt_by'=>null,'lo_end'=>null]);
+            return $previous;
+        });
+        Log::info('LO cancelled',['member_id'=>(int)$id,'branch_store_id'=>$request->user()->branch_store_id,
+            'actor_id'=>$request->user()->id,'previous'=>$previous]);
+        return redirect()->route('members.index',$request->only(['search','per_page','sort','direction','page']))
+            ->with('success','LO berhasil dibatalkan. LO dapat didaftarkan ulang dengan PT yang benar.');
     }
 }

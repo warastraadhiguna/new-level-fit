@@ -326,6 +326,7 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
     Route::get('layout-orientation/{id}', [MemberController::class, 'layoutOrientation'])->name('useLayoutOrientation');
     Route::put('process-layout-orientation/{id}', [MemberController::class, 'updateLO'])->name('prosesLayoutOrientation');
     Route::post('stop-layout-orientation/{id}', [MemberController::class, 'stopLO'])->name('stopLayoutOrientation');
+    Route::put('members/{id}/cancel-lo', [MemberController::class, 'cancelLO'])->name('cancelLayoutOrientation');
 
     // REPORT
     Route::get('revenue-report', [RevenueReportController::class, 'index'])->name('revenue-report.index');

@@ -79,3 +79,22 @@ Staff tidak menjadikan penerimanya Owner. Fitur yang tidak punya operasi tulis
 
 Perubahan ini memakai kolom CRUD yang sudah ada; tidak membutuhkan migration
 atau SQL tambahan setelah SQL CRUD di atas diterapkan.
+
+## Cancel LO
+
+Menu Action di `/members` menyediakan **Cancel LO** untuk LO yang sudah dipakai,
+baik masih berjalan maupun sudah selesai. Owner dapat membatalkan secara langsung.
+Role lain default ditolak; aktifkan **Read + Update** pada fitur **Cancel LO** di
+pengaturan role, dan Read pada **Data Member** untuk membuka daftar member.
+Izin ini terpisah dari izin edit Data Member atau Membership.
+
+Pembatalan hanya berlaku di cabang login dan meminta konfirmasi. Sistem mereset
+`lo_is_used` ke 0 serta mengosongkan `lo_start_date`, `lo_pt_by`, dan `lo_end`.
+Durasi/kuota `lo_days` dan data member lain tetap dipertahankan. Setelah itu LO
+dapat dimulai lagi dengan PT yang benar. Pembatalan dicatat di log aplikasi
+bersama ID member, cabang, pelaksana, dan nilai LO sebelumnya. Karena LO dibatalkan,
+data itu tidak lagi masuk laporan LO aktif/selesai.
+
+Perubahan memakai kolom LO dan tabel izin yang sudah tersedia, tanpa migration
+atau SQL tambahan. Mulai, Stop, dan Cancel LO memakai transaksi serta kunci baris;
+mulai LO yang sudah dipakai dan Stop LO yang telah dibatalkan ditolak.

@@ -456,6 +456,20 @@ class RoleFeatureAccessTest extends TestCase
         $this->assertFalse($access->allows($cs,'membership_approval','update'));
     }
 
+    public function test_owner_can_configure_cancel_lo_as_a_separate_update_permission(): void
+    {
+        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()
+            ->assertSee('Cancel LO')->assertSee('permissions[CS][lo_cancel][update]',false)
+            ->assertDontSee('permissions[CS][lo_cancel][delete]',false);
+        $this->put('/role-feature-access',['permissions'=>['CS'=>['members'=>['read'=>1],'lo_cancel'=>['read'=>1,'update'=>1]]]])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('role_feature_permissions',['branch_store_id'=>1,'role'=>'CS','feature_key'=>'lo_cancel','can_read'=>1,'can_update'=>1,'can_delete'=>0]);
+        $access=app(\App\Support\RoleFeatureAccess::class);
+        $route=app('router')->getRoutes()->getByName('cancelLayoutOrientation');
+        $this->assertSame('lo_cancel',$access->featureForRoute($route));
+        $this->assertSame('update',$access->actionForRoute($route));
+    }
+
     public function test_migration_is_repeatable_and_route_catalog_covers_all_protected_endpoints(): void
     {
         (new \CreateRoleFeaturePermissions())->up();

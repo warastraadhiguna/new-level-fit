@@ -13,6 +13,7 @@
             <thead><tr><th>Fitur</th>@foreach($roles as $role=>$label)<th class="text-center" style="min-width:160px">{{ $label }}</th>@endforeach</tr></thead>
             <tbody>@foreach($features as $key=>$feature)<tr><th scope="row">{{ $feature['label'] }}@if($key==='tip_tap_transfer')<small class="d-block text-muted">Ekspor data seluruh cabang</small>@endif
                 @if(in_array($key,['membership_checkin','pt_checkin'],true))<small class="d-block text-muted">Create mencatat check-in / check-out</small>@endif
+                @if($key==='lo_cancel')<small class="d-block text-muted">Update membatalkan LO agar dapat didaftarkan ulang. Aktifkan juga Read pada Data Member untuk membuka daftar member.</small>@endif
             </th>
                 @foreach($roles as $role=>$label)<td>
                     @if(in_array($role,$feature['roles'],true))

@@ -21,6 +21,7 @@ class RoleFeatureAccess
             'dashboard'=>['label'=>'Dashboard','roles'=>$withPt,'defaults'=>$withPt],
             'leads'=>['label'=>'Lead & Appointment','roles'=>$operations,'defaults'=>$operations],
             'members'=>['label'=>'Data Member','roles'=>$operations,'defaults'=>$operations],
+            'lo_cancel'=>['label'=>'Cancel LO','roles'=>$operations,'defaults'=>[]],
             'membership'=>['label'=>'Membership','roles'=>$operations,'defaults'=>$operations],
             'pt'=>['label'=>'PT','roles'=>$withPt,'defaults'=>$withPt],
             'membership_approval'=>['label'=>'Approval Membership','roles'=>['ADMIN'],'defaults'=>['ADMIN'],'parent'=>'membership'],
@@ -116,7 +117,7 @@ class RoleFeatureAccess
         $definition=self::features()[$feature] ?? null;
         if (!$definition || !in_array($role,$definition['roles'],true)) return [];
         if (in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
-        if (in_array($feature,['membership_approval','pt_approval'],true)) return ['read','update'];
+        if (in_array($feature,['membership_approval','pt_approval','lo_cancel'],true)) return ['read','update'];
         if ($feature==='pos_sales') return ['create','read'];
         if (in_array($feature,['enrollment','membership_checkin','pt_checkin','membership_payments','pt_payments'],true)) return ['create','read','delete'];
         return array_keys(self::actions());
@@ -227,6 +228,7 @@ class RoleFeatureAccess
         if (Str::is('secret-branch-store.*',$name)) return null;
         if (Str::startsWith($route->uri(),'api/gate/')) return in_array('POST',$route->methods(),true) ? 'membership_checkin' : 'membership';
         $patterns=[
+            'lo_cancel'=>['cancelLayoutOrientation'],
             'membership_approval'=>['member-approval.*'], 'pt_approval'=>['trainer-approval.*'],
             'membership_payments'=>['member-registration-payment.*','member-payment.*'],
             'pt_payments'=>['trainer-session-payment.*'],
