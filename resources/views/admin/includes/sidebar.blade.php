@@ -72,7 +72,7 @@
                         @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->member_approval_enabled)
                             <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'member-approval.index'))<a href="{{ route('member-approval.index') }}">Member Approval</a>@endif</li>
                         @endif
-                        <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'history-member-registration'))<a href="{{ route('history-member-registration') }}">History</a>@endif
+                        <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'history-member-registration'))<a href="{{ route('history-member-registration') }}">History Leading</a>@endif
                         </li>
                     </ul>
                 </li>
@@ -101,7 +101,7 @@
                             @if (Auth::user()->isAdmin() && optional(Auth::user()->branchStore)->trainer_approval_enabled)
                                 <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'trainer-approval.index'))<a href="{{ route('trainer-approval.index') }}">PT Approval</a>@endif</li>
                             @endif
-                            <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'pt-history'))<a href="{{ route('pt-history') }}">History</a>@endif</li>
+                            <li>@if(app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'pt-history'))<a href="{{ route('pt-history') }}">PT History Leading</a>@endif</li>
                         @endif
                     @endif
                 </ul>
