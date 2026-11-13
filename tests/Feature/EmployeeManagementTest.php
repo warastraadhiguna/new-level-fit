@@ -434,4 +434,25 @@ class EmployeeManagementTest extends TestCase
         $this->deleteJson('/employee-positions/'.$id)->assertForbidden();
         $this->assertDatabaseHas('employee_position_categories',['id'=>$id,'name'=>'Customer Service']);
     }
+
+    public function test_employment_duration_uses_calendar_units_and_stops_at_resignation(): void
+    {
+        $this->travelTo(\Carbon\Carbon::parse('2026-11-13 10:00:00','Asia/Jakarta'));
+        foreach ([
+            ['2025-09-10',null,'1 tahun 2 bulan 3 hari'],
+            ['2026-09-10',null,'2 bulan 3 hari'],
+            ['2026-11-10',null,'3 hari'],
+            ['2026-11-13',null,'0 hari'],
+            ['2025-11-13',null,'1 tahun 0 hari'],
+            ['2025-09-10','2026-11-01','1 tahun 1 bulan 22 hari'],
+            ['2026-11-10','2026-12-01','3 hari'],
+            ['2026-12-01',null,'-'],
+            [null,null,'-'],
+        ] as [$start,$resign,$expected]) {
+            $employee=new Employee(['employment_start_date'=>$start,'resign_date'=>$resign]);
+            $this->assertSame($expected,$employee->employment_duration);
+        }
+        Employee::create($this->payload()+['branch_store_id'=>1,'employment_start_date'=>'2025-09-10']);
+        $this->actingAs($this->actor())->get('/employees')->assertOk()->assertSee('Lama kerja:')->assertSee('1 tahun 2 bulan 3 hari');
+    }
 }

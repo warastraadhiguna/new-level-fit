@@ -36,6 +36,7 @@
                                 <small class="d-block"><span class="text-muted">Lahir:</span> {{ $employee->born ? $employee->born->format('d M Y') : '-' }}</small>
                                 <small class="d-block"><span class="text-muted">Mulai:</span> {{ $employee->employment_start_date ? $employee->employment_start_date->format('d M Y') : '-' }}</small>
                                 <small class="d-block"><span class="text-muted">Resign:</span> {{ $employee->resign_date ? $employee->resign_date->format('d M Y') : '-' }}</small>
+                                <small class="d-block"><span class="text-muted">Lama kerja:</span> {{ $employee->employment_duration }}</small>
                             </td>
                             <td>@if($employee->position_category)<span class="badge badge-primary">{{ optional($positionCategories->get($employee->position_category))->name ?? $employee->position_category }}</span>@else - @endif</td>
                             <td>{{ $employee->phone ?: '-' }}</td>
