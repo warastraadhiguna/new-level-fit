@@ -207,4 +207,33 @@ class EmployeeAttendanceManagementTest extends TestCase
         $this->actingAs($u)->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>$ids])->assertNotFound();
         $this->assertDatabaseCount('face_attendance_records',2);
     }
+
+    public function test_schedule_filters_combine_date_position_and_search_within_branch(): void
+    {
+        Employee::find(1)->update(['position_category'=>'PT']);
+        $third=Employee::create(['employee_code'=>'CS003','full_name'=>'Budi','is_active'=>true,'branch_store_id'=>1,'position_category'=>'CS']);
+        $template=$this->template();
+        $this->post('/employee-schedules',$this->schedule($template,['employee_ids'=>[1,$third->id]]))->assertSessionHasNoErrors();
+        $this->actingAs($this->actor('OWNER',2))->post('/employee-schedules',$this->schedule($template,['employee_ids'=>[2],'is_day_off'=>1]))->assertSessionHasNoErrors();
+        $this->actingAs($this->actor());
+        foreach ([
+            ['search=Andi',['Andi']],['search=CS003',['Budi']],['position_category=PT',['Andi']],
+            ['position_category=CS&search=Andi',[]],['search=EMP2',[]],
+        ] as [$filter,$names]) {
+            $response=$this->get('/employee-schedules?from=2026-11-13&to=2026-11-13&'.$filter)->assertOk();
+            $this->assertSame($names,$response->viewData('schedules')->pluck('full_name')->all());
+        }
+        $this->get('/employee-schedules?from=2026-11-14&to=2026-11-14')->assertOk()->assertViewHas('schedules',fn($schedules)=>$schedules->total()===0);
+        $this->getJson('/employee-schedules?search='.str_repeat('x',151))->assertStatus(422);
+    }
+    public function test_schedule_creation_shows_entered_dates_and_validation_reopens_modal(): void
+    {
+        $template=$this->template();
+        $payload=$this->schedule($template,['start_date'=>'2026-12-15','end_date'=>'2026-12-15','_schedule_form'=>1]);
+        $this->post('/employee-schedules',$payload)->assertSessionHasNoErrors()->assertRedirect(route('employee-schedules.index',['from'=>'2026-12-15','to'=>'2026-12-15']));
+        $this->get('/employee-schedules?from=2026-12-15&to=2026-12-15')->assertOk()->assertViewHas('schedules',fn($schedules)=>$schedules->total()===1);
+        $this->from('/employee-schedules')->post('/employee-schedules',array_merge($payload,['end_date'=>'2026-12-14','note'=>'Remember me']))->assertSessionHasErrors('end_date');
+        $this->get('/employee-schedules')->assertOk()->assertSee("new bootstrap.Modal(document.getElementById('createSchedule')).show()",false)->assertSee('Remember me');
+        $this->assertDatabaseCount('employee_shift_schedules',1);
+    }
 }

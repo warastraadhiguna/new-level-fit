@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\EmployeePositionCategory;
 use App\Services\EmployeeAttendanceReport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -80,10 +81,16 @@ class EmployeeAttendanceController extends Controller
     public function schedules(Request $r)
     {
         [$from,$to]=$this->range($r);
+        $r->validate(['position_category'=>'nullable|string|max:20','search'=>'nullable|string|max:150']);
         $query=$this->db()->table('employee_shift_schedules as s')->join('employees as e','e.id','=','s.employee_id')->where('s.branch_store_id',$this->branch($r))
-            ->whereBetween('work_date',[$from,$to])->select('s.*','e.full_name','e.employee_code');
+            ->whereBetween('work_date',[$from,$to])->select('s.*','e.full_name','e.employee_code','e.position_category');
         if ($r->filled('employee_id')) $query->where('employee_id',$r->employee_id);
+        if ($r->filled('position_category')) $query->where('e.position_category',$r->position_category);
+        if ($r->filled('search')) $query->where(function($q) use($r) {
+            $q->where('e.full_name','like','%'.$r->search.'%')->orWhere('e.employee_code','like','%'.$r->search.'%');
+        });
         return $this->page('schedules',['from'=>$from,'to'=>$to,'employees'=>$this->employees($r)->where('is_active',true)->orderBy('full_name')->get(),
+            'positionCategories'=>EmployeePositionCategory::catalog(),
             'templates'=>$this->db()->table('employee_shift_templates')->where('branch_store_id',$this->branch($r))->where('is_active',true)->orderBy('name')->get(),
             'schedules'=>$query->orderBy('work_date')->orderBy('e.full_name')->paginate(50)->withQueryString()]);
     }
@@ -122,7 +129,8 @@ class EmployeeAttendanceController extends Controller
             }
             if (!$count) $this->fail('Tidak ada tanggal yang cocok dengan hari pilihan.');
         });
-        return back()->with('message','Jadwal pegawai berhasil ditambahkan.');
+        return redirect()->route('employee-schedules.index',['from'=>$data['start_date'],'to'=>$data['end_date']])
+            ->with('message','Jadwal pegawai berhasil ditambahkan.');
     }
     public function destroySchedule(Request $r, int $id)
     {
