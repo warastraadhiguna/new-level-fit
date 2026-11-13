@@ -16,7 +16,7 @@ class RoleFeatureAccess
     {
         $operations=['ADMIN','CS','CSPOS','FC'];
         $withPt=array_merge($operations,['PT']);
-        return [
+        $features=[
             'tip_tap_transfer'=>['label'=>'Export Tip-Tap','roles'=>array_keys(self::roles()),'defaults'=>[]],
             'dashboard'=>['label'=>'Dashboard','roles'=>$withPt,'defaults'=>$withPt],
             'leads'=>['label'=>'Lead & Appointment','roles'=>$operations,'defaults'=>$operations],
@@ -41,6 +41,12 @@ class RoleFeatureAccess
             'classes'=>['label'=>'Kelas & Studio','roles'=>$operations,'defaults'=>$operations],
             'other'=>['label'=>'Fitur Operasional Lain','roles'=>$operations,'defaults'=>$operations],
         ];
+        foreach($features as &$feature) {
+            $feature['native_roles']=$feature['roles'];
+            $feature['roles']=array_keys(self::roles());
+        }
+        unset($feature);
+        return $features;
     }
 
     public function rolesForBranch(?BranchStore $branch): array
@@ -109,7 +115,7 @@ class RoleFeatureAccess
     {
         $definition=self::features()[$feature] ?? null;
         if (!$definition || !in_array($role,$definition['roles'],true)) return [];
-        if ($role==='PT' || in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
+        if (in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
         if (in_array($feature,['membership_approval','pt_approval'],true)) return ['read','update'];
         if ($feature==='pos_sales') return ['create','read'];
         if (in_array($feature,['enrollment','membership_checkin','pt_checkin','membership_payments','pt_payments'],true)) return ['create','read','delete'];
@@ -136,6 +142,7 @@ class RoleFeatureAccess
             if ($this->ready()) foreach(DB::table('role_feature_permissions')->where('branch_store_id',$branch)->get() as $row) {
                 foreach(array_keys(self::actions()) as $action) {
                     $matrix[$row->role][$row->feature_key][$action]=(bool)($row->{'can_'.$action} ?? $row->is_allowed);
+                    $matrix[$row->role][$row->feature_key]['explicit'][$action]=isset($row->{'can_'.$action});
                 }
             }
             request()->attributes->set($key,$matrix);
@@ -152,9 +159,37 @@ class RoleFeatureAccess
         $definition=self::features()[$feature];
         $matrix=$this->actionMatrix((int)$user->branch_store_id);
         $permission=$matrix[$role][$feature] ?? null;
-        if ($permission===null && isset($definition['parent'])) return $this->allows($user,$definition['parent'],$action);
-        if ($permission===null) return in_array($role,$definition['defaults'],true);
+        if ($permission===null && isset($definition['parent']) && in_array($role,$definition['native_roles'],true)) return $this->allows($user,$definition['parent'],$action);
+        if ($permission===null) return in_array($role,$definition['defaults'],true) && ($role!=='PT' || $action==='read');
+        if (!in_array($role,$definition['native_roles'],true) || ($role==='PT' && $action!=='read')) {
+            if (empty($permission['explicit']['read']) || empty($permission['explicit'][$action])) return false;
+        }
         return $permission['read'] && $permission[$action];
+    }
+
+    public function hasExplicitGrant(User $user, string $feature, string $action='read'): bool
+    {
+        if (!$user->branch_store_id) return false;
+        $permission=$this->actionMatrix((int)$user->branch_store_id)[strtoupper((string)$user->role)][$feature] ?? [];
+        return !empty($permission['explicit']['read']) && !empty($permission['explicit'][$action])
+            && $this->allows($user,$feature,$action) && $this->branchEnabled($user,$feature);
+    }
+
+    public function hasExplicitRouteGrant(User $user, $route=null): bool
+    {
+        $route=$route ?? request()->route();
+        $feature=$this->featureForRoute($route);
+        return $feature && $this->hasExplicitGrant($user,$feature,$this->actionForRoute($route,request()->method()));
+    }
+
+    public function expandedNavigation(User $user): bool
+    {
+        $role=strtoupper((string)$user->role);
+        foreach(self::features() as $feature=>$definition) {
+            if (!in_array($role,$definition['native_roles'],true) && $this->hasExplicitGrant($user,$feature)) return true;
+            if ($role==='PT') foreach(['create','update','delete'] as $action) if ($this->hasExplicitGrant($user,$feature,$action)) return true;
+        }
+        return false;
     }
 
     public function branchEnabled(User $user, string $feature): bool

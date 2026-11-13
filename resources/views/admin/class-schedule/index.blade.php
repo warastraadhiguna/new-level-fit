@@ -23,7 +23,7 @@
                                 <th>Instructor</th>        
                                 <th>Real Capacity</th>        
                                 <th>Status</th>                                                                                                     
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <th>Action</th>
                                 @endif
                             </tr>
@@ -52,7 +52,7 @@
                                     <td>
                                         <h6>{{ $item->is_active == "1"? "Active" : "Inactive" }}</h6>
                                     </td>                                                                                                  
-                                    @if (Auth::user()->isAdmin())
+                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                         <td>
                                             <div>
                                                 <a href="{{ route("class-detail.index", "class-schedule=" . $item->id) }}" class="btn light btn-primary btn-xs mb-1 btn-block">Detail</a>

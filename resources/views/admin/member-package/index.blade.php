@@ -21,7 +21,7 @@
                                 <th data-orderable="false">Duration</th>
                                 <th data-orderable="false">Price</th>
                                 <th data-orderable="false" class="text-center">Access & Payment</th>
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <th data-orderable="false">Action</th>
                                 @endif
                             </tr>
@@ -59,7 +59,7 @@
                                         @endif
                                         </div>
                                     </td>
-                                    @if (Auth::user()->isAdmin())
+                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                         <td>
                                             <div>
                                                 <button type="button"

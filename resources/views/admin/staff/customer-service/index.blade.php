@@ -196,7 +196,7 @@
                                     <th>Full Name</th>
                                     <th>Email</th>
                                     <th>Gender</th>
-                                    @if (Auth::user()->isAdmin())
+                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                         <th>Action</th>
                                     @endif
                                 </tr>
@@ -216,7 +216,7 @@
                                         <td>
                                             <h6>{{ $item->gender }}</h6>
                                         </td>
-                                        @if (Auth::user()->isAdmin())
+                                        @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                             <td>
                                                 <div>
                                                 @if ($pageType == "new")                                                           

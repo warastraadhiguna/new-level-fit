@@ -325,7 +325,7 @@
                                             {{-- <td>{{ $item->personalTrainer->full_name }}</td> --}}
                                             <td>{{ $item->personaltrainer ? $item->personalTrainer->full_name : "No Data" }}</td>
                                             <td>
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <form
                                                         action="{{ route('trainer-session-check-in.destroy', $item->id) }}"
                                                         onclick="return confirm('Delete Data ?')" method="POST">

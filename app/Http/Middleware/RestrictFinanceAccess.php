@@ -8,8 +8,9 @@ class RestrictFinanceAccess
     {
         if (!$request->user() || !$request->user()->isFinance()) return $next($request);
         $route=optional($request->route())->getName();
-        if ($route==='dashboard' && $request->isMethod('GET')) return redirect()->route('finance.home');
         $access=app(\App\Support\RoleFeatureAccess::class);
+        if ($access->hasExplicitRouteGrant($request->user(),$request->route())) return $next($request);
+        if ($route==='dashboard' && $request->isMethod('GET')) return redirect()->route('finance.home');
         $feature=$access->featureForRoute($request->route());
         if (in_array($feature,['employees','enrollment','revenue','tip_tap_transfer'],true) && $access->allows($request->user(),$feature)) return $next($request);
         abort_unless(in_array($route,['finance.home','revenue-report.index','login','logout'],true),403,

@@ -106,7 +106,7 @@
                             </select>
                         </div>
                     </div>
-                    @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
+                    @if (Auth::user()->role == 'CS' || (Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <div class="col-xl-6">
                             <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>
@@ -205,7 +205,7 @@
                                     <a href="{{ route('payment-receipts.trainer', ['id' => $trainerSessionPayment->id, 'autoprint' => 1]) }}"
                                         target="_blank" rel="noopener" class="btn light btn-primary btn-xs w-100">Cetak Struk</a>
                                 @endif
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <form action="{{ route('trainer-session-payment.destroy', $trainerSessionPayment->id) }}" method="POST" class="m-0">
                                         @method('delete')
                                         @csrf

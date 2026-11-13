@@ -252,7 +252,7 @@
                                         @endif
 
                                         {{-- EDIT --}}
-                                        @if (Auth::user()->isAdmin())
+                                        @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                             <a href="{{ route('trainer-session.edit', $item->id) }}"
                                                 class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                         @endif
@@ -265,7 +265,7 @@
                                         {{-- <button type="button" class="btn light btn-dark btn-xs mb-1 btn-block"
                                             data-bs-toggle="modal" data-bs-target=".freeze{{ $item->id }}"
                                             id="checkInButton">Freeze</button> --}}
-                                        @if (Auth::user()->isAdmin())
+                                        @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                             <form action="{{ route('trainer-session.destroy', $item->id) }}"
                                                 onclick="return confirm('Delete Data ?')" method="POST">
                                                 @method('delete')

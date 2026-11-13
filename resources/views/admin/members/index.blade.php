@@ -161,7 +161,7 @@
                                                     <a href="{{ route('members.pt-history', $item->id) }}"
                                                         class="btn light btn-dark btn-xs btn-block mb-1">PT History</a>
                                                 </li>
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <a href="{{ route('members.create-membership', $item->id) }}"
                                                             class="btn light btn-primary btn-xs btn-block mb-1">Create Membership</a>
@@ -184,7 +184,7 @@
                                                         </button>
                                                     @endif
                                                 </li>
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <form action="{{ route('member.destroy', $item->id) }}"
                                                             onsubmit="return confirm('Delete Data ?')" method="POST">

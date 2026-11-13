@@ -1,5 +1,5 @@
 @php
-    $isPtReadOnly = Auth::user()->isPt();
+    $isPtReadOnly = Auth::user()->isPt() && !Auth::user()->hasCurrentFeatureGrant();
 @endphp
 
 <div class="row">
@@ -70,7 +70,7 @@
                                     </td>
                                     @if (!$isPtReadOnly)
                                     <td class="btn-group-vertical">
-                                        @if (Auth::user()->isAdmin())
+                                        @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                             <a href="{{ route('trainer-session.edit', $item->ts_id) }}"
                                                 class="btn light btn-warning btn-xs mb-1">Edit</a>
                                         @endif

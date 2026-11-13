@@ -34,7 +34,7 @@
                             Personal Trainer
                         </a>
                     </li>
-                    @if (Auth::user()->isAdmin())
+                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'pt-user' ? 'show active' : '' }}" data-bs-toggle="tab"
                                 href="#ptUser">
@@ -48,7 +48,7 @@
                             Class Instructor
                         </a>
                     </li>                     --}}
-                    @if (Auth::user()->isAdmin())
+                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <li class="nav-item">
                             <a class="nav-link {{ $page == 'admin' ? 'show active' : '' }}" data-bs-toggle="tab"
                                 href="#administrator">
@@ -56,7 +56,7 @@
                             </a>
                         </li>
                     @endif
-                    @if(Auth::user()->isAdmin())
+                    @if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <li class="nav-item"><a class="nav-link {{ $page==='hrd' ? 'show active' : '' }}" data-bs-toggle="tab" href="#hrdAccounts">HRD</a></li>
                         <li class="nav-item"><a class="nav-link {{ $page==='finance' ? 'show active' : '' }}" data-bs-toggle="tab" href="#financeAccounts">Finance</a></li>
                     @endif
@@ -68,7 +68,7 @@
                     @include('admin.staff.pt-user.index')
                     @include('admin.staff.administrator.index')
                     @include('admin.staff.class-instructor.index')
-                    @if(Auth::user()->isAdmin())
+                    @if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         @include('admin.staff.role-accounts.index',['accountRole'=>'HRD','rolePrefix'=>'hrd','roleLabel'=>'HRD','tabId'=>'hrdAccounts','accounts'=>$roleAccounts->get('HRD',collect())])
                         @include('admin.staff.role-accounts.index',['accountRole'=>'FINANCE','rolePrefix'=>'finance','roleLabel'=>'Finance','tabId'=>'financeAccounts','accounts'=>$roleAccounts->get('FINANCE',collect())])
                     @endif

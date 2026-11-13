@@ -16,7 +16,7 @@
 </style>
 
 @php
-    $isPtReadOnly = Auth::user()->isPt();
+    $isPtReadOnly = Auth::user()->isPt() && !Auth::user()->hasCurrentFeatureGrant();
 @endphp
 
 <div class="row">
@@ -148,11 +148,11 @@
                                                         </a>
                                                     </li>
                                                 @endif
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li><a href="{{ route('pt-free.edit', $item->id) }}" class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a></li>
                                                 @endif
                                                 <li><a href="{{ route('pt-free.show', $item->id) }}" class="btn light btn-info btn-xs mb-1 btn-block">Detail</a></li>
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <form action="{{ route('pt-free.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Delete Data ?')">
                                                             @csrf

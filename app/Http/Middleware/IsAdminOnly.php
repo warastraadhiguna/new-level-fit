@@ -13,6 +13,7 @@ class IsAdminOnly
         if (Auth::user() && Auth::user()->isAdmin()) {
             return $next($request);
         }
+        if (Auth::user() && app(\App\Support\RoleFeatureAccess::class)->hasExplicitRouteGrant(Auth::user(),$request->route())) return $next($request);
 
         abort(403);
     }

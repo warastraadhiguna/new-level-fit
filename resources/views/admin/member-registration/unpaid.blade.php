@@ -187,7 +187,7 @@
                                             $now = \Carbon\Carbon::now()->tz('asia/jakarta');
                                         @endphp
                                         {{-- @if ($idCodeMaxCount - $item->id_code_count == 0)
-                                            @if (Auth::user()->isAdmin())
+                                            @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                 <a href="{{ route('resetCheckIn', $item->member_id) }}"
                                                     class="btn light btn-warning btn-xs mb-1 btn-block">Reset Check In
                                                     ?</a>
@@ -243,7 +243,7 @@
                                             </button>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                    @if (Auth::user()->isAdmin())
+                                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                         <a href="{{ route('member-active.edit', $item->id) }}"
                                                             class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                                     @endif
@@ -272,7 +272,7 @@
                                                     @endif
                                                 </li>
                                                 <li>
-                                                    @if (Auth::user()->isAdmin())
+                                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                         <form action="{{ route('member-active.destroy', $item->id) }}"
                                                             method="POST">
                                                             @method('delete')
@@ -290,7 +290,7 @@
                                             id="checkInButton">Freeze</button> --}}
                                         {{-- <a href="{{ route('renewal', $item->id) }}"
                                             class="btn light btn-dark btn-xs mb-1 btn-block">Renewal</a> --}}
-                                        {{-- @if (Auth::user()->isAdmin())
+                                        {{-- @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                             <form action="{{ route('member-active.destroy', $item->id) }}"
                                                 method="POST">
                                                 @method('delete')

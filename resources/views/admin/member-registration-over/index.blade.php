@@ -110,7 +110,7 @@
                                     </td>
                                     <td>
                                         <div>
-                                            @if (Auth::user()->isAdmin())
+                                            @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                 <a href="{{ route('member-active.edit', $item->mr_id) }}"
                                                     class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
                                             @endif

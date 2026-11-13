@@ -73,12 +73,12 @@ class StaffController extends Controller
     private function staffPage(): ?string
     {
         $oldForm=(string)request()->old('_role_form','');
-        if (Auth::user()->isAdmin() && preg_match('/^(hrd|finance)-(create|edit-[0-9]+)$/D',$oldForm,$matches)) return $matches[1];
+        if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()) && preg_match('/^(hrd|finance)-(create|edit-[0-9]+)$/D',$oldForm,$matches)) return $matches[1];
         return Request()->input('page');
     }
     private function roleAccounts(bool $old)
     {
-        if (!Auth::user()->isAdmin()) return collect();
+        if (!(Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant())) return collect();
         $query=User::with('branchStore')->whereIn('role',['HRD','FINANCE'])
             ->where('branch_store_id',Auth::user()->branch_store_id)->orderBy('full_name');
         if ($old) $query->onlyTrashed();

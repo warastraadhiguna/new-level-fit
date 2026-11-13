@@ -86,6 +86,13 @@ class User extends Authenticatable
         return strtoupper((string) $this->role) === 'PT';
     }
 
+    public function hasCurrentFeatureGrant(): bool
+    {
+        $access=app(\App\Support\RoleFeatureAccess::class);
+        $feature=$access->featureForRoute(request()->route());
+        return $feature && $access->hasExplicitGrant($this,$feature);
+    }
+
     public function hasApplicationAccess($applicationCode)
     {
         if ($this->isOwner()) {

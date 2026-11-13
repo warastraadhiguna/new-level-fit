@@ -206,7 +206,7 @@
                                     <a href="{{ route('payment-receipts.member', ['id' => $memberRegistrationPayment->id, 'autoprint' => 1]) }}"
                                         target="_blank" rel="noopener" class="btn light btn-primary btn-xs w-100">Cetak Struk</a>
                                 @endif
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <form action="{{ route('member-registration-payment.destroy', $memberRegistrationPayment->id) }}" method="POST" class="m-0">
                                         @method('delete')
                                         @csrf

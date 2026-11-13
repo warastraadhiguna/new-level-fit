@@ -81,7 +81,7 @@ class RoleFeatureAccessTest extends TestCase
         $this->actingAs($this->actor('OWNER'));
         foreach([
             ['OWNER'=>['staff'=>1]],['UNKNOWN'=>['staff'=>1]],['ADMIN'=>['unknown'=>1]],
-            ['PT'=>['staff'=>1]],['FINANCE'=>['pos_inventory'=>1]],['HRD'=>['employees'=>'yes']],
+            ['INVALID'=>['staff'=>1]],['FINANCE'=>['pos_inventory'=>1]],['HRD'=>['employees'=>'yes']],
         ] as $permissions) $this->put('/role-feature-access',['permissions'=>$permissions])->assertSessionHasErrors();
         $this->assertEquals(0,DB::table('role_feature_permissions')->count());
     }
@@ -312,8 +312,8 @@ class RoleFeatureAccessTest extends TestCase
         $this->actingAs($this->actor('OWNER'));
         foreach([
             ['ADMIN'=>['staff'=>['create'=>1]]],['ADMIN'=>['staff'=>['read'=>1,'unknown'=>1]]],
-            ['PT'=>['pt'=>['read'=>1,'update'=>1]]],['ADMIN'=>['revenue'=>['read'=>1,'delete'=>1]]],
-            ['HRD'=>['staff'=>['read'=>1]]],['ADMIN'=>['staff'=>['read'=>'yes']]],
+            ['PT'=>['pt'=>['read'=>1,'unknown'=>1]]],['ADMIN'=>['revenue'=>['read'=>1,'delete'=>1]]],
+            ['HRD'=>['staff'=>['create'=>1]]],['ADMIN'=>['staff'=>['read'=>'yes']]],
         ] as $permissions) $this->put('/role-feature-access',['permissions'=>$permissions])->assertSessionHasErrors();
         $this->assertDatabaseCount('role_feature_permissions',0);
     }
@@ -397,6 +397,63 @@ class RoleFeatureAccessTest extends TestCase
             'PTSecondCheckIn'=>'create','members.destroy'=>'delete','pos-sales.void'=>'delete',
             'pos-stock.adjust'=>'update','tip-tap-transfer.export'=>'read','employees.photo'=>'read',
         ] as $name=>$action) $this->assertSame($action,$access->actionForRoute(app('router')->getRoutes()->getByName($name)),$name);
+    }
+
+    public function test_all_role_feature_cells_can_be_configured_without_automatically_granting_access(): void
+    {
+        DB::table('branch_stores')->where('id',1)->update(['pos_inventory_enabled'=>true,'face_enrollment_enabled'=>true]);
+        $pt=$this->actor('PT');$this->actingAs($pt);
+        $access=app(\App\Support\RoleFeatureAccess::class);
+        $this->assertFalse($access->allows($pt,'staff','read'));
+        $this->assertFalse($access->allows($pt,'pt','create'));
+        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()
+            ->assertSee('permissions[PT][staff][create]',false)
+            ->assertSee('permissions[FINANCE][staff][update]',false)
+            ->assertSee('permissions[CS][employees][delete]',false)
+            ->assertDontSee('>?</span>',false);
+    }
+
+    public function test_owner_can_delegate_actual_staff_crud_to_every_other_role_and_revoke_it(): void
+    {
+        DB::table('branch_stores')->where('id',1)->update(['pos_inventory_enabled'=>true]);
+        $owner=$this->actor('OWNER');
+        foreach(['CS','CSPOS','FC','PT','HRD','FINANCE'] as $role) {
+            $actor=$this->actor($role);
+            $this->actingAs($actor)->get('/staff')->assertForbidden();
+            $this->actingAs($owner)->put('/role-feature-access',['permissions'=>[$role=>[
+                'staff'=>['read'=>1,'create'=>1,'update'=>1,'delete'=>1],
+            ]]])->assertSessionHasNoErrors()->assertRedirect();
+            $this->actingAs($actor)->get('/staff?page=admin')->assertOk()->assertSee('Administrator')
+                ->assertSee('href="'.route('staff.index').'"',false);
+            $payload=['branch_store_id'=>1,'full_name'=>'Delegated '.$role,'email'=>'delegated-'.strtolower($role).'@example.com',
+                'gender'=>'Male','role'=>'ADMIN','password'=>'Secret123','application_access'=>['management']];
+            $this->post('/administrator',$payload)->assertSessionHasNoErrors()->assertRedirect();
+            $created=User::where('email',$payload['email'])->firstOrFail();
+            $this->put('/administrator/'.$created->id,array_merge($payload,['full_name'=>'Updated '.$role]))->assertSessionHasNoErrors()->assertRedirect();
+            $this->assertSame('Updated '.$role,$created->fresh()->full_name);
+            $this->delete('/administrator/'.$created->id)->assertRedirect();
+            $this->assertSoftDeleted('users',['id'=>$created->id]);
+            $this->get('/role-feature-access')->assertForbidden();
+            $this->get('/secret-branch-store')->assertForbidden();
+            $this->get('/attendance-device')->assertForbidden();
+            $this->actingAs($owner)->put('/role-feature-access',['permissions'=>[]])->assertSessionHasNoErrors()->assertRedirect();
+            $this->actingAs($actor)->get('/staff')->assertForbidden();
+        }
+    }
+
+    public function test_old_out_of_role_rows_do_not_silently_become_grants_and_pt_writes_need_explicit_crud(): void
+    {
+        $hrd=$this->actor('HRD');$pt=$this->actor('PT');
+        $this->allow('HRD','staff',true);$this->allow('PT','pt',true);
+        $this->actingAs($hrd);$access=app(\App\Support\RoleFeatureAccess::class);
+        $this->assertFalse($access->allows($hrd,'staff','read'));
+        $this->assertTrue($access->allows($pt,'pt','read'));
+        $this->assertFalse($access->allows($pt,'pt','create'));
+        $this->assertFalse($access->hasExplicitGrant($hrd,'staff','read'));
+        $cs=$this->actor('CS');
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'CS','feature_key'=>'membership',
+            'is_allowed'=>true,'can_read'=>true,'can_create'=>true,'can_update'=>true,'can_delete'=>true]);
+        $this->assertFalse($access->allows($cs,'membership_approval','update'));
     }
 
     public function test_migration_is_repeatable_and_route_catalog_covers_all_protected_endpoints(): void

@@ -72,7 +72,7 @@
                                 <th>Email</th>
                                 <th>User</th>          
                                 <th>Status</th>                                                                                                     
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <th>Action</th>
                                 @endif
                             </tr>
@@ -95,7 +95,7 @@
                                     <td>
                                         <h6>{{ $item->status == "1"? "Continue" : "Canceled" }}</h6>
                                     </td>                                                                                                  
-                                    @if (Auth::user()->isAdmin())
+                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                         <td>
                                             <div>
                                                 <button type="button"

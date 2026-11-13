@@ -12,7 +12,9 @@
                     </a>@endif
                 </li>
             @endif
-            @if(Auth::user()->isHrd())
+            @if(app(\App\Support\RoleFeatureAccess::class)->expandedNavigation(Auth::user()))
+                @include('admin.includes.delegated-sidebar')
+            @elseif(Auth::user()->isHrd())
                 @include('admin.hrd.sidebar')
             @elseif(Auth::user()->isFinance())
                 @include('admin.finance.sidebar')

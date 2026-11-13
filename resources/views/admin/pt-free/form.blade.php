@@ -84,7 +84,7 @@
                             </div>
                         </div>
 
-                        @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
+                        @if (Auth::user()->role == 'CS' || (Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                             <div class="col-xl-6">
                                 <div class="mb-3">
                                     <label class="form-label">Fitness Consultant</label>

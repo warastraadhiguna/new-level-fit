@@ -480,7 +480,7 @@ class TrainerSessionController extends Controller
 
     public function moveBranchPage(string $id)
     {
-        if (!Auth::user()->isAdmin()) {
+        if (!Auth::user()->isAdmin() && !app(\App\Support\RoleFeatureAccess::class)->hasExplicitRouteGrant(Auth::user(),request()->route())) {
             abort(403);
         }
 
@@ -610,7 +610,7 @@ class TrainerSessionController extends Controller
 
     public function moveBranch(Request $request, string $id)
     {
-        if (!Auth::user()->isAdmin()) {
+        if (!Auth::user()->isAdmin() && !app(\App\Support\RoleFeatureAccess::class)->hasExplicitRouteGrant(Auth::user(),request()->route())) {
             abort(403);
         }
 

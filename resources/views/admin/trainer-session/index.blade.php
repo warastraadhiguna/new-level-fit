@@ -47,7 +47,7 @@
 </style>
 
 @php
-    $isPtReadOnly = Auth::user()->isPt();
+    $isPtReadOnly = Auth::user()->isPt() && !Auth::user()->hasCurrentFeatureGrant();
 @endphp
 
 <div class="row">
@@ -314,7 +314,7 @@
                                                     @endif
                                                 @endif
 
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <a href="{{ route('trainer-session.edit', $item->id) }}"
                                                             class="btn light btn-warning btn-xs mb-1 btn-block">Edit</a>
@@ -332,7 +332,7 @@
                                                         <a href="{{ route('cutiTrainerSession', $item->id) }}" target="_blank"
                                                             class="btn light btn-secondary btn-xs mb-1 btn-block">Freeze</a>
                                                     </li>
-                                                    @if (Auth::user()->isAdmin())
+                                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                         <li>
                                                             <form action="{{ route('trainer-session-unfreeze', $item->id) }}"
                                                                 method="POST"
@@ -351,7 +351,7 @@
                                                         class="btn light btn-info btn-xs mb-1 btn-block">Detail</a>
                                                 </li>
 
-                                                @if (Auth::user()->isAdmin())
+                                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                                     <li>
                                                         <form action="{{ route('trainer-session.destroy', $item->id) }}"
                                                             method="POST"

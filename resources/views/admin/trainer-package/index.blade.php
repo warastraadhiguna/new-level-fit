@@ -22,7 +22,7 @@
                                 <th data-orderable="false">Branch & Staff</th>
                                 <th data-orderable="false">Session & Duration</th>
                                 <th data-orderable="false">Price</th>
-                                @if (Auth::user()->isAdmin())
+                                @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                     <th data-orderable="false">Action</th>
                                 @endif
                             </tr>
@@ -55,7 +55,7 @@
                                         <h6 class="mb-1">Package: {{ formatRupiah($item->package_price) }}</h6>
                                         <small class="text-muted">Admin: {{ formatRupiah($item->admin_price) }}</small>
                                     </td>
-                                    @if (Auth::user()->isAdmin())
+                                    @if ((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                                         <td>
                                             <div>
                                                 <button type="button"

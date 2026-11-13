@@ -109,7 +109,7 @@
                     </div>
                     @include('admin.partials.pos-received-amount-field')
                     @include('admin.partials.payment-deadline-field')
-                    @if (Auth::user()->role == 'CS' || Auth::user()->isAdmin())
+                    @if (Auth::user()->role == 'CS' || (Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
                         <div class="col-xl-6" id="fitness_consultant">
                             <div class="mb-3">
                                 <label for="exampleFormControlInput1" class="form-label">Fitness Consultant</label>

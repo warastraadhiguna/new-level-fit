@@ -2,8 +2,9 @@
 
 Pengaturan `/role-feature-access` sekarang memiliki Create (tambah), Read (lihat),
 Update (ubah/restore), dan Delete (hapus) per fitur dan role. Read wajib aktif
-sebelum aksi lain. Owner tetap tidak dapat dikunci. Aksi yang tidak didukung
-fitur atau role tidak ditawarkan: PT hanya Read, Approval hanya Read/Update,
+sebelum aksi lain. Owner tetap tidak dapat dikunci. Semua role, termasuk PT,
+HRD, dan Finance, dapat diberi izin. Aksi yang tidak didukung fitur tidak
+ditawarkan: Approval hanya Read/Update,
 Revenue/Dashboard/laporan/Export Tip-Tap hanya Read, enrollment/check-in/pembayaran
 hanya Create/Read/Delete. Create pada Check-in mencatat masuk maupun keluar.
 
@@ -52,7 +53,29 @@ Gunakan SQL **atau** migration, bukan keduanya. Tabel awal tetap disiapkan melal
 Kolom nullable sengaja memakai NULL agar izin `is_allowed` lama tetap berlaku
 hingga Owner menyimpan matriks baru. Modul tambahan mewarisi izin induknya jika
 belum memiliki baris: Approval/Check-in/Pembayaran Membership dari `membership`,
-versi PT dari `pt`. Setelah matriks baru disimpan, setiap aksi disimpan eksplisit;
+versi PT dari `pt`, hanya untuk role yang sebelumnya memang didukung fitur itu.
+Kombinasi role/fitur baru dan izin tulis PT membutuhkan grant CRUD eksplisit;
+baris legacy `is_allowed` tidak otomatis membuka akses tersebut. Setelah matriks
+baru disimpan, setiap aksi disimpan eksplisit;
 checkbox yang tidak dicentang ditolak. Data cabang/pencatat diambil dari akun login.
 Penyimpanan ditolak sebelum kolom CRUD tersedia agar tidak terjadi penyimpanan
 setengah aturan. Migration tidak mengubah data transaksi atau absensi.
+
+## Seluruh role dapat diatur
+
+Tanda tanya pada sel role/fitur diganti pilihan izin yang didukung fitur tersebut.
+Owner dapat memberi Create/Read/Update/Delete kepada role mana pun, termasuk PT,
+HRD, dan Finance. Tidak ada grant baru secara otomatis. Pembatasan lama pada
+middleware, tombol, form, tab Staff, dan menu disesuaikan untuk menerima grant
+CRUD eksplisit. Menu fitur tambahan mengikuti izin yang disimpan; pencabutan
+izin kembali menutup akses URL dan operasi.
+
+Secret Branch Store, visibilitas Revenue, dan penyembunyian CS POS saat POS mati
+tetap berlaku. Sel Revenue yang tidak diizinkan cabang diberi keterangan jelas,
+bukan tanda tanya. Pengaturan akses role, perangkat absensi, pemilihan akun Owner,
+dan unduh Excel tetap mengikuti pembatasan khusus masing-masing. Pemberian izin
+Staff tidak menjadikan penerimanya Owner. Fitur yang tidak punya operasi tulis
+(seperti laporan) tetap hanya menyediakan Read.
+
+Perubahan ini memakai kolom CRUD yang sudah ada; tidak membutuhkan migration
+atau SQL tambahan setelah SQL CRUD di atas diterapkan.

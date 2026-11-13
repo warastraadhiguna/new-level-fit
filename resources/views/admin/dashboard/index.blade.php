@@ -12,7 +12,7 @@
 @endforeach
 @endif
 
-@if(Auth::user()->isAdmin())
+@if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
 <div class="modal fade modal-sm" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -118,9 +118,9 @@
 </div>
 @endif
 
-@if(Auth::user()->isAdmin() || $installmentReminderEnabled)
+@if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()) || $installmentReminderEnabled)
 <div class="row">
-    @if(Auth::user()->isAdmin())
+    @if((Auth::user()->isAdmin() || Auth::user()->hasCurrentFeatureGrant()))
     <div class="col-xl-6 col-xxl-6 col-lg-6 col-sm-6">
         <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal">
             <div class="widget-stat card bg-info">

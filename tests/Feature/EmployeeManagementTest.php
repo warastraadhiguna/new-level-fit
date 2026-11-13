@@ -240,6 +240,26 @@ class EmployeeManagementTest extends TestCase
         $this->assertNull($employee->employment_start_date);
     }
 
+    public function test_pt_can_manage_employees_only_after_explicit_owner_grant(): void
+    {
+        require_once database_path('migrations/2026_11_10_000001_create_role_feature_permissions.php');(new \CreateRoleFeaturePermissions)->up();
+        require_once database_path('migrations/2026_11_13_000003_add_crud_to_role_feature_permissions.php');(new \AddCrudToRoleFeaturePermissions)->up();
+        $pt=$this->actor('PT');
+        $this->actingAs($pt)->post('/employees',$this->payload())->assertForbidden();
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'PT','feature_key'=>'employees',
+            'is_allowed'=>true,'can_create'=>true,'can_read'=>true,'can_update'=>true,'can_delete'=>true]);
+        $this->post('/employees',$this->payload())->assertSessionHasNoErrors()->assertRedirect();
+        $employee=Employee::firstOrFail();
+        $this->get('/employees')->assertOk()->assertSee('Pegawai baru');
+        $this->put('/employees/'.$employee->id,array_merge($this->payload(),['full_name'=>'Updated by PT']))->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('Updated by PT',$employee->fresh()->full_name);
+        $pt->branchStore->face_enrollment_enabled=false;
+        $this->get('/employees')->assertNotFound();
+        $pt->branchStore->face_enrollment_enabled=true;
+        $this->delete('/employees/'.$employee->id)->assertRedirect();
+        $this->assertSoftDeleted('employees',['id'=>$employee->id]);
+    }
+
     public function test_birthday_can_be_saved_edited_and_cleared(): void
     {
         $this->travelTo(\Carbon\Carbon::parse('2026-11-05 10:00:00','Asia/Jakarta'));

@@ -28,6 +28,7 @@ class EnsurePtReadOnlyAccess
         if (! $user || ! $user->isPt()) {
             return $next($request);
         }
+        if (app(\App\Support\RoleFeatureAccess::class)->hasExplicitRouteGrant($user,$request->route())) return $next($request);
 
         // Export creates a file without modifying business data; require an explicit grant.
         if (in_array(optional($request->route())->getName(), ['tip-tap-transfer.index','tip-tap-transfer.export'], true)
