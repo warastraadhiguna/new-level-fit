@@ -28,9 +28,17 @@ class EmployeeController extends Controller
         $editId=$request->input('edit_employee') ?: $request->session()->getOldInput('_employee_id');
         $editingEmployee=$editId ? $this->employees($request)->findOrFail($editId) : null;
         return view('admin.layouts.wrapper',[
-            'title'=>'Data Pegawai','content'=>'admin.employees.index',
+            'title'=>'Employees','content'=>'admin.employees.index',
             'birthdayMessages'=>$this->birthdayMessages($request),
             'employees'=>$employees,'editingEmployee'=>$editingEmployee,
+        ]);
+    }
+
+    public function show(Request $request, $id)
+    {
+        return view('admin.layouts.wrapper',[
+            'title'=>'Detail Employee','content'=>'admin.employees.show',
+            'employee'=>$this->employees($request)->findOrFail($id),
         ]);
     }
 

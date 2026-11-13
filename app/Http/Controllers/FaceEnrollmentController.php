@@ -30,11 +30,15 @@ class FaceEnrollmentController extends Controller
     }
     public function index(Request $request)
     {
+        $request->validate(['employee_id'=>'nullable|integer|min:1']);
         $ready=$this->ready();
         $query=$this->employees($request)->leftJoin('branch_stores as b','u.branch_store_id','=','b.id');
+        if ($request->filled('employee_id')) $query->where('u.id',$request->employee_id);
         if ($ready) $query->leftJoin('face_attendance_employees as f','u.id','=','f.source_employee_id');
         $employees=$query->orderBy('u.full_name')->select('u.id','u.full_name','u.position','b.name as branch_name')
             ->selectRaw($ready ? 'f.id as profile_id':'NULL as profile_id')->get();
+        if ($request->filled('employee_id')) abort_if($employees->isEmpty(),404);
+        $selectedEmployeeId=$request->filled('employee_id') ? (int)$request->employee_id : null;
         $counts=$ready ? DB::connection('face_enrollment')->table('face_attendance_samples')
             ->whereIn('face_profile_id',$employees->pluck('profile_id')->filter())->select('face_profile_id')
             ->selectRaw('COUNT(*) as total')->selectRaw('SUM(CASE WHEN face_model = ? THEN 1 ELSE 0 END) as valid_count',[config('face.model')])
@@ -44,7 +48,7 @@ class FaceEnrollmentController extends Controller
             $employee->sample_count=$count ? (int)$count->total : 0;
             $employee->enrolled=$count && $count->valid_count>0;
         }
-        return view('admin.layouts.wrapper',['title'=>'Pendaftaran Wajah','content'=>'admin.face-enrollment.index','employees'=>$employees,'faceReady'=>$ready]);
+        return view('admin.layouts.wrapper',['title'=>'Pendaftaran Wajah','content'=>'admin.face-enrollment.index','employees'=>$employees,'faceReady'=>$ready,'selectedEmployeeId'=>$selectedEmployeeId]);
     }
     public function samples(Request $request)
     {

@@ -1,4 +1,4 @@
-<div class="col-xl-12"><h4>Rekap Kehadiran Pegawai</h4>@include('admin.employee-attendance.navigation')
+<div class="col-xl-12"><h4>Attendance Report</h4>@include('admin.employee-attendance.navigation')
 <div class="card"><div class="card-body">@include('admin.employee-attendance.filter')
 <div class="d-flex flex-wrap gap-3 mb-3">@foreach(['hadir'=>'Hadir','terlambat'=>'Terlambat','absen'=>'Tidak hadir','izin'=>'Izin/Cuti/Sakit','late'=>'Menit terlambat','early'=>'Menit pulang awal','work'=>'Menit bekerja'] as $key=>$label)<div class="border rounded p-3"><small>{{ $label }}</small><strong class="d-block">{{ $summary[$key] }}</strong></div>@endforeach</div>
 <p class="text-muted">Tidak hadir dihitung setelah jam akhir shift. Tanpa jadwal tidak dihitung mangkir. Durasi bekerja adalah selisih masuk/pulang, termasuk waktu istirahat. Shift malam menggunakan tanggal mulai shift.</p>

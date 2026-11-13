@@ -1,0 +1,10 @@
+.dlabnav .metismenu .staff-navigation > ul > li > ul > li > a {
+    padding-left: 4.6rem;
+    white-space: normal;
+    line-height: 1.5;
+}
+[data-sidebar-style="mini"] .dlabnav .metismenu .staff-navigation > ul > li > ul > li > a,
+[data-sidebar-style="full"] .menu-toggle .dlabnav .metismenu .staff-navigation > ul > li > ul > li > a,
+[data-layout="horizontal"] .dlabnav .metismenu .staff-navigation > ul > li > ul > li > a {
+    padding-left: 1.5rem;
+}

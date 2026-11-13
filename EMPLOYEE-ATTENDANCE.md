@@ -1,9 +1,17 @@
 # Shift dan absensi pegawai
 
-Pengaturan dilakukan di Master melalui Staff: Template Shift (`/employee-shifts`),
-Jadwal Pegawai (`/employee-schedules`), Izin & Cuti (`/employee-leaves`), dan
-Rekap Kehadiran (`/employee-attendance`). Face Attendance tetap memakai aktivasi
-perangkat dan pengenalan wajah yang sudah ada; tidak ada pemilihan identitas dari browser.
+Pengaturan berada di Master melalui menu bertingkat **Staff**:
+
+- Staff List
+- Attendance: Employees (`/employees`), Schedules (`/employee-schedules`),
+  Day Off (`/employee-leaves`), Attendance Report (`/employee-attendance`).
+- Attendance Setting: Perangkat absensi (`/attendance-device`, Owner saja),
+  Shift template (`/employee-shifts`).
+
+Pendaftaran wajah dibuka dari **Employees ? Detail ? Pendaftaran Wajah**.
+Link membawa pegawai yang dipilih langsung ke halaman enrollment, dengan validasi
+pegawai aktif/cabang dan izin enrollment. Tidak ada menu enrollment terpisah di sidebar.
+Face Attendance tetap memakai aktivasi perangkat dan pengenalan wajah yang sudah ada.
 
 ## Pemasangan
 

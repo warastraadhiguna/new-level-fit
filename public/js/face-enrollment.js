@@ -139,5 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     window.addEventListener('pagehide', () => stream?.getTracks().forEach(track => track.stop()));
     update();
+    if(employee.value) loadSamples();
     camera();
 });

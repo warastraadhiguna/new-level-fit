@@ -373,7 +373,7 @@ Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagemen
     Route::put('employee-leaves/{id}', [\App\Http\Controllers\EmployeeAttendanceController::class,'reviewLeave'])->name('employee-leaves.update');
     Route::get('employee-attendance', [\App\Http\Controllers\EmployeeAttendanceController::class,'report'])->name('employee-attendance.report');
     Route::get('employee-attendance/export', [\App\Http\Controllers\EmployeeAttendanceController::class,'report'])->name('employee-attendance.report.export');
-    Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','edit','update','destroy']);
+    Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','show','edit','update','destroy']);
     Route::get('employees/{id}/photos/{kind}', [\App\Http\Controllers\EmployeeController::class,'photo'])->where('kind','photo|ktp')->name('employees.photo');
     Route::get('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('face-enrollment.index');
     Route::get('/enroll/samples', [\App\Http\Controllers\FaceEnrollmentController::class, 'samples'])->name('face-enrollment.samples');

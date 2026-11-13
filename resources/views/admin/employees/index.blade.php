@@ -1,7 +1,7 @@
 <div class="col-xl-12">
     @include('admin.employees.birthdays')
     <div class="page-title flex-wrap justify-content-between">
-        <div><h4>Data Pegawai</h4><p class="text-muted mb-0">Cabang: {{ optional(Auth::user()->branchStore)->name }}</p></div>
+        <div><h4>Employees</h4><p class="text-muted mb-0">Cabang: {{ optional(Auth::user()->branchStore)->name }}</p></div>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddEmployee">+ Tambah Pegawai</button>
     </div>
     <div class="card"><div class="card-body">
@@ -33,6 +33,7 @@
                             <td>{{ $employee->phone ?: '-' }}</td>
                             <td><span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span></td>
                             <td>
+                                <a class="btn light btn-info btn-xs mb-1" href="{{ route('employees.show',$employee->id) }}">Detail</a>
                                 <button type="button" class="btn light btn-warning btn-xs mb-1" data-bs-toggle="modal" data-bs-target="#modalEditEmployee{{ $employee->id }}">Ubah</button>
                                 <form class="d-inline" method="POST" action="{{ route('employees.destroy',$employee->id) }}" onsubmit="return confirm('Hapus sementara pegawai ini? Pegawai tidak dapat absen setelah dihapus.')">
                                     @csrf @method('DELETE')<button class="btn light btn-danger btn-xs">Hapus Sementara</button>

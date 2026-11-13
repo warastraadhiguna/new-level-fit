@@ -115,11 +115,11 @@ class EmployeeAttendanceManagementTest extends TestCase
         $this->post('/employee-leaves',['employee_id'=>1,'type'=>'izin','start_date'=>'2026-11-13','end_date'=>'2026-11-13','reason'=>'Izin'])->assertSessionHasNoErrors();
         $this->putJson('/employee-leaves/1',['status'=>'approved'])->assertForbidden();
         $this->get('/employee-shifts')->assertForbidden();
-        $this->actingAs($this->actor('HRD'))->view('admin.includes.sidebar')->assertSee('Template Shift')->assertSee('Rekap Kehadiran');
+        $this->actingAs($this->actor('HRD'))->view('admin.includes.sidebar')->assertSee('Shift template')->assertSee('Attendance Report');
         $u=$this->actor();$u->branchStore->face_enrollment_enabled=false;
         $features=app(\App\Support\RoleFeatureAccess::class)->featuresForBranch($u->branchStore);
         $this->assertArrayNotHasKey('attendance_shifts',$features);$this->assertArrayNotHasKey('attendance_leaves',$features);
-        $this->actingAs($u)->view('admin.includes.sidebar')->assertDontSee('Template Shift')->assertDontSee('Rekap Kehadiran');
+        $this->actingAs($u)->view('admin.includes.sidebar')->assertDontSee('Shift template')->assertDontSee('Attendance Report');
     }
     public function test_recap_uses_paired_mobile_records_and_used_schedule_is_locked(): void
     {

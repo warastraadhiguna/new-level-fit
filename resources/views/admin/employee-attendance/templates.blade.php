@@ -1,5 +1,5 @@
 <div class="col-xl-12">
-<h4>Template Shift</h4>@include('admin.employee-attendance.navigation')
+<h4>Shift template</h4>@include('admin.employee-attendance.navigation')
 <p>Contoh: Shift Pagi 06:00–13:00 dan Shift Siang 13:00–19:00. Jam selesai yang lebih kecil dari jam mulai dihitung sebagai hari berikutnya. Toleransi dikurangi dari perhitungan menit terlambat.</p>
 @if($attendanceAccess->allowsRoute(Auth::user(),'employee-shifts.store'))
 <div class="card"><div class="card-body"><h5>Tambah template</h5><form method="POST" action="{{ route('employee-shifts.store') }}">@csrf @include('admin.employee-attendance.template-fields',['template'=>null])</form></div></div>

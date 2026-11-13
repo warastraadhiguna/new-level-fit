@@ -62,6 +62,7 @@
     <link href="{{ asset('admingym/vendor/bootstrap-select/dist/css/bootstrap-select.min.css') }}" rel="stylesheet">
     <link href="{{ asset('admingym/vendor/jquery-nice-select/css/nice-select.css') }}" rel="stylesheet">
     <link href="{{ asset('admingym/css/style.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/staff-navigation.css') }}" rel="stylesheet">
 
     <!-- Daterange picker -->
     <link href="{{ asset('admingym/vendor/bootstrap-daterangepicker/daterangepicker.css') }}" rel="stylesheet">

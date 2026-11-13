@@ -1,5 +1,6 @@
 <div class="col-12">
     <div class="mb-4"><h3>Pendaftaran Wajah</h3><p class="text-muted">Daftarkan wajah pegawai untuk absensi otomatis. Pilih pegawai, lalu tambahkan 3 contoh: depan, sedikit kiri, dan sedikit kanan. Maksimal 5 contoh.</p></div>
+    @if(($selectedEmployeeId ?? null) && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'employees.show'))<a href="{{ route('employees.show',$selectedEmployeeId) }}" class="btn btn-outline-primary mb-3">Kembali ke Detail Employee</a>@endif
     @if (!$faceReady)<div class="alert alert-warning">Tabel profil atau contoh wajah belum tersedia. Hubungi administrator untuk menyiapkan enrollment.</div>@endif
     <dialog id="faceResultDialog" class="face-result-dialog" aria-labelledby="faceResultTitle">
         <div id="faceResultIcon" class="face-result-icon" aria-hidden="true"></div>
@@ -18,7 +19,7 @@
             <label for="faceEmployee" class="form-label">Pegawai</label>
             <select id="faceEmployee" class="form-control" @if(!$faceReady) disabled @endif>
                 <option value="">Pilih nama pegawai</option>
-                @foreach ($employees as $employee)<option value="{{ $employee->id }}" data-enrolled="{{ $employee->enrolled ? '1' : '0' }}" data-count="{{ $employee->sample_count }}">{{ $employee->full_name }} · {{ ($employee->position ?: 'Pegawai') }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
+                @foreach ($employees as $employee)<option value="{{ $employee->id }}" {{ ($selectedEmployeeId ?? null)===(int)$employee->id ? 'selected':'' }} data-enrolled="{{ $employee->enrolled ? '1' : '0' }}" data-count="{{ $employee->sample_count }}">{{ $employee->full_name }} · {{ ($employee->position ?: 'Pegawai') }}{{ $employee->branch_name ? ' · '.$employee->branch_name : '' }}</option>@endforeach
             </select>
             @if ($employees->isEmpty())<p class="text-muted mt-2">Tidak ada pegawai aktif yang dapat didaftarkan.</p>@endif
             <span id="faceStatus" class="badge badge-secondary mt-3">Pilih pegawai terlebih dahulu</span>

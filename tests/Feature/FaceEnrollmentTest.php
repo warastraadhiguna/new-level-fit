@@ -62,10 +62,15 @@ class FaceEnrollmentTest extends TestCase
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $links = (new \DOMXPath($document))->query('//li[a/span[normalize-space(.)="Staff"]]/ul/li/a');
-        $this->assertCount(4, $links);
+        $this->assertCount(3, $links);
         $this->assertEquals('Staff List', trim($links->item(0)->textContent));
-        $this->assertEquals('Data Pegawai', trim($links->item(1)->textContent));
-        $this->assertEquals('Pendaftaran Wajah', trim($links->item(2)->textContent));
+        $this->assertEquals('Attendance', trim($links->item(1)->textContent));
+        $this->assertEquals('Attendance Setting', trim($links->item(2)->textContent));
+        $xpath=new \DOMXPath($document);
+        $children=$xpath->query('//li[a[normalize-space(.)="Attendance"]]/ul/li/a');
+        $this->assertSame(['Employees','Schedules','Day Off','Attendance Report'],array_map(fn($link)=>trim($link->textContent),iterator_to_array($children)));
+        $this->assertCount(0,$xpath->query('//div[contains(@class,"dlabnav")]//a[normalize-space(.)="Pendaftaran Wajah"]'));
+
     }
     public function test_admin_is_limited_to_own_branch(): void
     {
@@ -256,5 +261,16 @@ class FaceEnrollmentTest extends TestCase
         $actor=$this->actor();$actor->setRelation('branchStore',new BranchStore(['name'=>'New branch']));
         $this->assertFalse($actor->branchStore->face_enrollment_enabled);
         $this->actingAs($actor)->get('/enroll')->assertNotFound();
+    }
+
+    public function test_employee_detail_enrollment_link_selects_only_scoped_active_employee(): void
+    {
+        $response=$this->actingAs($this->actor())->get('/enroll?employee_id=10')->assertOk()->assertSee('Active One')->assertDontSee('Active Two');
+        $dom=new \DOMDocument();@$dom->loadHTML($response->getContent());
+        $options=(new \DOMXPath($dom))->query('//select[@id="faceEmployee"]/option[@selected]');
+        $this->assertCount(1,$options);$this->assertSame('10',$options->item(0)->getAttribute('value'));
+        $this->get('/enroll?employee_id=20')->assertNotFound();
+        $this->get('/enroll?employee_id=30')->assertNotFound();
+        $this->getJson('/enroll?employee_id=invalid')->assertStatus(422);
     }
 }

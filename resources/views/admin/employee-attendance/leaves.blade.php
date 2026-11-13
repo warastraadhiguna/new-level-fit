@@ -1,4 +1,4 @@
-<div class="col-xl-12"><h4>Izin & Cuti Pegawai</h4>@include('admin.employee-attendance.navigation')
+<div class="col-xl-12"><h4>Day Off</h4>@include('admin.employee-attendance.navigation')
 <p>Pengajuan dibuat oleh petugas untuk pegawai dan harus disetujui agar masuk rekap. Pegawai yang sedang izin/cuti disetujui tidak dapat absen masuk. Pengajuan tidak memotong saldo cuti.</p>
 @if($attendanceAccess->allowsRoute(Auth::user(),'employee-leaves.store'))
 <div class="card"><div class="card-body"><h5>Tambah pengajuan</h5><form method="POST" action="{{ route('employee-leaves.store') }}">@csrf<div class="row g-3">

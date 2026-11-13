@@ -340,4 +340,17 @@ class EmployeeManagementTest extends TestCase
         $this->assertDatabaseHas('face_attendance_employees',['source_user_id'=>99,'source_employee_id'=>null,'face_embedding'=>'[1]']);
         $this->assertDatabaseCount('users',1);
     }
+
+    public function test_employee_details_show_enrollment_link_and_protect_other_branches(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $this->actingAs($this->actor())->get('/employees')->assertOk()->assertSee(route('employees.show',$employee->id),false);
+        $this->get('/employees/'.$employee->id)->assertOk()->assertSee('Detail Employee')->assertSee(route('face-enrollment.index',['employee_id'=>$employee->id]),false);
+        $employee->update(['is_active'=>false]);
+        $this->get('/employees/'.$employee->id)->assertOk()->assertDontSee(route('face-enrollment.index',['employee_id'=>$employee->id]),false);
+        $employee->update(['branch_store_id'=>2,'is_active'=>true]);
+        $this->get('/employees/'.$employee->id)->assertNotFound();
+        $employee->update(['all_branch'=>true]);
+        $this->get('/employees/'.$employee->id)->assertOk();
+    }
 }

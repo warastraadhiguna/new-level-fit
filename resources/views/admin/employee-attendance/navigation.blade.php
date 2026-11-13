@@ -1,6 +1,6 @@
 @php($attendanceAccess=app(\App\Support\RoleFeatureAccess::class))
 <div class="d-flex flex-wrap gap-2 mb-3">
-@foreach(['employee-shifts.index'=>'Template Shift','employee-schedules.index'=>'Jadwal Pegawai','employee-leaves.index'=>'Izin & Cuti','employee-attendance.report'=>'Rekap Kehadiran'] as $navRoute=>$navLabel)
+@foreach(['employees.index'=>'Employees','employee-schedules.index'=>'Schedules','employee-leaves.index'=>'Day Off','employee-attendance.report'=>'Attendance Report','employee-shifts.index'=>'Shift template'] as $navRoute=>$navLabel)
 @if($attendanceAccess->allowsRoute(Auth::user(),$navRoute))<a class="btn {{ request()->routeIs($navRoute) ? 'btn-primary':'btn-outline-primary' }}" href="{{ route($navRoute) }}">{{ $navLabel }}</a>@endif
 @endforeach
 </div>

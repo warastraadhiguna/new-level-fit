@@ -424,7 +424,7 @@ class RoleFeatureAccessTest extends TestCase
                 'staff'=>['read'=>1,'create'=>1,'update'=>1,'delete'=>1],
             ]]])->assertSessionHasNoErrors()->assertRedirect();
             $this->actingAs($actor)->get('/staff?page=admin')->assertOk()->assertSee('Administrator')
-                ->assertSee('href="'.route('staff.index').'"',false);
+                ->assertSee('href="'.route('staff.index',['page'=>'cs']).'"',false);
             $payload=['branch_store_id'=>1,'full_name'=>'Delegated '.$role,'email'=>'delegated-'.strtolower($role).'@example.com',
                 'gender'=>'Male','role'=>'ADMIN','password'=>'Secret123','application_access'=>['management']];
             $this->post('/administrator',$payload)->assertSessionHasNoErrors()->assertRedirect();

@@ -1,4 +1,4 @@
-<div class="col-xl-12"><h4>Jadwal Shift Pegawai</h4>@include('admin.employee-attendance.navigation')
+<div class="col-xl-12"><h4>Schedules</h4>@include('admin.employee-attendance.navigation')
 @if($attendanceAccess->allowsRoute(Auth::user(),'employee-schedules.store'))
 <div class="card"><div class="card-body"><h5>Atur jadwal sekaligus</h5>
 <p>Pilih beberapa pegawai dan hari. Satu pegawai hanya boleh memiliki satu jadwal per tanggal, termasuk pegawai mobile lintas cabang.</p>

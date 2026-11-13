@@ -8,8 +8,7 @@
         'pt-history'=>'PT Leading History',
         'trainer-session.index'=>'PT','trainer-approval.index'=>'Approval PT',
         'trainer-session-check-in.index'=>'Check-in PT','pt-free.active'=>'PT Free',
-        'staff.index'=>'Staff List & Akun Staff','employees.index'=>'Data Pegawai',
-        'face-enrollment.index'=>'Pendaftaran Wajah','pos.index'=>'POS Kasir',
+        'pos.index'=>'POS Kasir',
         'pos-sales.index'=>'Riwayat Penjualan','pos-products.index'=>'POS Produk & Stok',
         'pos-purchases.index'=>'POS Pembelian','pos-suppliers.index'=>'POS Supplier',
         'revenue-report.index'=>'Laporan Revenue','report-member-pt-checkin'=>'Laporan Check-in',
@@ -26,4 +25,4 @@
     @endif
 @endforeach
 
-@include('admin.employee-attendance.sidebar')
+@include('admin.includes.staff-sidebar')
