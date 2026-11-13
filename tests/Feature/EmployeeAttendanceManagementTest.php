@@ -150,4 +150,61 @@ class EmployeeAttendanceManagementTest extends TestCase
         $this->delete('/employee-schedules/1')->assertSessionHasNoErrors();
         $this->assertDatabaseCount('employee_shift_schedules',0);
     }
+
+    private function attendanceRecords(int $employee=1, string $date='2026-11-13', int $branch=1): array
+    {
+        $profile=DB::table('face_attendance_employees')->where('source_employee_id',$employee)->value('id');
+        if (!$profile) $profile=DB::table('face_attendance_employees')->insertGetId(['source_employee_id'=>$employee,'employee_code'=>'EMP'.$employee,'name'=>'Employee','department'=>'CS']);
+        $ids=[];
+        foreach (['check_in'=>'06:00:00','check_out'=>'13:00:00'] as $type=>$time) $ids[]=DB::table('face_attendance_records')->insertGetId([
+            'employee_id'=>$profile,'branch_store_id'=>$branch,'type'=>$type,'attendance_date'=>$date,'attended_at'=>$date.' '.$time]);
+        return $ids;
+    }
+    public function test_owner_deletes_daily_attendance_pair_preserves_schedule_and_filter(): void
+    {
+        $template=$this->template();$this->post('/employee-schedules',$this->schedule($template))->assertSessionHasNoErrors();
+        $ids=$this->attendanceRecords();$other=$this->attendanceRecords(1,'2026-11-14');
+        \Illuminate\Support\Facades\Log::spy();
+        $this->get('/employee-attendance?from=2026-11-13&to=2026-11-14')->assertOk()->assertSee('Hapus Attendance');
+        $this->delete('/employee-attendance/1/2026-11-13',['record_ids'=>$ids,'from'=>'2026-11-13','to'=>'2026-11-14','employee_id'=>1])->assertSessionHasNoErrors()
+            ->assertRedirect(route('employee-attendance.report',['from'=>'2026-11-13','to'=>'2026-11-14','employee_id'=>1]));
+        foreach ($ids as $id) $this->assertDatabaseMissing('face_attendance_records',['id'=>$id]);
+        foreach ($other as $id) $this->assertDatabaseHas('face_attendance_records',['id'=>$id]);
+        $this->assertDatabaseCount('employee_shift_schedules',1);$this->assertDatabaseCount('employees',2);$this->assertDatabaseCount('face_attendance_employees',1);
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('info')->once()->with('Employee attendance deleted',\Mockery::on(fn($context)=>$context['actor_id']===7 && count($context['records'])===2));
+    }
+    public function test_attendance_delete_requires_explicit_role_delete_permission(): void
+    {
+        $ids=$this->attendanceRecords();
+        foreach (['ADMIN','HRD','FINANCE','CS','PT'] as $role) $this->actingAs($this->actor($role))->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>$ids])->assertForbidden();
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'HRD','feature_key'=>'attendance_reports','is_allowed'=>1,
+            'can_read'=>1,'can_create'=>0,'can_update'=>0,'can_delete'=>0]);
+        $this->actingAs($this->actor('HRD'))->get('/employee-attendance?from=2026-11-13&to=2026-11-13')->assertOk()->assertDontSee('Hapus Attendance');
+        $this->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>$ids])->assertForbidden();
+        DB::table('role_feature_permissions')->where('role','HRD')->update(['can_delete'=>1]);
+        $this->get('/employee-attendance?from=2026-11-13&to=2026-11-13')->assertSee('Hapus Attendance');
+        $this->delete('/employee-attendance/1/2026-11-13',['record_ids'=>$ids])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('face_attendance_records',0);
+    }
+    public function test_attendance_delete_protects_branch_scope_and_handles_mobile_pair(): void
+    {
+        $ids=$this->attendanceRecords(2,'2026-11-13',2);$this->actingAs($this->actor());
+        $this->deleteJson('/employee-attendance/2/2026-11-13',['record_ids'=>$ids])->assertNotFound();
+        Employee::find(2)->update(['all_branch'=>true]);
+        $this->deleteJson('/employee-attendance/2/2026-11-13',['record_ids'=>$ids])->assertNotFound();
+        DB::table('face_attendance_records')->where('id',$ids[1])->update(['branch_store_id'=>1]);
+        $this->delete('/employee-attendance/2/2026-11-13',['record_ids'=>$ids])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('face_attendance_records',0);
+    }
+    public function test_attendance_delete_rejects_stale_records_and_disabled_branch(): void
+    {
+        $ids=$this->attendanceRecords();$this->actingAs($this->actor());
+        $this->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>[$ids[0]]])->assertStatus(422);
+        $this->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>[999]])->assertStatus(422);
+        $this->deleteJson('/employee-attendance/1/not-a-date',['record_ids'=>$ids])->assertStatus(422);
+        $this->assertDatabaseCount('face_attendance_records',2);
+        $u=$this->actor();$u->branchStore->face_enrollment_enabled=false;
+        $this->actingAs($u)->deleteJson('/employee-attendance/1/2026-11-13',['record_ids'=>$ids])->assertNotFound();
+        $this->assertDatabaseCount('face_attendance_records',2);
+    }
 }

@@ -127,7 +127,7 @@ class RoleFeatureAccess
         if (!$definition || !in_array($role,$definition['roles'],true)) return [];
         if (in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
         if (in_array($feature,['membership_approval','pt_approval','lo_cancel'],true)) return ['read','update'];
-        if ($feature==='attendance_reports') return ['read'];
+        if ($feature==='attendance_reports') return ['read','delete'];
         if ($feature==='attendance_schedules') return ['create','read','delete'];
         if ($feature==='attendance_leaves') return ['create','read','update'];
         if ($feature==='pos_sales') return ['create','read'];
@@ -172,6 +172,8 @@ class RoleFeatureAccess
         $definition=self::features()[$feature];
         $matrix=$this->actionMatrix((int)$user->branch_store_id);
         $permission=$matrix[$role][$feature] ?? null;
+        // Deleting attendance is a new capability: existing/default read grants must not enable it.
+        if ($feature==='attendance_reports' && $action==='delete' && empty($permission['explicit']['delete'])) return false;
         if ($permission===null && isset($definition['parent']) && in_array($role,$definition['native_roles'],true)) return $this->allows($user,$definition['parent'],$action);
         if ($permission===null) return in_array($role,$definition['defaults'],true) && ($role!=='PT' || $action==='read');
         if (!in_array($role,$definition['native_roles'],true) || ($role==='PT' && $action!=='read')) {

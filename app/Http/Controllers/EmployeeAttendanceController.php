@@ -6,6 +6,7 @@ use App\Services\EmployeeAttendanceReport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class EmployeeAttendanceController extends Controller
@@ -186,7 +187,7 @@ class EmployeeAttendanceController extends Controller
         if ($r->routeIs('employee-attendance.report.export')) return response()->streamDownload(function() use($rows) {
             $file=fopen('php://output','w');fwrite($file,"\xEF\xBB\xBF");
             fputcsv($file,['Kode','Pegawai','Tanggal kerja','Shift','Mulai shift','Akhir shift','Masuk','Pulang','Terlambat (menit)','Pulang awal (menit)','Durasi (menit)','Status']);
-            foreach ($rows as $row) { unset($row['employee_id']);fputcsv($file,array_map(function($value) {
+            foreach ($rows as $row) { unset($row['employee_id'],$row['record_ids']);fputcsv($file,array_map(function($value) {
                 return is_string($value) && preg_match('/^[=+@\-\t\r\n]/',$value) ? "'".$value : $value;
             },array_values($row))); }fclose($file);
         },'rekap-absensi-'.$from.'-'.$to.'.csv',['Content-Type'=>'text/csv; charset=UTF-8']);
@@ -201,5 +202,34 @@ class EmployeeAttendanceController extends Controller
         $r->validate(['page'=>'nullable|integer|min:1']);$page=(int)$r->input('page',1);
         $paginator=new \Illuminate\Pagination\LengthAwarePaginator(array_slice($rows,($page-1)*50,50),count($rows),50,$page,['path'=>$r->url(),'query'=>$r->query()]);
         return $this->page('report',compact('from','to','employees','summary')+['rows'=>$paginator]);
+    }
+
+    public function destroyAttendance(Request $r, int $employee, string $date)
+    {
+        $r->merge(['work_date'=>$date]);
+        $data=$r->validate(['work_date'=>'required|date_format:Y-m-d',
+            'record_ids'=>'required|array|min:1|max:10','record_ids.*'=>'required|integer|min:1|distinct',
+            'from'=>'nullable|date_format:Y-m-d','to'=>'nullable|date_format:Y-m-d',
+            'employee_id'=>'nullable|integer|min:1','status'=>'nullable|string|max:30','page'=>'nullable|integer|min:1']);
+        $records=$this->db()->transaction(function() use($r,$employee,$date,$data) {
+            // Same source-employee lock as face check-in/out, including inactive/deleted employees.
+            $this->lockEmployee($r,$employee,false);
+            $profiles=$this->db()->table('face_attendance_employees')->where('source_employee_id',$employee)->pluck('id');
+            $records=$this->db()->table('face_attendance_records')->whereIn('employee_id',$profiles)
+                ->where('attendance_date',$date)->lockForUpdate()->get();
+            $branch=$this->branch($r);
+            $visible=$records->contains(fn($record)=>(int)$record->branch_store_id===$branch)
+                || $this->db()->table('employee_shift_schedules')->where('employee_id',$employee)->where('work_date',$date)->where('branch_store_id',$branch)->exists();
+            abort_unless($visible && $records->isNotEmpty(),404);
+            $expected=array_map('intval',$data['record_ids']);sort($expected,SORT_NUMERIC);
+            $actual=$records->pluck('id')->map(fn($id)=>(int)$id)->sort()->values()->all();
+            if ($expected!==$actual) $this->fail('Data absensi sudah berubah. Muat ulang Attendance Report sebelum menghapus.');
+            $this->db()->table('face_attendance_records')->whereIn('id',$actual)->delete();
+            return $records->map(fn($record)=>(array)$record)->all();
+        });
+        Log::info('Employee attendance deleted',['actor_id'=>$r->user()->id,'branch_store_id'=>$this->branch($r),
+            'employee_id'=>$employee,'work_date'=>$date,'records'=>$records]);
+        return redirect()->route('employee-attendance.report',$r->only(['from','to','employee_id','status','page']))
+            ->with('message','Absensi masuk/pulang pada tanggal kerja tersebut berhasil dihapus. Jadwal pegawai tetap tersimpan.');
     }
 }

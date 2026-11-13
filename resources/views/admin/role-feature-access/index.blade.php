@@ -14,6 +14,7 @@
             <tbody>@foreach($features as $key=>$feature)<tr><th scope="row">{{ $feature['label'] }}@if($key==='tip_tap_transfer')<small class="d-block text-muted">Ekspor data seluruh cabang</small>@endif
                 @if(in_array($key,['membership_checkin','pt_checkin'],true))<small class="d-block text-muted">Create mencatat check-in / check-out</small>@endif
                 @if($key==='lo_cancel')<small class="d-block text-muted">Update membatalkan LO agar dapat didaftarkan ulang. Aktifkan juga Read pada Data Member untuk membuka daftar member.</small>@endif
+                @if($key==='attendance_reports')<small class="d-block text-muted">Delete menghapus pasangan absensi masuk/pulang per tanggal kerja. Default hanya Owner; role lain perlu Read dan Delete.</small>@endif
             </th>
                 @foreach($roles as $role=>$label)<td>
                     @if(in_array($role,$feature['roles'],true))

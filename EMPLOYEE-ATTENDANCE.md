@@ -79,10 +79,29 @@ tidak ada perhitungan ulang atau rekonstruksi jadwal lama.
 
 Empat fitur baru dapat diatur terpisah pada `/role-feature-access`:
 Template Shift (CRUD), Jadwal Shift (Create/Read/Delete), Izin & Cuti
-(Create/Read/Update; Update berarti keputusan pengajuan), Rekap (Read termasuk CSV).
+(Create/Read/Update; Update berarti keputusan pengajuan), Rekap (Read termasuk CSV, Delete untuk hapus absensi).
 Default Owner, Admin, HRD. Role lain perlu grant eksplisit.
 Semua mengikuti switch `face_enrollment_enabled` yang sudah ada di Secret Branch Store;
 jika mati, fitur tidak muncul di pengaturan role/menu dan endpoint ditolak.
+
+### Menghapus absensi
+
+Attendance Report memiliki tombol Hapus Attendance untuk baris yang memiliki
+catatan absensi. Konfirmasi menghapus seluruh pasangan masuk/pulang pada tanggal
+kerja tersebut, termasuk pasangan shift malam dan mobile lintas cabang. Jadwal,
+pegawai dan profil wajah tetap tersimpan. Rekap dihitung ulang dari catatan tersisa;
+jika shift sudah berakhir, baris dapat berubah menjadi Tidak hadir.
+
+Default hanya Owner boleh menghapus. Role lain harus diberi Read dan Delete
+pada Rekap Kehadiran Pegawai. Izin Read lama/default tidak otomatis mengaktifkan
+Delete. Endpoint membatasi pegawai/cabang sesuai visibilitas rekap. Snapshot ID
+catatan diperiksa ulang dengan kunci pegawai yang sama seperti absensi wajah;
+data yang sudah berubah mengharuskan pengguna memuat ulang laporan.
+
+Penghapusan permanen dicatat pada log aplikasi (pelaku, cabang, pegawai, tanggal
+kerja, snapshot catatan). Foto audit privat yang disimpan aplikasi Face Attendance
+tetap berada di storage aplikasi tersebut; Master tidak menghapus file lintas aplikasi.
+Tidak ada migration/SQL tambahan untuk fitur hapus ini.
 
 Tidak ada akun pegawai self-service baru, kuota cuti, koreksi jam manual,
 atau pemrosesan payroll pada perubahan ini. Kamera/perangkat asli tetap perlu

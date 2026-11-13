@@ -43,7 +43,7 @@ class EmployeeAttendanceReport
                 'start'=>$in->scheduled_start ?? ($schedule->starts_at ?? null),'end'=>$in->scheduled_end ?? ($schedule->ends_at ?? null),
                 'check_in'=>$in->attended_at ?? null,'check_out'=>$out->attended_at ?? null,'late'=>$late,'early'=>$early,
                 'work_minutes'=>$in && $out ? max(0,(int)floor((strtotime($out->attended_at)-strtotime($in->attended_at))/60)) : null,
-                'status'=>$status];
+                'status'=>$status,'record_ids'=>$events->pluck('id')->map(fn($id)=>(int)$id)->sort()->values()->all()];
         }
         return $rows;
     }
