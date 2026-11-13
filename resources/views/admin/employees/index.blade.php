@@ -39,7 +39,23 @@
                             </td>
                             <td>@if($employee->position_category)<span class="badge badge-primary">{{ \App\Models\Employee::POSITION_CATEGORIES[$employee->position_category] ?? $employee->position_category }}</span>@else - @endif</td>
                             <td>{{ $employee->phone ?: '-' }}</td>
-                            <td><span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span></td>
+                            <td>
+                                <span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span>
+                                <small class="d-block text-muted mt-2">Wajah</small>
+                                @php
+                                    $faceStatus=$faceStatuses->get($employee->id);
+                                @endphp
+                                @if(!$faceEnrollmentReady)
+                                    <span class="badge badge-secondary">Status belum tersedia</span>
+                                @elseif($faceStatus && $faceStatus->valid_count>0)
+                                    <span class="badge badge-success">Sudah terdaftar</span>
+                                    <small class="d-block text-muted">{{ $faceStatus->valid_count }} contoh aktif</small>
+                                @elseif($faceStatus)
+                                    <span class="badge badge-warning">Perlu daftar ulang</span>
+                                @else
+                                    <span class="badge badge-danger">Belum terdaftar</span>
+                                @endif
+                            </td>
                             <td><div class="d-flex flex-column align-items-start gap-1">
                                 <a class="btn light btn-info btn-xs mb-1" href="{{ route('employees.show',$employee->id) }}">Detail</a>
                                 <button type="button" class="btn light btn-warning btn-xs mb-1" data-bs-toggle="modal" data-bs-target="#modalEditEmployee{{ $employee->id }}">Ubah</button>

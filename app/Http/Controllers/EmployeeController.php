@@ -25,12 +25,21 @@ class EmployeeController extends Controller
             $query->where(function($q) use($search) { $q->where('full_name','like','%'.$search.'%')->orWhere('employee_code','like','%'.$search.'%'); });
         }
         $employees=$query->orderBy('full_name')->paginate((int)$request->input('per_page',10))->withQueryString();
+        $faceDb=DB::connection('face_enrollment');
+        $faceSchema=$faceDb->getSchemaBuilder();
+        $faceEnrollmentReady=$faceSchema->hasTable('face_attendance_employees') && $faceSchema->hasTable('face_attendance_samples');
+        $faceStatuses=$faceEnrollmentReady ? $faceDb->table('face_attendance_employees as f')
+            ->join('face_attendance_samples as s','s.face_profile_id','=','f.id')
+            ->whereIn('f.source_employee_id',$employees->pluck('id'))->select('f.source_employee_id')
+            ->selectRaw('COUNT(*) as total')->selectRaw('SUM(CASE WHEN s.face_model = ? THEN 1 ELSE 0 END) as valid_count',[config('face.model')])
+            ->groupBy('f.source_employee_id')->get()->keyBy('source_employee_id') : collect();
         $editId=$request->input('edit_employee') ?: $request->session()->getOldInput('_employee_id');
         $editingEmployee=$editId ? $this->employees($request)->findOrFail($editId) : null;
         return view('admin.layouts.wrapper',[
             'title'=>'Employees','content'=>'admin.employees.index',
             'birthdayMessages'=>$this->birthdayMessages($request),
             'employees'=>$employees,'editingEmployee'=>$editingEmployee,
+            'faceEnrollmentReady'=>$faceEnrollmentReady,'faceStatuses'=>$faceStatuses,
         ]);
     }
 

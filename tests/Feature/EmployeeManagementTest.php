@@ -353,4 +353,19 @@ class EmployeeManagementTest extends TestCase
         $employee->update(['all_branch'=>true]);
         $this->get('/employees/'.$employee->id)->assertOk();
     }
+
+    public function test_face_registration_status_follows_current_samples_and_model(): void
+    {
+        Employee::create($this->payload()+['branch_store_id'=>1]);
+        $this->actingAs($this->actor())->get('/employees')->assertOk()->assertSee('Status belum tersedia')->assertDontSee('Sudah terdaftar');
+        require_once database_path('migrations/2026_11_04_000002_create_face_attendance_samples.php');(new \CreateFaceAttendanceSamples)->up();
+        $profile=DB::table('face_attendance_employees')->insertGetId(['source_employee_id'=>Employee::first()->id,'employee_code'=>'EMP-1','name'=>'Pegawai baru','department'=>'CS']);
+        $this->get('/employees')->assertOk()->assertSee('Belum terdaftar')->assertDontSee('Sudah terdaftar');
+        DB::table('face_attendance_samples')->insert(['face_profile_id'=>$profile,'slot'=>1,'pose'=>'front','face_model'=>'old-model','face_embedding'=>json_encode(array_fill(0,128,0.1))]);
+        $this->get('/employees')->assertOk()->assertSee('Perlu daftar ulang')->assertDontSee('Sudah terdaftar');
+        DB::table('face_attendance_samples')->update(['face_model'=>config('face.model')]);
+        $this->get('/employees')->assertOk()->assertSee('Sudah terdaftar')->assertSee('1 contoh aktif')->assertDontSee('Belum terdaftar');
+        DB::table('face_attendance_samples')->delete();
+        $this->get('/employees')->assertOk()->assertSee('Belum terdaftar')->assertDontSee('Sudah terdaftar');
+    }
 }
