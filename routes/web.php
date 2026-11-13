@@ -361,6 +361,7 @@ Auth::routes();
 // Face enrollment shares profiles with Face Attendance in level-fit.
 Route::middleware(['auth', 'admin', \App\Http\Middleware\EnsureEmployeeManagementAccess::class, \App\Http\Middleware\EnsureFaceEnrollmentEnabled::class])->group(function () {
     Route::resource('employees', \App\Http\Controllers\EmployeeController::class)->only(['index','store','edit','update','destroy']);
+    Route::get('employees/{id}/photos/{kind}', [\App\Http\Controllers\EmployeeController::class,'photo'])->where('kind','photo|ktp')->name('employees.photo');
     Route::get('/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('face-enrollment.index');
     Route::get('/enroll/samples', [\App\Http\Controllers\FaceEnrollmentController::class, 'samples'])->name('face-enrollment.samples');
     Route::delete('/enroll/samples/{sample}', [\App\Http\Controllers\FaceEnrollmentController::class, 'destroySample'])->name('face-enrollment.samples.destroy');

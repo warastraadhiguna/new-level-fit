@@ -1,6 +1,6 @@
 <div class="modal fade" id="{{ $formId }}" tabindex="-1" aria-labelledby="{{ $formId }}Label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content">
-        <form method="POST" action="{{ $formEmployee ? route('employees.update',$formEmployee->id) : route('employees.store') }}">
+        <form method="POST" enctype="multipart/form-data" action="{{ $formEmployee ? route('employees.update',$formEmployee->id) : route('employees.store') }}">
             @csrf
             @if($formEmployee) @method('PUT') @endif
             <input type="hidden" name="_employee_id" value="{{ $formEmployee ? $formEmployee->id : '' }}">

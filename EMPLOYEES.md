@@ -1,5 +1,32 @@
 # Data pegawai absensi terpisah
 
+## Foto dan informasi pekerjaan
+
+Form tambah/edit memakai modal seperti Staff. Tersedia foto pegawai, foto KTP,
+kategori jabatan (PT, CS, HR, Finance), detail jabatan, tanggal mulai kerja,
+tanggal resign, serta catatan (maksimal 5.000 karakter). Kolom tambahan opsional
+agar data pegawai lama tetap dapat digunakan. Tanggal resign tidak boleh sebelum
+tanggal mulai kerja. Status aktif/nonaktif tetap diatur melalui pilihan Status.
+
+Upload menerima JPG/PNG/WebP, maksimal 5 MB per foto. File disimpan di disk local
+(`storage/app/employees`), di luar storage publik. Akses foto/KTP mengikuti izin
+Data Pegawai, aktivasi fitur cabang, dan cabang login. File lama dipertahankan
+jika tidak ada pengganti, dan diganti setelah perubahan database berhasil.
+Hapus sementara mempertahankan dokumen; dokumen tidak dipakai sebagai enrollment wajah.
+
+Sebelum memakai field baru, jalankan hanya migration berikut:
+
+```sh
+php artisan migrate --path=database/migrations/2026_11_13_000001_add_employment_details_to_employees.php
+php artisan optimize:clear
+```
+
+Migration menggunakan koneksi `face_enrollment`, memeriksa kolom yang sudah ada,
+dan tidak menghapus data lama. Alternatif SQL manual pada database yang sama:
+`database/sql/2026_11_13_employee_employment_details.sql`. Tidak perlu menjalankan
+kedua cara sekaligus. Dokumen disimpan di aplikasi utama, sehingga folder file
+tersebut perlu ikut dalam backup aplikasi.
+
 Menu Staff → Data Pegawai (`/employees`) dikelola Owner/Admin pada cabang login,
 dengan pengaturan wajah cabang aktif. Bisa tambah, cari, edit, nonaktifkan, atau
 hapus sementara. Kode pegawai unik termasuk pada pegawai yang dihapus sementara;

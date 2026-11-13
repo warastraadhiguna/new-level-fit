@@ -6,6 +6,8 @@ class Employee extends Model
 {
     use SoftDeletes;
     protected $connection='face_enrollment';
-    protected $fillable=['employee_code','branch_store_id','full_name','born','position','phone','is_active'];
-    protected $casts=['is_active'=>'boolean','born'=>'date'];
+    public const POSITION_CATEGORIES=['PT'=>'PT','CS'=>'CS','HR'=>'HR','FINANCE'=>'Finance'];
+    protected $fillable=['employee_code','branch_store_id','full_name','born','position','phone','is_active',
+        'photo_path','ktp_photo_path','position_category','employment_start_date','resign_date','note'];
+    protected $casts=['is_active'=>'boolean','born'=>'date','employment_start_date'=>'date','resign_date'=>'date'];
 }

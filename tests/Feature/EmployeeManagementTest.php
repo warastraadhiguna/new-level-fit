@@ -3,6 +3,8 @@ namespace Tests\Feature;
 use App\Models\{User,BranchStore,Employee};
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\{DB,Schema};
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 class EmployeeManagementTest extends TestCase
 {
@@ -20,6 +22,7 @@ class EmployeeManagementTest extends TestCase
         require_once database_path('migrations/2026_11_04_000001_create_independent_employees.php');
         (new \CreateIndependentEmployees)->up();
         require_once database_path('migrations/2026_11_05_000001_add_born_to_employees.php');(new \AddBornToEmployees)->up();
+        require_once database_path('migrations/2026_11_13_000001_add_employment_details_to_employees.php');(new \AddEmploymentDetailsToEmployees)->up();
     }
     private function actor(string $role='OWNER'): User
     {
@@ -101,6 +104,109 @@ class EmployeeManagementTest extends TestCase
         $this->assertSame('1995-05-06',$dom->getElementById('modalEditEmployee'.$employee->id.'Born')->getAttribute('value'));
         $this->assertSame('',$dom->getElementById('modalAddEmployeeCode')->getAttribute('value'));
         $this->assertDatabaseHas('employees',['id'=>$employee->id,'employee_code'=>'EMP001','full_name'=>'Pegawai baru']);
+    }
+
+    public function test_employment_details_and_private_photos_can_be_created_and_viewed(): void
+    {
+        Storage::fake('local');
+        $this->actingAs($this->actor())->post('/employees',$this->payload()+[
+            'position_category'=>'FINANCE','employment_start_date'=>'2025-01-01','resign_date'=>'2026-11-01',
+            'note'=>'Catatan <script>test</script>','photo'=>UploadedFile::fake()->image('pegawai.jpg'),
+            'ktp_photo'=>UploadedFile::fake()->image('ktp.png'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $employee=Employee::firstOrFail();
+        $this->assertSame('FINANCE',$employee->position_category);
+        $this->assertSame('2025-01-01',$employee->employment_start_date->format('Y-m-d'));
+        $this->assertSame('2026-11-01',$employee->resign_date->format('Y-m-d'));
+        $this->assertSame('Catatan <script>test</script>',$employee->note);
+        Storage::disk('local')->assertExists([$employee->photo_path,$employee->ktp_photo_path]);
+        foreach (['photo','ktp'] as $kind) {
+            $response=$this->get(route('employees.photo',[$employee->id,$kind]))->assertOk()->assertHeader('X-Content-Type-Options','nosniff');
+            $this->assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+        }
+        $this->get('/employees')->assertOk()->assertSee('Finance')->assertSee('01 Jan 2025')
+            ->assertSee('Catatan &lt;script&gt;test&lt;/script&gt;',false)->assertSee('enctype="multipart/form-data"',false);
+        $this->assertDatabaseCount('users',1);
+    }
+
+    public function test_update_keeps_existing_files_until_replacements_are_saved(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('employees/photo/old.jpg','old photo');
+        Storage::disk('local')->put('employees/ktp_photo/old.jpg','old ktp');
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1,'photo_path'=>'employees/photo/old.jpg','ktp_photo_path'=>'employees/ktp_photo/old.jpg']);
+        $this->actingAs($this->actor())->put('/employees/'.$employee->id,$this->payload()+[
+            'position_category'=>'PT','employment_start_date'=>'2025-02-01','note'=>'Updated',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $employee->refresh();
+        $this->assertSame('employees/photo/old.jpg',$employee->photo_path);
+        $this->assertSame('employees/ktp_photo/old.jpg',$employee->ktp_photo_path);
+        $this->put('/employees/'.$employee->id,$this->payload()+[
+            'photo'=>UploadedFile::fake()->image('replacement.jpg'),'ktp_photo'=>UploadedFile::fake()->image('replacement-ktp.jpg'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $employee->refresh();
+        Storage::disk('local')->assertMissing(['employees/photo/old.jpg','employees/ktp_photo/old.jpg']);
+        Storage::disk('local')->assertExists([$employee->photo_path,$employee->ktp_photo_path]);
+        $this->assertSame('PT',$employee->position_category);
+        $this->delete('/employees/'.$employee->id)->assertRedirect();
+        Storage::disk('local')->assertExists([$employee->photo_path,$employee->ktp_photo_path]);
+        $this->get(route('employees.photo',[$employee->id,'ktp']))->assertNotFound();
+    }
+
+    public function test_employee_documents_require_branch_feature_and_role_access(): void
+    {
+        Storage::fake('local');Storage::disk('local')->put('employees/ktp_photo/test.jpg','test');
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1,'ktp_photo_path'=>'employees/ktp_photo/test.jpg']);
+        $other=Employee::create(array_merge($this->payload(),['employee_code'=>'OTHER','branch_store_id'=>2,'ktp_photo_path'=>$employee->ktp_photo_path]));
+        $this->get(route('employees.photo',[$employee->id,'ktp']))->assertRedirect(route('login'));
+        $this->actingAs($this->actor())->get(route('employees.photo',[$other->id,'ktp']))->assertNotFound();
+        $this->get(route('employees.photo',[$employee->id,'photo']))->assertNotFound();
+        $this->get('/employees/'.$employee->id.'/photos/invalid')->assertNotFound();
+        $this->actingAs($this->actor('CS'))->get(route('employees.photo',[$employee->id,'ktp']))->assertForbidden();
+        $actor=$this->actor();$actor->branchStore->face_enrollment_enabled=false;
+        $this->actingAs($actor)->get(route('employees.photo',[$employee->id,'ktp']))->assertNotFound();
+    }
+
+    public function test_validates_employment_category_dates_note_and_images(): void
+    {
+        Storage::fake('local');$this->actingAs($this->actor());
+        foreach ([
+            ['position_category'=>'OTHER'],['employment_start_date'=>'invalid'],['resign_date'=>'2026-02-30'],
+            ['employment_start_date'=>'2026-11-01','resign_date'=>'2026-10-31'],['note'=>str_repeat('x',5001)],
+            ['photo'=>UploadedFile::fake()->create('document.pdf',10,'application/pdf')],
+            ['ktp_photo'=>UploadedFile::fake()->image('large.jpg')->size(5121)],
+        ] as $extra) $this->postJson('/employees',array_merge($this->payload(),$extra))->assertUnprocessable();
+        $this->assertDatabaseCount('employees',0);
+        $this->assertCount(0,Storage::disk('local')->allFiles('employees'));
+        foreach (['PT','CS','HR','FINANCE'] as $category) {
+            $this->post('/employees',array_merge($this->payload(),['employee_code'=>$category,'position_category'=>$category]))->assertRedirect()->assertSessionHasNoErrors();
+        }
+    }
+
+    public function test_failed_database_update_removes_new_upload_and_keeps_original(): void
+    {
+        Storage::fake('local');Storage::disk('local')->put('employees/photo/original.jpg','old');
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1,'photo_path'=>'employees/photo/original.jpg']);
+        Schema::drop('face_attendance_employees');
+        $this->withoutExceptionHandling();
+        try {
+            $this->actingAs($this->actor())->put('/employees/'.$employee->id,$this->payload()+['photo'=>UploadedFile::fake()->image('new.jpg')]);
+            $this->fail('Missing profile table should roll back the update.');
+        } catch (\Illuminate\Database\QueryException $error) {
+            $this->assertSame('employees/photo/original.jpg',$employee->fresh()->photo_path);
+            $this->assertSame(['employees/photo/original.jpg'],Storage::disk('local')->allFiles('employees'));
+        }
+    }
+
+    public function test_employment_migration_is_repeatable_and_preserves_legacy_data(): void
+    {
+        $employee=Employee::create($this->payload()+['branch_store_id'=>1]);
+        $migration=new \AddEmploymentDetailsToEmployees;$migration->up();$migration->up();$migration->down();
+        $employee->refresh();
+        $this->assertSame('Kasir',$employee->position);
+        $this->assertNull($employee->position_category);
+        $this->assertNull($employee->photo_path);
+        $this->assertNull($employee->employment_start_date);
     }
 
     public function test_birthday_can_be_saved_edited_and_cleared(): void
