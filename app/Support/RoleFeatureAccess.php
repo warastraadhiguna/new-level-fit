@@ -21,8 +21,14 @@ class RoleFeatureAccess
             'dashboard'=>['label'=>'Dashboard','roles'=>$withPt,'defaults'=>$withPt],
             'leads'=>['label'=>'Lead & Appointment','roles'=>$operations,'defaults'=>$operations],
             'members'=>['label'=>'Data Member','roles'=>$operations,'defaults'=>$operations],
-            'membership'=>['label'=>'Membership & Check In','roles'=>$operations,'defaults'=>$operations],
-            'pt'=>['label'=>'PT & Check In','roles'=>$withPt,'defaults'=>$withPt],
+            'membership'=>['label'=>'Membership','roles'=>$operations,'defaults'=>$operations],
+            'pt'=>['label'=>'PT','roles'=>$withPt,'defaults'=>$withPt],
+            'membership_approval'=>['label'=>'Approval Membership','roles'=>['ADMIN'],'defaults'=>['ADMIN'],'parent'=>'membership'],
+            'pt_approval'=>['label'=>'Approval PT','roles'=>['ADMIN'],'defaults'=>['ADMIN'],'parent'=>'pt'],
+            'membership_checkin'=>['label'=>'Check-in / Check-out Membership','roles'=>$operations,'defaults'=>$operations,'parent'=>'membership'],
+            'pt_checkin'=>['label'=>'Check-in / Check-out PT','roles'=>$operations,'defaults'=>$operations,'parent'=>'pt'],
+            'membership_payments'=>['label'=>'Pembayaran Membership','roles'=>$operations,'defaults'=>$operations,'parent'=>'membership'],
+            'pt_payments'=>['label'=>'Pembayaran PT','roles'=>$operations,'defaults'=>$operations,'parent'=>'pt'],
             'pt_free'=>['label'=>'PT Free','roles'=>$withPt,'defaults'=>$withPt],
             'staff'=>['label'=>'Staff List & Akun Staff','roles'=>['ADMIN'],'defaults'=>['ADMIN']],
             'employees'=>['label'=>'Data Pegawai','roles'=>['ADMIN','HRD','FINANCE'],'defaults'=>['ADMIN','HRD']],
@@ -44,10 +50,11 @@ class RoleFeatureAccess
         return $roles;
     }
 
-    public function featuresForBranch(?BranchStore $branch): array
+    private static function branchFlags(): array
     {
-        $features=self::features();
-        $switches=[
+        return [
+            'membership_approval'=>'member_approval_enabled',
+            'pt_approval'=>'trainer_approval_enabled',
             'tip_tap_transfer'=>'tip_tap_transfer_enabled',
             'pt_free'=>'pt_free_enabled',
             'pos_sales'=>'pos_inventory_enabled',
@@ -55,6 +62,12 @@ class RoleFeatureAccess
             'employees'=>'face_enrollment_enabled',
             'enrollment'=>'face_enrollment_enabled',
         ];
+    }
+
+    public function featuresForBranch(?BranchStore $branch): array
+    {
+        $features=self::features();
+        $switches=self::branchFlags();
         foreach($switches as $feature=>$flag) {
             if (!$branch || !$branch->$flag) unset($features[$feature]);
         }
@@ -87,13 +100,89 @@ class RoleFeatureAccess
         return request()->attributes->get($key);
     }
 
-    public function allows(User $user, string $feature): bool
+    public static function actions(): array
+    {
+        return ['create'=>'Create','read'=>'Read','update'=>'Update','delete'=>'Delete'];
+    }
+
+    public static function actionsFor(string $feature, string $role): array
+    {
+        $definition=self::features()[$feature] ?? null;
+        if (!$definition || !in_array($role,$definition['roles'],true)) return [];
+        if ($role==='PT' || in_array($feature,['dashboard','revenue','reports','tip_tap_transfer'],true)) return ['read'];
+        if (in_array($feature,['membership_approval','pt_approval'],true)) return ['read','update'];
+        if ($feature==='pos_sales') return ['create','read'];
+        if (in_array($feature,['enrollment','membership_checkin','pt_checkin','membership_payments','pt_payments'],true)) return ['create','read','delete'];
+        return array_keys(self::actions());
+    }
+
+    public function crudReady(): bool
+    {
+        if (!$this->ready()) return false;
+        $request=request();
+        if (!$request->attributes->has('role_features_crud_ready')) {
+            $ready=true;
+            foreach(array_keys(self::actions()) as $action) $ready=$ready && Schema::hasColumn('role_feature_permissions','can_'.$action);
+            $request->attributes->set('role_features_crud_ready',$ready);
+        }
+        return $request->attributes->get('role_features_crud_ready');
+    }
+
+    public function actionMatrix(int $branch): array
+    {
+        $key='role_feature_actions_'.$branch;
+        if (!request()->attributes->has($key)) {
+            $matrix=[];
+            if ($this->ready()) foreach(DB::table('role_feature_permissions')->where('branch_store_id',$branch)->get() as $row) {
+                foreach(array_keys(self::actions()) as $action) {
+                    $matrix[$row->role][$row->feature_key][$action]=(bool)($row->{'can_'.$action} ?? $row->is_allowed);
+                }
+            }
+            request()->attributes->set($key,$matrix);
+        }
+        return request()->attributes->get($key);
+    }
+
+    public function allows(User $user, string $feature, string $action='read'): bool
     {
         if ($user->isOwner()) return true;
-        $definition=self::features()[$feature] ?? null;$role=strtoupper((string)$user->role);
-        if (!$definition || !in_array($role,$definition['roles'],true)) return false;
-        $matrix=$this->matrix((int)$user->branch_store_id);
-        return $matrix[$role][$feature] ?? in_array($role,$definition['defaults'],true);
+        if (!$user->branch_store_id) return false;
+        $role=strtoupper((string)$user->role);
+        if (!in_array($action,self::actionsFor($feature,$role),true)) return false;
+        $definition=self::features()[$feature];
+        $matrix=$this->actionMatrix((int)$user->branch_store_id);
+        $permission=$matrix[$role][$feature] ?? null;
+        if ($permission===null && isset($definition['parent'])) return $this->allows($user,$definition['parent'],$action);
+        if ($permission===null) return in_array($role,$definition['defaults'],true);
+        return $permission['read'] && $permission[$action];
+    }
+
+    public function branchEnabled(User $user, string $feature): bool
+    {
+        $flags=self::branchFlags();
+        return !isset($flags[$feature]) || (bool)optional($user->branchStore)->{$flags[$feature]};
+    }
+
+    public function actionForRoute($route, ?string $method=null): string
+    {
+        if (!$route) return 'read';
+        $name=$route->getName() ?? '';
+        $method=$method ?? $route->methods()[0];
+        $controllerAction=$route->getActionMethod();
+        if ($name==='tip-tap-transfer.export') return 'read';
+        // Legacy mutation URLs must never inherit read access merely because they use GET.
+        if (in_array($name,['member-check-in.toggle-by-registration-id','member-check-in.toggle-by-card-number','PTSecondCheckIn','LGTCheckIn','LGTSecondCheckIn','pt-free.check-in.session','pt-free.check-in'],true)) return 'create';
+        if (Str::is(['restore-*','*.restore'],$name) || in_array($controllerAction,['restore','resetCheckIn'],true)) return 'update';
+        if (in_array($controllerAction,['forceDelete','destroy'],true) || $name==='pos-sales.void') return 'delete';
+        if ($controllerAction==='create' || Str::is(['*.create','*.create-membership'],$name) || in_array($name,['renewal','oneDayVisit','one-day-visit-lead','useLayoutOrientation'],true)) return 'create';
+        if ($controllerAction==='edit' || Str::is(['*.edit','*.move-branch-page'],$name) || $name==='edit-member-sell') return 'update';
+        if (in_array($method,['PUT','PATCH'],true)) return 'update';
+        if ($method==='DELETE') return 'delete';
+        if ($method==='POST') {
+            if (in_array($name,['stopLayoutOrientation','pos-purchases.receive','pos-stock.adjust'],true) || Str::contains($name,['update','unfreeze'])) return 'update';
+            return 'create';
+        }
+        return 'read';
     }
 
     public function featureForRoute($route): ?string
@@ -101,8 +190,13 @@ class RoleFeatureAccess
         if (!$route) return null;
         $name=$route->getName() ?? '';
         if (Str::is('secret-branch-store.*',$name)) return null;
-        if (Str::startsWith($route->uri(),'api/gate/')) return 'membership';
+        if (Str::startsWith($route->uri(),'api/gate/')) return in_array('POST',$route->methods(),true) ? 'membership_checkin' : 'membership';
         $patterns=[
+            'membership_approval'=>['member-approval.*'], 'pt_approval'=>['trainer-approval.*'],
+            'membership_payments'=>['member-registration-payment.*','member-payment.*'],
+            'pt_payments'=>['trainer-session-payment.*'],
+            'membership_checkin'=>['member-check-in.*'],
+            'pt_checkin'=>['trainer-session-check-in.*','PTSecondCheckIn','LGTCheckIn','LGTSecondCheckIn'],
             'tip_tap_transfer'=>['tip-tap-transfer.*'],
             'enrollment'=>['face-enrollment.*'], 'employees'=>['employees.*'],
             'staff'=>['staff.*','old-staff','hrd-accounts.*','finance-accounts.*','administrator.*','administrator-*','restore-administrator','customer-service.*','customer-service-*','restore-customer-service','customer-service-pos.*','fitness-consultant.*','fitness-consultant-*','restore-fitness-consultant','personal-trainer.*','personal-trainer-force-delete','restore-personal-trainer','class-instructor.*','class-instructor-*','restore-class-instructor','pt-leader.*','physiotherapy.*','cetak-staff-pdf'],
@@ -110,7 +204,7 @@ class RoleFeatureAccess
             'reports'=>['report-*','*-report','*-report-*','lo-report','ptReportExcel'],
             'pt_free'=>['pt-free.*'],
             'packages'=>['member-package*','dataSoft','restore-member-package-data','trainer-package*','restore-trainer-package-data','payment-method.*','source-code.*','sold-by.*','referral.*','buddy-referral.*','trainer-transaction-type.*'],
-            'pos_inventory'=>['pos-products.*','pos-product-categories.*','pos-suppliers.*','pos-purchases.*','pos-stock.*','pos-sales.void'],
+            'pos_inventory'=>['pos-products.*','pos-products.attach','pos-product-categories.*','pos-suppliers.*','pos-purchases.*','pos-stock.*','pos-sales.void'],
             'pos_sales'=>['pos.*','pos-sales.*'],
             'classes'=>['class.*','class-session.*','class-schedule.*','class-detail.*','studio.*'],
             'leads'=>['add-data','one-day-visit-lead','openMembers','leads.*','missed-guest.*','appointment','appointmentSchedule','storeAppointment'],
@@ -131,6 +225,29 @@ class RoleFeatureAccess
     public function allowsRoute(User $user, string $name): bool
     {
         $feature=$this->featureForRoute(app('router')->getRoutes()->getByName($name));
-        return !$feature || $this->allows($user,$feature);
+        return !$feature || ($this->branchEnabled($user,$feature) && $this->allows($user,$feature,$this->actionForRoute(app('router')->getRoutes()->getByName($name))));
+    }
+
+    public function deniedControls(User $user): array
+    {
+        if ($user->isOwner()) return [];
+        $rules=[];
+        foreach(app('router')->getRoutes() as $route) {
+            $feature=$this->featureForRoute($route);
+            if (!$feature) continue;
+            $pattern='';
+            foreach(explode('/',$route->uri()) as $segment) {
+                if (preg_match('/^\{[^}]+\?\}$/',$segment)) $pattern.='(?:/[^/]+)?';
+                elseif (preg_match('/^\{[^}]+\}$/',$segment)) $pattern.='/[^/]+';
+                else $pattern.='/'.preg_quote($segment,'~');
+            }
+            foreach($route->methods() as $method) {
+                if ($method==='HEAD') continue;
+                if (!$this->branchEnabled($user,$feature) || !$this->allows($user,$feature,$this->actionForRoute($route,$method))) {
+                    $rules[]=['path'=>'^'.$pattern.'/?$','method'=>$method];
+                }
+            }
+        }
+        return $rules;
     }
 }

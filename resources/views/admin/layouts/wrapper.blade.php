@@ -3,3 +3,4 @@
 @include('admin.includes.header')
 @include('admin.includes.sidebar')
 @include('admin.includes.footer')
+@include('admin.includes.role-feature-controls')

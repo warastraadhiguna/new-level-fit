@@ -9,10 +9,11 @@ class EnsureRoleFeatureAccess
     {
         $user=$request->user();$access=app(RoleFeatureAccess::class);
         $feature=$access->featureForRoute($request->route());
-        if ($user && !$user->isOwner() && $feature) {
+        if ($user && $feature) {
             // Role homes stay reachable even when all configurable features are disabled.
             if ($feature==='dashboard' && ($user->isHrd() || $user->isFinance())) return $next($request);
-            abort_unless($access->allows($user,$feature),403,'Role Anda tidak memiliki akses ke fitur ini. Hubungi Owner.');
+            abort_unless($access->allows($user,$feature,$access->actionForRoute($request->route(),$request->method())),403,'Role Anda tidak memiliki izin untuk tindakan ini. Hubungi Owner.');
+            abort_unless($access->branchEnabled($user,$feature),404,'Fitur tidak aktif untuk cabang ini.');
         }
         return $next($request);
     }

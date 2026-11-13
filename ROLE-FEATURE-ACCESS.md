@@ -1,58 +1,58 @@
-# Pengaturan akses fitur per role
+# Izin CRUD role per cabang
 
-Owner membuka **Pengaturan Akses Role** (`/role-feature-access`) pada aplikasi
-utama. Matriks checkbox berlaku untuk cabang login Owner saja. Role yang diatur:
-Administrator, CS, CS POS, FC, PT User, HRD dan Finance. Owner selalu mempunyai
-akses dan tidak dapat dikunci melalui matriks ini.
+Pengaturan `/role-feature-access` sekarang memiliki Create (tambah), Read (lihat),
+Update (ubah/restore), dan Delete (hapus) per fitur dan role. Read wajib aktif
+sebelum aksi lain. Owner tetap tidak dapat dikunci. Aksi yang tidak didukung
+fitur atau role tidak ditawarkan: PT hanya Read, Approval hanya Read/Update,
+Revenue/Dashboard/laporan/Export Tip-Tap hanya Read, enrollment/check-in/pembayaran
+hanya Create/Read/Delete. Create pada Check-in mencatat masuk maupun keluar.
 
-Perubahan berlaku pada request berikutnya tanpa login ulang. Menu tujuan yang
-dinonaktifkan disembunyikan; middleware juga menolak request langsung, termasuk
-POST/PUT/DELETE dan URL alternatif. Menyembunyikan menu saja bukan otorisasi.
-Penyimpanan satu matriks lengkap dilakukan dalam transaksi. Cabang dan pencatat
-perubahan diambil dari akun login, bukan parameter form.
+Selain modul lama, ada pengaturan terpisah untuk Approval Membership, Approval PT,
+Check-in Membership, Check-in PT, Pembayaran Membership, dan Pembayaran PT.
+Pembayaran di sini mengatur penambahan/penghapusan pembayaran lewat endpoint
+pembayaran; pembayaran awal yang dibuat bersama registrasi tetap merupakan
+bagian Create registrasi. Diskon/cicilan pada form registrasi tetap mengikuti
+sakelar cabang dan validasi transaksi yang sudah ada.
 
-Aturan khusus tetap berlaku: PT hanya lihat, ekspor Excel/perangkat absensi/
-akses aplikasi Management tetap diperiksa. Export Tip-Tap secara default hanya
-Owner, dan dapat diberikan ke role lain melalui checkbox tersendiri. Tanda —
-pada matriks berarti fitur berada di luar cakupan role yang didukung. Pengaturan
-ini tidak mengubah role menjadi Admin atau memberi hak akun lain secara otomatis.
-HRD dapat diberi Revenue; Finance dapat diberi Data Pegawai/Pendaftaran Wajah.
-Controller pegawai dan Revenue tetap membatasi data pada cabang login.
+Sakelar Secret Branch Store digunakan bersama untuk menyaring matriks dan
+memeriksa endpoint: PT Free, POS, pegawai/wajah, Export Tip-Tap, serta kedua
+Approval. Kolom CS POS hilang ketika POS cabang nonaktif. Pilihan role Revenue
+mengikuti visibilitas Revenue cabang. Pengaturan role tidak dapat menyalakan
+fitur cabang yang mati. Fitur tanpa sakelar cabang tetap mengikuti izin role.
 
-Secret Branch Store tetap menjadi sakelar fitur cabang (POS, PT Free, wajah,
-Revenue dll.). Checkbox izin role tidak mengaktifkan fitur cabang yang mati.
-Sebagai contoh HRD dengan Revenue dicentang tetap harus diizinkan oleh pengaturan
-visibilitas Revenue di cabang tersebut. Izin fitur memberi akses ke operasi yang
-memang didukung fitur/role, bukan izin edit tambahan untuk role baca.
+Pemeriksaan dilakukan di server, termasuk API gate dan alias GET lama untuk
+check-in, restore, reset check-in, serta form create/edit. Tidak bergantung pada
+penyembunyian menu. Kontrol link/form/modal yang tidak diizinkan juga disembunyikan
+pada halaman operasional; POST/PUT/DELETE langsung tetap ditolak. Pembatasan role,
+akses Management, cakupan cabang, aturan bisnis, dan batas ekspor Excel tetap berlaku.
 
-Tanpa baris pengaturan, matriks menggunakan default role dalam
-`App\Support\RoleFeatureAccess`. Tabel kosong tidak membuat akun atau grant baru.
-Tanpa tabel, aplikasi menggunakan default dan halaman Owner memberi petunjuk
-SQL; penyimpanan dinonaktifkan. Untuk menambah fitur baru, daftarkan fitur,
-cakupan role, pemetaan route (termasuk endpoint mutasi/alias), dan menu, lalu uji
-akses URL langsung. Route management yang belum dipetakan masuk kategori
-Fitur Operasional Lain; HRD/Finance/PT tidak mendapat akses fallback tersebut.
+## SQL tambahan untuk CRUD
 
-## Database dan deploy
+Jalankan satu kali pada **database utama Management**, tempat tabel
+`role_feature_permissions` dan `users` berada, bukan database absensi:
 
-Tabel `role_feature_permissions` berada di **database utama aplikasi**, sama
-seperti tabel `users`, bukan koneksi terpisah `face_enrollment`. Tidak ada perubahan
-Python atau aplikasi kiosk. Gunakan migration
-`2026_11_10_000001_create_role_feature_permissions.php` **atau** SQL manual
-`database/sql/2026_11_10_role_feature_permissions.sql`. Tidak perlu menjalankan
-keduanya. Migration aman jika tabel sudah dibuat manual.
+```sql
+ALTER TABLE `role_feature_permissions`
+    ADD COLUMN `can_create` TINYINT(1) NULL DEFAULT NULL,
+    ADD COLUMN `can_read` TINYINT(1) NULL DEFAULT NULL,
+    ADD COLUMN `can_update` TINYINT(1) NULL DEFAULT NULL,
+    ADD COLUMN `can_delete` TINYINT(1) NULL DEFAULT NULL;
+```
 
-Deploy aplikasi utama dan bersihkan cache config/route/view sesuai versi PHP
-aplikasi. Pengaturan default tidak membutuhkan INSERT manual; simpan melalui
-halaman Owner agar seluruh matriks dan `updated_by` konsisten.
+File: `database/sql/2026_11_13_role_feature_crud.sql`. Jika kolom sudah ada,
+lewati ADD terkait. Alternatif migration yang memeriksa kolom yang sudah ada:
 
-Secret Branch Store tidak masuk matriks izin role. Akses halaman tersebut tetap
-mengikuti pembatasan khusus yang sudah ada dan tidak dapat diberikan melalui matriks.
+```sh
+php artisan migrate --path=database/migrations/2026_11_13_000003_add_crud_to_role_feature_permissions.php --force
+php artisan optimize:clear
+```
 
-Export Tip-Tap merupakan pengecualian yang dapat didelegasikan oleh Owner.
-Semua role non-Owner default ditolak, termasuk jika belum ada baris pengaturan.
-Grant berlaku bagi role pada cabang login; sakelar Tip-Tap cabang tetap berlaku.
-Paket transfer mencakup data seluruh cabang (termasuk tabel akun), bukan export
-terbatas cabang. PT yang diberi izin boleh membuat file lewat endpoint POST
-export tanpa memperoleh izin mengubah data/transaksi. Tidak ada migration atau
-SQL tambahan; fitur memakai `feature_key=tip_tap_transfer` pada tabel izin yang ada.
+Gunakan SQL **atau** migration, bukan keduanya. Tabel awal tetap disiapkan melalui
+`2026_11_10_000001_create_role_feature_permissions.php` atau SQL tabel awal.
+Kolom nullable sengaja memakai NULL agar izin `is_allowed` lama tetap berlaku
+hingga Owner menyimpan matriks baru. Modul tambahan mewarisi izin induknya jika
+belum memiliki baris: Approval/Check-in/Pembayaran Membership dari `membership`,
+versi PT dari `pt`. Setelah matriks baru disimpan, setiap aksi disimpan eksplisit;
+checkbox yang tidak dicentang ditolak. Data cabang/pencatat diambil dari akun login.
+Penyimpanan ditolak sebelum kolom CRUD tersedia agar tidak terjadi penyimpanan
+setengah aturan. Migration tidak mengubah data transaksi atau absensi.

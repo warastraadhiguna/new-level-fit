@@ -17,7 +17,7 @@ class RoleFeatureAccessTest extends TestCase
         Schema::create('branch_stores',function(Blueprint $t) {
             $t->id();$t->string('name');$t->text('revenue_report_visible_roles')->nullable();
             $t->boolean('tip_tap_transfer_enabled')->default(false);$t->boolean('pos_inventory_enabled')->default(false);$t->boolean('face_enrollment_enabled')->default(false);
-            $t->boolean('pt_free_enabled')->default(false);
+            $t->boolean('pt_free_enabled')->default(false);$t->boolean('member_approval_enabled')->default(false);$t->boolean('trainer_approval_enabled')->default(false);
         });
         Schema::create('user_application_access',function(Blueprint $t) {
             $t->id();$t->unsignedInteger('user_id');$t->string('application_code');$t->boolean('is_active');$t->timestamps();$t->unique(['user_id','application_code']);
@@ -26,6 +26,8 @@ class RoleFeatureAccessTest extends TestCase
         foreach (['personal_trainers','class_instructors'] as $table) Schema::create($table,function(Blueprint $t) { $t->id();$t->softDeletes(); });
         require_once database_path('migrations/2026_11_10_000001_create_role_feature_permissions.php');
         (new \CreateRoleFeaturePermissions())->up();
+        require_once database_path('migrations/2026_11_13_000003_add_crud_to_role_feature_permissions.php');
+        (new \AddCrudToRoleFeaturePermissions())->up();
         $this->travelTo(\Carbon\Carbon::parse('2026-11-10 10:00:00','Asia/Jakarta'));
     }
     private function actor(string $role='FINANCE',int $branch=1): User
@@ -261,6 +263,140 @@ class RoleFeatureAccessTest extends TestCase
         $this->get('/role-feature-access')->assertOk()->assertDontSee('permissions[ADMIN][revenue]',false)
             ->assertDontSee('permissions[FINANCE][revenue]',false);
         $this->put('/role-feature-access',['permissions'=>['FINANCE'=>['revenue'=>1]]])->assertSessionHasErrors();
+    }
+
+    public function test_read_only_permissions_block_writes_and_legacy_get_mutations(): void
+    {
+        $owner=$this->actor('OWNER');
+        $this->actingAs($owner)->put('/role-feature-access',['permissions'=>['ADMIN'=>[
+            'staff'=>['read'=>1],'members'=>['read'=>1],'membership'=>['read'=>1],'pt'=>['read'=>1],
+            'membership_checkin'=>['read'=>1],'pt_checkin'=>['read'=>1],
+        ]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('role_feature_permissions',['role'=>'ADMIN','feature_key'=>'staff','can_read'=>1,'can_create'=>0,'can_update'=>0,'can_delete'=>0]);
+        $this->actingAs($this->actor('ADMIN'))->get('/staff?page=finance')->assertOk();
+        foreach(['/administrator/create','/administrator/1/edit','/restore-administrator/1','/reset-check-in/1',
+            '/member-check-in/by-registration/1','/pt-check-in/1'] as $url) $this->get($url)->assertForbidden();
+        $this->post('/administrator',[])->assertForbidden();
+        $this->put('/administrator/1',[])->assertForbidden();
+        $this->delete('/administrator/1')->assertForbidden();
+        $this->post('/member-check-in',[])->assertForbidden();
+        $this->post('/trainer-session-payment',[])->assertForbidden();
+    }
+
+    public function test_crud_grants_allow_only_selected_actions_and_stay_branch_scoped(): void
+    {
+        $this->actingAs($this->actor('OWNER'))->put('/role-feature-access',['permissions'=>['ADMIN'=>[
+            'staff'=>['read'=>1,'create'=>1],
+        ]]])->assertSessionHasNoErrors()->assertRedirect();
+        $payload=['branch_store_id'=>1,'full_name'=>'CRUD Staff','email'=>'crud@example.com','gender'=>'Male','role'=>'ADMIN','password'=>'Secret123','application_access'=>['management']];
+        $admin=$this->actor('ADMIN');$this->actingAs($admin)->post('/administrator',$payload)->assertSessionHasNoErrors()->assertRedirect();
+        $created=User::where('email','crud@example.com')->firstOrFail();
+        $this->put('/administrator/1',[])->assertForbidden();$this->delete('/administrator/1')->assertForbidden();
+        $this->assertEquals(0,DB::table('role_feature_permissions')->where('branch_store_id',2)->count());
+        $this->actingAs($this->actor('OWNER'))->put('/role-feature-access',['permissions'=>['ADMIN'=>[
+            'staff'=>['read'=>1,'update'=>1],
+        ]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->actingAs($admin)->put('/administrator/'.$created->id,array_merge($payload,['full_name'=>'Updated CRUD Staff']))->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('Updated CRUD Staff',$created->fresh()->full_name);
+        $this->post('/administrator',[])->assertForbidden();$this->delete('/administrator/1')->assertForbidden();
+        $this->actingAs($this->actor('OWNER'))->put('/role-feature-access',['permissions'=>['ADMIN'=>[
+            'staff'=>['read'=>1,'delete'=>1],
+        ]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->actingAs($admin)->delete('/administrator/'.$created->id)->assertRedirect();
+        $this->assertSoftDeleted('users',['id'=>$created->id]);
+        $this->put('/administrator/1',[])->assertForbidden();
+    }
+
+    public function test_crud_validation_rejects_writes_without_read_and_unsupported_role_actions_atomically(): void
+    {
+        $this->actingAs($this->actor('OWNER'));
+        foreach([
+            ['ADMIN'=>['staff'=>['create'=>1]]],['ADMIN'=>['staff'=>['read'=>1,'unknown'=>1]]],
+            ['PT'=>['pt'=>['read'=>1,'update'=>1]]],['ADMIN'=>['revenue'=>['read'=>1,'delete'=>1]]],
+            ['HRD'=>['staff'=>['read'=>1]]],['ADMIN'=>['staff'=>['read'=>'yes']]],
+        ] as $permissions) $this->put('/role-feature-access',['permissions'=>$permissions])->assertSessionHasErrors();
+        $this->assertDatabaseCount('role_feature_permissions',0);
+    }
+
+    public function test_approvals_are_separate_and_only_configurable_when_enabled_in_branch(): void
+    {
+        $owner=$this->actor('OWNER');$this->actingAs($owner);
+        $this->get('/role-feature-access')->assertOk()->assertDontSee('permissions[ADMIN][membership_approval]',false)
+            ->assertDontSee('permissions[ADMIN][pt_approval]',false);
+        foreach(['membership_approval','pt_approval'] as $feature) {
+            $this->put('/role-feature-access',['permissions'=>['ADMIN'=>[$feature=>['read'=>1]]]])->assertSessionHasErrors();
+        }
+        DB::table('branch_stores')->where('id',1)->update(['member_approval_enabled'=>true,'trainer_approval_enabled'=>true]);
+        $owner->unsetRelation('branchStore');
+        $this->get('/role-feature-access')->assertOk()->assertSee('permissions[ADMIN][membership_approval][read]',false)
+            ->assertSee('permissions[ADMIN][pt_approval][update]',false)->assertDontSee('permissions[ADMIN][pt_approval][delete]',false);
+        $this->put('/role-feature-access',['permissions'=>['ADMIN'=>[
+            'membership_approval'=>['read'=>1],'pt_approval'=>['read'=>1],
+        ]]])->assertSessionHasNoErrors()->assertRedirect();
+        $this->actingAs($this->actor('ADMIN'))->put('/member-approval/1',[])->assertForbidden();
+        $this->put('/trainer-approval/1',[])->assertForbidden();
+    }
+
+    public function test_legacy_grants_survive_crud_migration_and_new_features_inherit_parent_until_saved(): void
+    {
+        $admin=$this->actor('ADMIN');$this->allow('ADMIN','membership',false);
+        $this->allow('ADMIN','staff',true);
+        $this->actingAs($admin);
+        $access=app(\App\Support\RoleFeatureAccess::class);
+        foreach(['create','read','update','delete'] as $action) {
+            $this->assertTrue($access->allows($admin,'staff',$action));
+            $this->assertFalse($access->allows($admin,'membership_checkin',$action));
+        }
+        $migration=new \AddCrudToRoleFeaturePermissions;$migration->up();$migration->up();
+        $this->assertDatabaseHas('role_feature_permissions',['role'=>'ADMIN','feature_key'=>'staff','is_allowed'=>1,'can_read'=>null]);
+    }
+
+    public function test_old_schema_still_reads_legacy_grants_but_cannot_save_crud(): void
+    {
+        Schema::drop('role_feature_permissions');(new \CreateRoleFeaturePermissions)->up();
+        $this->allow('ADMIN','staff',true);
+        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()->assertSee('Kolom izin CRUD belum tersedia');
+        $this->put('/role-feature-access',['permissions'=>[]])->assertStatus(503);
+        $this->actingAs($this->actor('ADMIN'))->get('/staff?page=finance')->assertOk();
+    }
+
+    public function test_denied_controls_match_http_method_and_preserve_read_search_forms(): void
+    {
+        $admin=$this->actor('ADMIN');
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'ADMIN','feature_key'=>'staff',
+            'is_allowed'=>true,'can_read'=>true,'can_create'=>false,'can_update'=>false,'can_delete'=>false]);
+        $this->actingAs($admin);
+        $rules=app(\App\Support\RoleFeatureAccess::class)->deniedControls($admin);
+        $blocked=function($path,$method) use($rules) {
+            foreach($rules as $rule) if ($rule['method']===$method && preg_match('~'.$rule['path'].'~',$path)) return true;
+            return false;
+        };
+        $this->assertFalse($blocked('/staff','GET'));
+        $this->assertTrue($blocked('/administrator','POST'));
+        $this->assertTrue($blocked('/administrator/1','DELETE'));
+        $this->assertTrue($blocked('/administrator/1/edit','GET'));
+        $this->assertTrue($blocked('/restore-administrator/1','GET'));
+    }
+
+    public function test_read_only_membership_cannot_mutate_gate_api(): void
+    {
+        $cs=$this->actor('CS');
+        DB::table('role_feature_permissions')->insert(['branch_store_id'=>1,'role'=>'CS','feature_key'=>'membership',
+            'is_allowed'=>true,'can_read'=>true,'can_create'=>false,'can_update'=>false,'can_delete'=>false]);
+        \Laravel\Sanctum\Sanctum::actingAs($cs);
+        $this->postJson('/api/gate/check-in',[])->assertForbidden();
+        $this->postJson('/api/gate/check-out',[])->assertForbidden();
+    }
+
+    public function test_route_action_catalog_covers_forms_aliases_and_exports(): void
+    {
+        $access=app(\App\Support\RoleFeatureAccess::class);
+        foreach([
+            'members.create'=>'create','members.create-membership'=>'create','members.edit'=>'update',
+            'restore-administrator'=>'update','resetCheckIn'=>'update','member-check-in.toggle-by-registration-id'=>'create',
+            'PTSecondCheckIn'=>'create','members.destroy'=>'delete','pos-sales.void'=>'delete',
+            'pos-stock.adjust'=>'update','tip-tap-transfer.export'=>'read','employees.photo'=>'read',
+        ] as $name=>$action) $this->assertSame($action,$access->actionForRoute(app('router')->getRoutes()->getByName($name)),$name);
     }
 
     public function test_migration_is_repeatable_and_route_catalog_covers_all_protected_endpoints(): void

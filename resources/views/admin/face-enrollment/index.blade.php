@@ -28,7 +28,7 @@
             <select id="facePose" class="form-control"><option value="front">Menghadap depan</option><option value="left">Sedikit menoleh kiri</option><option value="right">Sedikit menoleh kanan</option><option value="additional">Contoh tambahan / penampilan baru</option></select>
             <h5 class="mt-4">Hasil capture</h5>
             <div class="face-preview"><img id="facePhoto" class="d-none" alt="Foto hasil capture"><span id="facePlaceholder" class="text-muted">Belum ada foto</span></div>
-            <button type="button" id="faceEnroll" class="btn btn-success mt-3 w-100" disabled>Tambah Contoh Wajah</button>
+            <button type="button" id="faceEnroll" class="btn btn-success mt-3 w-100" data-role-route="{{ route('face-enrollment.store') }}" data-role-method="POST" disabled>Tambah Contoh Wajah</button>
             <p class="small text-muted mt-3 mb-0">Contoh baru ditambahkan tanpa mengganti contoh lama. Pastikan identitas benar. Hapus contoh yang tidak sesuai; menghapus semuanya membuat pegawai tidak dapat absen sampai didaftarkan lagi.</p>
         </div></div></div>
     </div>

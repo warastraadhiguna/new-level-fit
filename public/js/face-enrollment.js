@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const row = document.createElement('div');row.className = 'd-flex justify-content-between align-items-center border-bottom py-2';
             const label = document.createElement('span');label.textContent = 'Contoh ' + sample.slot + ' · ' + (poseNames[sample.pose] || sample.pose) + (sample.compatible ? '' : ' (model lama)');
             const remove = document.createElement('button');remove.type = 'button';remove.className = 'btn btn-sm btn-outline-danger';remove.textContent = 'Hapus';
+            remove.dataset.roleRoute = faceEnrollmentConfig.samplesUrl + '/' + sample.id;remove.dataset.roleMethod = 'DELETE';
             remove.addEventListener('click', () => removeSample(sample.id));row.append(label, remove);sampleList.append(row);
         }
         pose.value = ['front','left','right'].find(value => !samples.some(sample => sample.pose === value)) || 'additional';
