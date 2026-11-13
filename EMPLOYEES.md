@@ -29,7 +29,7 @@ sudah ada. Terapkan kolom sebelum kode baru dipakai.
 ## Foto dan informasi pekerjaan
 
 Form tambah/edit memakai modal seperti Staff. Tersedia foto pegawai, foto KTP,
-kategori jabatan (PT, CS, HR, Finance), detail jabatan, tanggal mulai kerja,
+kategori jabatan (PT, CS, HR, Finance), tanggal mulai kerja,
 tanggal resign, serta catatan (maksimal 5.000 karakter). Kolom tambahan opsional
 agar data pegawai lama tetap dapat digunakan. Tanggal resign tidak boleh sebelum
 tanggal mulai kerja. Status aktif/nonaktif tetap diatur melalui pilihan Status.

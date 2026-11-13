@@ -28,7 +28,7 @@
                             <td>@if($employee->photo_path)<img src="{{ route('employees.photo',[$employee->id,'photo']) }}" alt="Foto {{ $employee->full_name }}" class="rounded" width="70" loading="lazy">@else - @endif</td>
                             <td>{{ $employee->employee_code }}</td><td>{{ $employee->full_name }}@if($employee->all_branch)<span class="badge badge-info d-block">Semua cabang</span>@endif @if($employee->note)<small class="d-block text-muted">{{ \Illuminate\Support\Str::limit($employee->note,80) }}</small>@endif</td>
                             <td>{{ $employee->born ? $employee->born->format('d M Y') : '-' }}</td>
-                            <td>@if($employee->position_category)<span class="badge badge-primary">{{ \App\Models\Employee::POSITION_CATEGORIES[$employee->position_category] ?? $employee->position_category }}</span>@endif<div>{{ $employee->position ?: '-' }}</div></td>
+                            <td>@if($employee->position_category)<span class="badge badge-primary">{{ \App\Models\Employee::POSITION_CATEGORIES[$employee->position_category] ?? $employee->position_category }}</span>@else - @endif</td>
                             <td class="text-nowrap"><small>Mulai:</small> {{ $employee->employment_start_date ? $employee->employment_start_date->format('d M Y') : '-' }}<br><small>Resign:</small> {{ $employee->resign_date ? $employee->resign_date->format('d M Y') : '-' }}</td>
                             <td>{{ $employee->phone ?: '-' }}</td>
                             <td><span class="badge {{ $employee->is_active ? 'badge-success':'badge-secondary' }}">{{ $employee->is_active ? 'Aktif':'Nonaktif' }}</span></td>
