@@ -31,7 +31,7 @@
                                 <th>Date</th>
                                 <th>Status</th>
                                 <th>Staff</th>
-                                <th>Action</th>
+                                <th class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,7 +138,7 @@
                                     <td>
                                         <h6>{{ $item->staff_name }}</h6>
                                     </td>
-                                    <td>
+                                    <td class="text-center align-middle">
                                         <a href="{{ route('detail-history-member-registration', $item->id) }}" class="btn light btn-info btn-xs btn-block mb-1">Detail
                                             Member</a>
                                         @if($canApproveLeading && (int)($item->member_registration_days ?? $item->days) > 1)
