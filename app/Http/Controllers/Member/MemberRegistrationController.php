@@ -173,7 +173,7 @@ class MemberRegistrationController extends Controller
             ->join('users as f', 'a.user_id', '=', 'f.id')
             ->where('b.status', 'one_day_visit')
             ->where(function ($query) {
-                $query->where('b.branch_store_id', Auth::user()->branch_store_id)
+                $query->where('c.branch_store_id', Auth::user()->branch_store_id)
                     ->orWhere('c.is_all_club', 1);
             })
             ->orderBy('a.created_at', 'desc')
@@ -923,7 +923,7 @@ class MemberRegistrationController extends Controller
                 
         $data = [
             'title'                 => 'Renewal Member Expired',
-            'memberRegistration'    => MemberRegistration::find($id),
+            'memberRegistration'    => MemberRegistration::findOrFail($id)->ensureRenewableBy(Auth::user()),
             'members'               => Member::get(),
             'memberLastCode'        => Member::latest('id')->first(),
             'memberPackage'         => MemberPackage::where("branch_store_id", $branchId)
@@ -989,7 +989,7 @@ class MemberRegistrationController extends Controller
             }
 
             $package = MemberPackage::findOrFail($data['member_package_id'])
-                ->ensureAssignableBy(Auth::user());
+                ->ensureAssignableAtBranch(Auth::user());
             $firstPayment = (int) str_replace(".", "", $data['first_payment']);
             $receivedAmount = NormalizePosReceivedAmount(
                 $data['received_amount'] ?? null,
@@ -1024,6 +1024,7 @@ class MemberRegistrationController extends Controller
             $newMemberRegistration = MemberRegistration::create($data);
 
             $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
+                "branch_store_id" => (int) Auth::user()->branch_store_id,
                 "member_registration_id" => $newMemberRegistration->id,
                 "user_id" => Auth::user()->id,
                 "value" => $firstPayment,
@@ -1045,12 +1046,12 @@ class MemberRegistrationController extends Controller
 
     public function renewMemberRegistration(Request $request, $id)
     {
-        $statusMember = MemberRegistration::find($id);
+        $statusMember = MemberRegistration::findOrFail($id)->ensureRenewableBy(Auth::user());
 
         if ($statusMember->members->status == "one_day_visit") {
             DB::beginTransaction();
             try {
-                $memberRegistration = MemberRegistration::findOrFail($id);
+                $memberRegistration = MemberRegistration::lockForUpdate()->findOrFail($id)->ensureRenewableBy(Auth::user());
                 $memberId = $memberRegistration->members->id;
 
                 $data = $request->validate([
@@ -1101,7 +1102,7 @@ class MemberRegistrationController extends Controller
                 ]);
 
                 $package = MemberPackage::findOrFail($data['member_package_id'])
-                    ->ensureAssignableBy(Auth::user());
+                    ->ensureAssignableAtBranch(Auth::user());
                 $data['package_price'] = $package->package_price;
                 $data['user_id'] = Auth::user()->id;
                 $startTime = date('H:i:s', strtotime('00:00:00'));
@@ -1171,6 +1172,7 @@ class MemberRegistrationController extends Controller
                 $newMemberRegistration = MemberRegistration::create($data);
 
                 $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
+                    "branch_store_id" => (int) Auth::user()->branch_store_id,
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
                     "value" =>  $firstPayment,
@@ -1191,7 +1193,7 @@ class MemberRegistrationController extends Controller
         } else {
             DB::beginTransaction();
             try {
-                $memberRegistration = MemberRegistration::findOrFail($id);
+                $memberRegistration = MemberRegistration::lockForUpdate()->findOrFail($id)->ensureRenewableBy(Auth::user());
 
                 $fc = Auth::user()->id;
 
@@ -1228,7 +1230,7 @@ class MemberRegistrationController extends Controller
                 // ]);
 
                 $package = MemberPackage::findOrFail($data['member_package_id'])
-                    ->ensureAssignableBy(Auth::user());
+                    ->ensureAssignableAtBranch(Auth::user());
                 $data['package_price'] = $package->package_price;
 
                 $data['user_id'] = Auth::user()->id;
@@ -1267,6 +1269,7 @@ class MemberRegistrationController extends Controller
                 $newMemberRegistration = MemberRegistration::create($data);
 
                 $createdPayment = MemberRegistrationPayment::create(WithPosReceivedAmount([
+                    "branch_store_id" => (int) Auth::user()->branch_store_id,
                     "member_registration_id" =>  $newMemberRegistration->id,
                     "user_id" =>  Auth::user()->id,
                     "value" =>  $firstPayment,

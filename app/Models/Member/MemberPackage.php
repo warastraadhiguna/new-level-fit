@@ -94,4 +94,12 @@ class MemberPackage extends Model
 
         return $this;
     }
+
+    public function ensureAssignableAtBranch(User $user): self
+    {
+        if (!$user->branch_store_id || (int)$this->branch_store_id!==(int)$user->branch_store_id) {
+            throw ValidationException::withMessages(['member_package_id'=>'Pilih paket membership dari cabang login.']);
+        }
+        return $this->ensureAssignableBy($user);
+    }
 }

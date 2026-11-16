@@ -29,7 +29,7 @@ class MemberApprovalFilterTest extends TestCase
             $t->id(); $t->integer('branch_store_id'); $t->string('full_name'); $t->string('member_code'); $t->softDeletes();
         });
         Schema::create('member_packages', function (Blueprint $t) {
-            $t->id(); $t->string('package_name'); $t->boolean('is_all_club')->default(false); $t->softDeletes();
+            $t->id(); $t->integer('branch_store_id')->default(1); $t->string('package_name'); $t->boolean('is_all_club')->default(false); $t->softDeletes();
         });
         Schema::create('method_payments', function (Blueprint $t) { $t->id(); $t->string('name'); });
         Schema::create('member_registrations', function (Blueprint $t) {
@@ -55,8 +55,9 @@ class MemberApprovalFilterTest extends TestCase
         }
         DB::table('branch_stores')->insert([['id'=>1,'name'=>'One'], ['id'=>2,'name'=>'Two']]);
         DB::table('member_packages')->insert([
-            ['id'=>1,'package_name'=>'One Club','is_all_club'=>false],
-            ['id'=>2,'package_name'=>'All Club','is_all_club'=>true],
+            ['id'=>1,'branch_store_id'=>1,'package_name'=>'One Club','is_all_club'=>false],
+            ['id'=>2,'branch_store_id'=>2,'package_name'=>'All Club','is_all_club'=>true],
+            ['id'=>3,'branch_store_id'=>2,'package_name'=>'Foreign One Club','is_all_club'=>false],
         ]);
         DB::table('method_payments')->insert(['id'=>1,'name'=>'Cash']);
         $this->actingAs(User::create([
@@ -70,7 +71,7 @@ class MemberApprovalFilterTest extends TestCase
         DB::table('leave_days')->insert(['member_registration_id'=>4,'submission_date'=>'2026-10-10 00:00:00','days'=>20]);
         $this->registration(5, '2026-11-01 00:00:00', 0, ['discount_amount'=>200]); // Zero payable is paid.
         $this->registration(6, '2026-11-01 00:00:00', 110, ['is_approved'=>true]);
-        $this->registration(7, '2026-11-01 00:00:00', 110, [], 2); // Foreign one-club excluded.
+        $this->registration(7, '2026-11-01 00:00:00', 110, ['member_package_id'=>3], 2); // Foreign one-club excluded.
         $this->registration(8, '2026-11-01 00:00:00', 110, ['member_package_id'=>2], 2); // All-club included.
         $this->registration(9, '2026-11-11 12:00:00', 110); // Exactly at start is active.
         $this->registration(10, '2026-10-12 12:00:00', 110); // Exactly at expiry is active.
@@ -152,5 +153,18 @@ class MemberApprovalFilterTest extends TestCase
         $this->assertSame(13, $page->total());
         $this->assertCount(3, $page->items());
         $this->assertSame([12,11,4], $page->pluck('id')->all());
+    }
+
+    public function test_approval_follows_package_branch_even_when_member_origin_is_different(): void
+    {
+        $this->registration(11,'2026-11-01 00:00:00',110,[],2);
+        $this->registration(12,'2026-11-01 00:00:00',110,['member_package_id'=>3],1);
+        $response=$this->get('/member-approval')->assertOk();
+        $ids=$response->viewData('memberRegistrations')->pluck('id')->all();
+        $this->assertContains(11,$ids);$this->assertNotContains(12,$ids);
+        $this->put('/member-approval/11',['is_approved'=>1,'description'=>'Approved in package branch'])->assertSessionHasNoErrors();
+        $this->put('/member-approval/12',['is_approved'=>1,'description'=>'Wrong branch'])->assertNotFound();
+        $this->assertDatabaseHas('member_registrations',['id'=>11,'is_approved'=>1]);
+        $this->assertDatabaseHas('members',['id'=>11,'branch_store_id'=>2]);
     }
 }

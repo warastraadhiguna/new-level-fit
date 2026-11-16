@@ -81,9 +81,11 @@ class MemberCheckInController extends Controller
             return redirect()->back()->with('error', 'Member pending');
         }
         
-        if (MembershipHasOneClubBranchRestriction($memberRegistration[0], Auth::user()->branch_store_id)) {
+        $accessible=$this->accessibleMemberships($memberRegistration,(int)Auth::user()->branch_store_id);
+        if (!$accessible) {
             return redirect()->back()->with('errorr', MembershipOneClubRestrictionMessage($memberRegistration[0]->member_name, 'check in'));
         }
+        $memberRegistration=$accessible;
 
         if ($memberRegistration[0]->leave_day_status == "Freeze") {
             return redirect()->back()->with('errorr', $memberRegistration[0]->member_name . ' sedang freeze!!');
@@ -284,6 +286,13 @@ class MemberCheckInController extends Controller
         } catch (\Throwable $th) {
             return redirect()->back()->with('errorr', 'Deleted Failed, please check other page where using this check in');
         }
+    }
+
+    private function accessibleMemberships(array $memberships, int $branch): array
+    {
+        return array_values(array_filter($memberships, function($membership) use($branch) {
+            return !MembershipHasOneClubBranchRestriction($membership,$branch);
+        }));
     }
 
     private function processCheckInRequest(int $memberRegistrationId): string

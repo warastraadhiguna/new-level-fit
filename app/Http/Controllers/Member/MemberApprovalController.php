@@ -35,7 +35,8 @@ class MemberApprovalController extends Controller
             ->with([
                 'members:id,full_name,member_code,branch_store_id',
                 'members.branchStore:id,name',
-                'memberPackageWithTrashed:id,package_name,is_all_club,deleted_at',
+                'memberPackageWithTrashed:id,package_name,branch_store_id,is_all_club,deleted_at',
+                'memberPackageWithTrashed.branchStore:id,name',
                 'methodPayment:id,name',
                 'users:id,full_name',
                 'latestCheckIn',
@@ -49,13 +50,7 @@ class MemberApprovalController extends Controller
                     ->latest('id')
                     ->limit(1),
             ])
-            ->where(function ($query) use ($branchId) {
-                $query->whereHas('members', function ($memberQuery) use ($branchId) {
-                    $memberQuery->where('branch_store_id', $branchId);
-                })->orWhereHas('memberPackageWithTrashed', function ($packageQuery) {
-                    $packageQuery->where('is_all_club', 1);
-                });
-            })
+            ->accessibleInBranch($branchId)
             ->where('days', '>', 1)
             ->where('is_approved', false)
             ->when($search !== '', function ($query) use ($search) {
@@ -167,6 +162,7 @@ class MemberApprovalController extends Controller
 
         DB::transaction(function () use ($memberRegistration, $data, $description) {
             $lockedRegistration = MemberRegistration::lockForUpdate()->findOrFail($memberRegistration->id);
+            $this->ensureRegistrationBelongsToActiveBranch($lockedRegistration);
             $lockedRegistration->update([
                 'is_approved' => (bool) $data['is_approved'],
                 'description' => $description,
@@ -188,14 +184,7 @@ class MemberApprovalController extends Controller
 
     private function ensureRegistrationBelongsToActiveBranch(MemberRegistration $memberRegistration): void
     {
-        $belongsToBranch = $memberRegistration->members()
-            ->where('branch_store_id', Auth::user()->branch_store_id)
-            ->exists();
-
-        $isAllClub = $memberRegistration->memberPackageWithTrashed()
-            ->where('is_all_club', 1)
-            ->exists();
-
-        abort_unless($belongsToBranch || $isAllClub, 404);
+        abort_unless(MemberRegistration::whereKey($memberRegistration->id)
+            ->accessibleInBranch((int)Auth::user()->branch_store_id)->exists(),404);
     }
 }

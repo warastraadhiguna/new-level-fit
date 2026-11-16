@@ -136,7 +136,7 @@
                                             {{ $isAllClub ? 'All Club' : 'One Club' }}
                                         </span>
                                         <br>
-                                        <h6>{{ optional(optional($item->members)->branchStore)->name }}</h6>
+                                        <h6>{{ optional(optional($memberPackage)->branchStore)->name }}</h6>
                                     </td>
                                     @php
                                         $latestCheckIn = $item->latestCheckIn;

@@ -39,7 +39,7 @@ class MemberRegistrationBranchVisibilityTest extends TestCase
     {
         $sql = str_replace(['`', '"'], '', MemberRegistration::expiredRegistrations('', 7)->toSql());
 
-        $this->assertStringContainsString('a.branch_store_id = ?', $sql);
+        $this->assertStringContainsString('b.member_package_branch_store_id = ?', $sql);
         $this->assertStringContainsString('b.is_all_club = ?', $sql);
         $this->assertStringContainsString(' or ', strtolower($sql));
     }
@@ -49,7 +49,7 @@ class MemberRegistrationBranchVisibilityTest extends TestCase
         $normalizedSql = strtolower(preg_replace('/\s+/', ' ', $sql));
 
         $this->assertStringContainsString(
-            '(mbr.branch_store_id=7 or mbr_pkg.is_all_club=1)',
+            '(mbr_pkg.branch_store_id=7 or mbr_pkg.is_all_club=1)',
             $normalizedSql
         );
     }
