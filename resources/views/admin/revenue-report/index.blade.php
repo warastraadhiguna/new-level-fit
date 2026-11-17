@@ -61,6 +61,7 @@
                         @endif
 
                         <div class="col-auto"><button type="submit" class="btn btn-info">Show</button></div>
+                        <div class="col-auto"><button type="submit" name="pdf" value="1" class="btn btn-outline-primary">Download PDF</button></div>
                         @if ($viewMode === 'detail' && Auth::user()->isOwner())
                             <div class="col-auto"><button type="submit" name="excel" value="1" class="btn btn-outline-info">Download Excel</button></div>
                         @endif

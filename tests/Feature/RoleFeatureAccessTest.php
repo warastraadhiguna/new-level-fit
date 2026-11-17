@@ -90,6 +90,8 @@ class RoleFeatureAccessTest extends TestCase
         $actor=$this->actor('HRD');$this->allow('HRD','revenue',true);
         DB::table('branch_stores')->where('id',1)->update(['revenue_report_visible_roles'=>json_encode(['OWNER_ONLY'])]);
         $this->actingAs($actor)->get('/revenue-report')->assertForbidden();
+        $this->get('/revenue-report?pdf=1&view=summary')->assertForbidden();
+        $this->get('/revenue-report?pdf=1&view=detail')->assertForbidden();
         $this->get('/attendance-device')->assertForbidden();
         $this->get('/secret-branch-store')->assertForbidden();
         // Defaults deny grants for account management, even with manually inserted rows.

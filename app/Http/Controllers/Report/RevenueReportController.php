@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Exports\RevenueReportExport;
 use App\Http\Controllers\Controller;
 use App\Services\RevenueReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,7 @@ class RevenueReportController extends Controller
             'category' => ['nullable', 'in:membership,one_day,pt,lgt,pos'],
             'per_page' => ['nullable', 'integer', 'in:10,20,50,100'],
             'excel' => ['nullable', 'in:1'],
+            'pdf' => ['nullable', 'in:1'],
         ]);
 
         $fromDate = $validated['from_date'] ?? now()->startOfMonth()->toDateString();
@@ -48,7 +50,7 @@ class RevenueReportController extends Controller
             $category = null;
         }
 
-        if ($request->input('excel') === '1') {
+        if ($request->input('excel') === '1' && ! $request->boolean('pdf')) {
             return Excel::download(
                 new RevenueReportExport(
                     (int) $branchStore->id,
@@ -80,6 +82,31 @@ class RevenueReportController extends Controller
             ->get();
 
         $transactions = null;
+
+        if ($request->boolean('pdf')) {
+            if ($viewMode === 'detail') {
+                $transactions = (clone $baseQuery)
+                    ->orderByDesc('transaction_at')
+                    ->orderByDesc('row_id')
+                    ->get();
+            }
+
+            return Pdf::loadView('admin.revenue-report.pdf', [
+                'branchName' => $branchStore->name,
+                'viewMode' => $viewMode,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+                'category' => $category,
+                'search' => $search,
+                'summary' => $summary,
+                'transactions' => $transactions,
+                'grandTotal' => (float) $summary->sum('total_amount'),
+                'transactionCount' => (int) $summary->sum('transaction_count'),
+                'generatedAt' => now(),
+            ])
+                ->setPaper('a4', $viewMode === 'detail' ? 'landscape' : 'portrait')
+                ->download('Revenue-Report-' . ucfirst($viewMode) . '-' . $fromDate . '-to-' . $toDate . '.pdf');
+        }
 
         if ($viewMode === 'detail') {
             $transactions = (clone $baseQuery)
