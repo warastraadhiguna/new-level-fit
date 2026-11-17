@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Member\MemberRegistration;
 use App\Models\Member\MemberRegistrationPayment;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -55,11 +56,11 @@ class MemberRegistrationPaymentController extends Controller
                     ->sum('value');
 
                 if ($paidAmount >= $price) {
-                    throw new \RuntimeException('This membership has already been fully paid.');
+                    throw ValidationException::withMessages(['value'=>'This membership has already been fully paid.']);
                 }
 
                 if ($paidAmount + $data["value"] > $price) {
-                    throw new \RuntimeException('The value is more than price should paid!!');
+                    throw ValidationException::withMessages(['value'=>'Nilai pembayaran melebihi sisa tagihan.']);
                 }
 
                 $payment = MemberRegistrationPayment::create($data);
@@ -71,7 +72,8 @@ class MemberRegistrationPaymentController extends Controller
                 return $payment;
             });
         } catch (\RuntimeException $e) {
-            return redirect()->back()->with('errorr', $e->getMessage());
+            report($e);
+            return redirect()->back()->withInput()->with('errorr', 'Pembayaran belum berhasil disimpan. Silakan coba kembali atau hubungi pengelola.');
         }
 
         $redirect = redirect("member-active/". $data["member_registration_id"] ."/edit")

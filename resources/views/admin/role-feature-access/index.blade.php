@@ -1,9 +1,8 @@
 <div class="col-12"><div class="card"><div class="card-header"><h4 class="card-title">Pengaturan Akses Role</h4></div><div class="card-body">
     <p>Pengaturan untuk <strong>{{ optional(Auth::user()->branchStore)->name }}</strong>. Hanya Owner yang dapat mengubah izin role.</p>
     <p class="text-muted">Create: tambah data. Read: lihat data. Update: ubah data / restore. Delete: hapus data. Read harus aktif sebelum izin lain dapat dipilih.</p>
-    <p class="text-muted">Semua role dapat diberi izin oleh Owner, termasuk PT, HRD, dan Finance. Izin tambahan tidak aktif sampai dicentang. Hanya fitur yang aktif di Secret Branch Store yang ditampilkan. Ekspor Tip-Tap termasuk Read. Excel dan perangkat absensi tetap mengikuti batas khusus Owner.</p>
-    @unless($ready)<div class="alert alert-warning">Tabel pengaturan belum tersedia. Jalankan migration atau SQL pengaturan akses role sebelum menyimpan.</div>@endunless
-    @if($ready && !$crudReady)<div class="alert alert-warning">Kolom izin CRUD belum tersedia. Jalankan SQL izin CRUD role sebelum menyimpan.</div>@endif
+    <p class="text-muted">Owner dapat mengatur izin setiap role. Read harus aktif agar izin lain dapat digunakan. Ekspor Tip-Tap termasuk Read; unduhan Excel dan perangkat absensi mengikuti izin Owner.</p>
+    @if(!$ready || !$crudReady)<div class="alert alert-warning">Pengaturan akses belum dapat digunakan. Silakan hubungi pengelola.</div>@endif
     @php
         $roleActors=[];
         foreach($roles as $role=>$label) $roleActors[$role]=new \App\Models\User(['role'=>$role,'branch_store_id'=>Auth::user()->branch_store_id]);

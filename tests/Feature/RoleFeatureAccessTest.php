@@ -98,7 +98,8 @@ class RoleFeatureAccessTest extends TestCase
     public function test_missing_permissions_table_keeps_defaults_and_cannot_save(): void
     {
         Schema::drop('role_feature_permissions');
-        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()->assertSee('Tabel pengaturan belum tersedia');
+        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()
+            ->assertSee('Pengaturan akses belum dapat digunakan')->assertDontSee('Jalankan SQL')->assertDontSee('migration');
         $this->put('/role-feature-access',['permissions'=>[]])->assertStatus(503);
         $this->actingAs($this->actor('ADMIN'))->get('/staff?page=finance')->assertOk();
         $this->actingAs($this->actor('HRD'))->get('/hrd')->assertOk();
@@ -355,7 +356,8 @@ class RoleFeatureAccessTest extends TestCase
     {
         Schema::drop('role_feature_permissions');(new \CreateRoleFeaturePermissions)->up();
         $this->allow('ADMIN','staff',true);
-        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()->assertSee('Kolom izin CRUD belum tersedia');
+        $this->actingAs($this->actor('OWNER'))->get('/role-feature-access')->assertOk()
+            ->assertSee('Pengaturan akses belum dapat digunakan')->assertDontSee('Kolom izin CRUD')->assertDontSee('Jalankan SQL');
         $this->put('/role-feature-access',['permissions'=>[]])->assertStatus(503);
         $this->actingAs($this->actor('ADMIN'))->get('/staff?page=finance')->assertOk();
     }

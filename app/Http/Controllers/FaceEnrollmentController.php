@@ -54,7 +54,7 @@ class FaceEnrollmentController extends Controller
     {
         $request->validate(['employee_id'=>'required|integer']);
         $employee=$this->employees($request)->where('u.id',$request->employee_id)->first();abort_unless($employee,404);
-        abort_unless($this->ready(),503,'Tabel contoh wajah belum tersedia. Jalankan SQL contoh wajah.');
+        abort_unless($this->ready(),503,'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.');
         $profile=DB::connection('face_enrollment')->table('face_attendance_employees')->where('source_employee_id',$employee->id)->first();
         $samples=$this->metadata($profile ? $profile->id : null);
         return response()->json(['samples'=>$samples,'sample_count'=>count($samples)])->header('Cache-Control','no-store, private');
@@ -80,7 +80,7 @@ class FaceEnrollmentController extends Controller
     {
         $request->validate(['employee_id'=>'required|integer','photo'=>'required|string|max:7000000','pose'=>'nullable|in:front,left,right,additional']);
         $employee=$this->employees($request)->where('u.id',$request->employee_id)->first();abort_unless($employee,404);
-        if (!$this->ready()) throw ValidationException::withMessages(['photo'=>'Tabel contoh wajah belum tersedia. Jalankan SQL contoh wajah.']);
+        if (!$this->ready()) throw ValidationException::withMessages(['photo'=>'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.']);
         $db=DB::connection('face_enrollment');
         $existing=$db->table('face_attendance_employees')->where('source_employee_id',$employee->id)->value('id');
         if ($existing && $db->table('face_attendance_samples')->where('face_profile_id',$existing)->count()>=5) {
@@ -114,7 +114,7 @@ class FaceEnrollmentController extends Controller
     }
     public function destroySample(Request $request, $sample)
     {
-        abort_unless($this->ready(),503,'Tabel contoh wajah belum tersedia.');
+        abort_unless($this->ready(),503,'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.');
         $request->validate(['employee_id'=>'required|integer']);
         $db=DB::connection('face_enrollment');
         $samples=$db->transaction(function() use($request,$sample,$db) {

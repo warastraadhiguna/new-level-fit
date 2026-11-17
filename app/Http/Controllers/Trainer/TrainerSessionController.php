@@ -15,6 +15,7 @@ use App\Models\Trainer\TrainerSession;
 use App\Models\Trainer\TrainerSessionPayment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -629,16 +630,16 @@ class TrainerSessionController extends Controller
                 $trainerPackage = TrainerPackage::with('branchStore')->paid()->findOrFail($data['trainer_package_id']);
 
                 if ($trainerPackage->status !== null) {
-                    throw new RuntimeException('Only regular PT packages can be used to move this PT registration.');
+                    throw ValidationException::withMessages(['trainer_package_id'=>'Only regular PT packages can be used to move this PT registration.']);
                 }
 
                 if ((int) $trainerPackage->branch_store_id === (int) $trainerSession->branch_store_id) {
-                    throw new RuntimeException('Please choose a PT package from another branch.');
+                    throw ValidationException::withMessages(['trainer_package_id'=>'Please choose a PT package from another branch.']);
                 }
 
                 $membership = GetLatestNonExpiredMembershipAccess($trainerSession->member_id);
                 if ($membership && MembershipHasOneClubBranchRestriction($membership, $trainerPackage->branch_store_id)) {
-                    throw new RuntimeException(MembershipOneClubRestrictionMessage($membership->member_name, 'move PT'));
+                    throw ValidationException::withMessages(['trainer_package_id'=>MembershipOneClubRestrictionMessage($membership->member_name, 'move PT')]);
                 }
 
                 $currentBranchName = data_get($trainerSession, 'branchStore.name', 'Unknown branch');
@@ -673,7 +674,8 @@ class TrainerSessionController extends Controller
 
             return redirect()->route('trainer-session.index')->with('success', $message);
         } catch (RuntimeException $exception) {
-            return redirect()->back()->with('errorr', $exception->getMessage());
+            report($exception);
+            return redirect()->back()->withInput()->with('errorr', 'Perpindahan cabang belum berhasil. Silakan coba kembali atau hubungi pengelola.');
         }
     }
 

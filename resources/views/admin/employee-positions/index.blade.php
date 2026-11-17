@@ -5,7 +5,7 @@
     <div class="page-title flex-wrap justify-content-between"><h4>Kategori Jabatan</h4>
         @if($positionAccess->allowsRoute(Auth::user(),'employee-positions.store'))<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPositionCategory">+ Tambah Jabatan</button>@endif
     </div>
-    <p class="text-muted">Kategori dipakai seluruh cabang pada database attendance yang sama. Kategori nonaktif tidak tersedia untuk pilihan baru, tetapi tetap tersimpan pada pegawai lama.</p>
+    <p class="text-muted">Kategori jabatan digunakan oleh seluruh cabang. Kategori nonaktif tidak tersedia untuk pilihan baru, tetapi tetap tersimpan pada pegawai lama.</p>
     @if(session('message'))<div class="alert alert-success">{{ session('message') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>@endif
     <div class="card"><div class="card-body"><div class="table-responsive"><table class="table">

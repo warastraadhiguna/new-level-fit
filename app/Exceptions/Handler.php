@@ -38,4 +38,29 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    public function render($request, Throwable $exception)
+    {
+        // Validation and authentication retain their normal field errors/redirects.
+        if ($exception instanceof \Illuminate\Validation\ValidationException
+            || $exception instanceof \Illuminate\Auth\AuthenticationException
+            || $exception instanceof \Illuminate\Http\Exceptions\HttpResponseException) {
+            return parent::render($request,$exception);
+        }
+
+        $exception=$this->prepareException($exception);
+        $http=$exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+        $status=$http ? $exception->getStatusCode() : 500;
+        $headers=$http ? $exception->getHeaders() : [];
+        $message=$status>=500
+            ? 'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.'
+            : ($status===404 ? 'Halaman tidak ditemukan.' : ($exception->getMessage() ?: 'Permintaan tidak dapat diproses.'));
+
+        // Never expose traces, queries, model names or connection details, even if
+        // a deployment accidentally leaves APP_DEBUG enabled. Reporting is unchanged.
+        $response=$request->expectsJson()
+            ? response()->json(['message'=>$message],$status,$headers)
+            : response()->view('errors.safe',['status'=>$status,'message'=>$message],$status,$headers);
+        return $response->header('Cache-Control','no-store, private');
+    }
 }

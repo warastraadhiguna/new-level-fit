@@ -23,7 +23,7 @@ class RoleFeatureAccessController extends Controller
     public function update(Request $request, RoleFeatureAccess $access)
     {
         $this->authorizeOwner($request);
-        abort_unless($access->crudReady(),503,'Jalankan SQL izin CRUD role terlebih dahulu.');
+        abort_unless($access->crudReady(),503,'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.');
         $data=$request->validate(['permissions'=>'sometimes|array','permissions.*'=>'array']);
         $submitted=$data['permissions'] ?? [];
         $roles=$access->rolesForBranch($request->user()->branchStore);
@@ -32,7 +32,7 @@ class RoleFeatureAccessController extends Controller
         foreach($submitted as $role=>$values) {
             if (!isset($roles[$role])) throw ValidationException::withMessages(['permissions'=>'Role tidak valid.']);
             foreach($values as $feature=>$valuesByAction) {
-                if (!isset($features[$feature])) throw ValidationException::withMessages(['permissions'=>'Fitur tidak aktif atau tidak valid.']);
+                if (!isset($features[$feature])) throw ValidationException::withMessages(['permissions'=>'Pilihan pengaturan tidak valid.']);
                 $actions=RoleFeatureAccess::actionsFor($feature,$role);
                 if (!is_array($valuesByAction)) {
                     if (!in_array($valuesByAction,[true,false,0,1,'0','1'],true)) throw ValidationException::withMessages(['permissions'=>'Izin harus berupa nilai boolean.']);

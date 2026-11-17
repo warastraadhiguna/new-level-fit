@@ -9,7 +9,7 @@ class EnsureFaceEnrollmentEnabled
         abort_unless(
             (bool) optional($request->user()->branchStore)->face_enrollment_enabled,
             404,
-            'Pendaftaran wajah belum diaktifkan untuk cabang ini.'
+            'Halaman tidak ditemukan.'
         );
         return $next($request);
     }

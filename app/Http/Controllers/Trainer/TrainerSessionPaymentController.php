@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Trainer\TrainerSession;
 use App\Models\Trainer\TrainerSessionPayment;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -54,11 +55,11 @@ class TrainerSessionPaymentController extends Controller
                     ->sum('value');
 
                 if ($paidAmount >= $price) {
-                    throw new RuntimeException('This trainer session has already been fully paid.');
+                    throw ValidationException::withMessages(['value'=>'This trainer session has already been fully paid.']);
                 }
 
                 if ($paidAmount + $data["value"] > $price) {
-                    throw new RuntimeException('The value is more than price should paid!!');
+                    throw ValidationException::withMessages(['value'=>'Nilai pembayaran melebihi sisa tagihan.']);
                 }
 
                 $payment = TrainerSessionPayment::create($data);
@@ -70,7 +71,8 @@ class TrainerSessionPaymentController extends Controller
                 return $payment;
             });
         } catch (RuntimeException $exception) {
-            return redirect()->back()->with('errorr', $exception->getMessage());
+            report($exception);
+            return redirect()->back()->withInput()->with('errorr', 'Pembayaran belum berhasil disimpan. Silakan coba kembali atau hubungi pengelola.');
         }
 
         $redirect = redirect("trainer-session/". $data["trainer_session_id"] ."/edit")

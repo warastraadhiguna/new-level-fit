@@ -1,7 +1,7 @@
 <div class="col-12">
     <div class="mb-4"><h3>Pendaftaran Wajah</h3><p class="text-muted">Daftarkan wajah pegawai untuk absensi otomatis. Pilih pegawai, lalu tambahkan 3 contoh: depan, sedikit kiri, dan sedikit kanan. Maksimal 5 contoh.</p></div>
     @if(($selectedEmployeeId ?? null) && app(\App\Support\RoleFeatureAccess::class)->allowsRoute(Auth::user(),'employees.show'))<a href="{{ route('employees.show',$selectedEmployeeId) }}" class="btn btn-outline-primary mb-3">Kembali ke Detail Employee</a>@endif
-    @if (!$faceReady)<div class="alert alert-warning">Tabel profil atau contoh wajah belum tersedia. Hubungi administrator untuk menyiapkan enrollment.</div>@endif
+    @if (!$faceReady)<div class="alert alert-warning">Pendaftaran wajah belum dapat digunakan. Silakan hubungi pengelola.</div>@endif
     <dialog id="faceResultDialog" class="face-result-dialog" aria-labelledby="faceResultTitle">
         <div id="faceResultIcon" class="face-result-icon" aria-hidden="true"></div>
         <h4 id="faceResultTitle" class="mt-3">Pendaftaran Wajah</h4>

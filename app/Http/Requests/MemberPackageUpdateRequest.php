@@ -62,7 +62,7 @@ class MemberPackageUpdateRequest extends FormRequest
             if (!$this->boolean('is_installment_plan')) return;
             $branch = \App\Models\BranchStore::find($this->branch_store_id);
             if (!$branch || !$branch->member_installment_enabled) {
-                $validator->errors()->add('is_installment_plan', 'Cicilan membership belum diaktifkan untuk cabang ini.');
+                $validator->errors()->add('is_installment_plan', 'Metode pembayaran yang dipilih tidak tersedia.');
             }
             if ((int) $this->days < 360) {
                 $validator->errors()->add('days', 'Paket cicilan 12 bulan harus minimal 360 hari.');

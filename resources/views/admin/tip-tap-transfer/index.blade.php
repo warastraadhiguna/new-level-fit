@@ -3,11 +3,10 @@
         <h4>Export Data untuk Tip-Tap</h4>
         <p class="mb-2">
             File ini berisi data member, membership, PT/PT Free, pembayaran, freeze, serta check-in/out yang
-            dibuat atau berubah dalam rentang waktu yang dipilih. ID asli tetap dipertahankan agar dapat digabungkan ke database Tip-Tap.
+            dibuat atau berubah dalam rentang waktu yang dipilih.
         </p>
         <div class="alert alert-info">
-            Untuk melanjutkan pekerjaan Tip-Tap yang sudah selesai sampai 27 September 2026, gunakan nilai awal bawaan.
-            Batas awal bersifat eksklusif dan batas akhir bersifat inklusif.
+            Data diambil setelah tanggal awal hingga tanggal akhir.
             Setelah import berhasil, gunakan waktu akhir yang ditampilkan Tip-Tap sebagai waktu awal export berikutnya.
         </div>
 
@@ -35,8 +34,7 @@
         </form>
 
         <p class="text-muted mb-0">
-            Export ini tidak mengubah database master. File hanya dapat dibuat oleh akun yang diberi izin dan dapat diimpor berulang kali
-            di Tip-Tap tanpa menggandakan ID.
+            Gunakan file hasil export untuk memperbarui data di Tip-Tap.
         </p>
     </div>
 </div>

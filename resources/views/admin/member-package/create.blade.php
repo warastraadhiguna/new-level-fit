@@ -84,7 +84,6 @@
                                     <option value="0" {{ old('is_installment_plan', '0') === '0' ? 'selected' : '' }}>Pembayaran biasa</option>
                                     <option value="1" {{ old('is_installment_plan') === '1' ? 'selected' : '' }}>Cicilan tahunan (bulan 1 + 12 di awal)</option>
                                 </select>
-                                <small class="text-muted">Hanya dapat disimpan jika fitur cicilan aktif di Secret Branch Store.</small>
                             </div>
                         </div>
                         <div class="col-xl-6 installment-setting">

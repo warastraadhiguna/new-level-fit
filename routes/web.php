@@ -350,9 +350,6 @@ Route::prefix('/')->namespace('Admin')->middleware(['auth', 'admin', 'pt.readonl
     Route::get('appointment-schedule', [MissedGuestController::class, 'appointmentSchedule'])->name('appointmentSchedule');
     Route::post('store-appointment/{id}', [MissedGuestController::class, 'storeAppointment'])->name('storeAppointment');
 
-    Route::get('/tes', function () {
-        return view('admin.member-registration.tes');
-    })->name('member.details');
 });
 
 Auth::routes();

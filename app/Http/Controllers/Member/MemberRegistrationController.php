@@ -1651,7 +1651,8 @@ class MemberRegistrationController extends Controller
             return redirect()->route('member-active.index')->with('success', 'Freeze membership dan PT berhasil dihentikan!');
         } catch (\Throwable $th) {
             DB::rollback();
-            return redirect()->route('member-active.index')->with('errorr', $th->getMessage());
+            report($th);
+            return redirect()->route('member-active.index')->with('errorr', 'Freeze belum berhasil dihentikan. Silakan coba kembali atau hubungi pengelola.');
         }
     }
 

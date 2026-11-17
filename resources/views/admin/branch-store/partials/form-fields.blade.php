@@ -159,7 +159,7 @@
                 <option value="0" {{ (string) $posInventoryEnabled === '0' ? 'selected' : '' }}>Nonaktif</option>
                 <option value="1" {{ (string) $posInventoryEnabled === '1' ? 'selected' : '' }}>Aktif</option>
             </select>
-            <small class="text-muted">Jika nonaktif, seluruh menu dan endpoint POS, produk, pembelian, serta stok tidak dapat diakses pada cabang ini. Data lama tetap tersimpan.</small>
+            <small class="text-muted">Atur ketersediaan POS, produk, pembelian, dan stok untuk cabang ini.</small>
         </div>
     </div>
     <div class="col-md-6">

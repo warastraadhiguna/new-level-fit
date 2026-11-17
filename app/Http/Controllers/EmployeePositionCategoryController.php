@@ -12,7 +12,7 @@ class EmployeePositionCategoryController extends Controller
     private function ready(Request $r): void
     {
         abort_unless($r->user()->branch_store_id,403,'Cabang aktif belum ditentukan.');
-        abort_unless(EmployeePositionCategory::ready(),503,'Jalankan migration atau SQL kategori jabatan terlebih dahulu.');
+        abort_unless(EmployeePositionCategory::ready(),503,'Layanan belum dapat digunakan. Silakan coba kembali atau hubungi pengelola.');
     }
 
     public function index(Request $r)

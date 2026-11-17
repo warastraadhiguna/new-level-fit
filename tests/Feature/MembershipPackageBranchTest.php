@@ -136,4 +136,14 @@ class MembershipPackageBranchTest extends TestCase
         $this->assertSame([$candisari,$allClub],$filter->invoke($controller,[$foreign,$candisari,$allClub],3));
         $this->assertSame([$allClub],$filter->invoke($controller,[$allClub],2));
     }
+
+    public function test_payment_validation_remains_actionable_while_database_errors_stay_private(): void
+    {
+        $payload=['member_registration_id'=>1,'value'=>'900.001','note'=>'Payment test','method_payment_id'=>1];
+        $this->post('/member-registration-payment',$payload)->assertSessionHasErrors('value');
+        $this->assertDatabaseCount('member_registration_payments',0);
+        Schema::drop('member_registration_payments');
+        $this->post('/member-registration-payment',array_merge($payload,['value'=>'100.000']))
+            ->assertRedirect()->assertSessionHas('errorr','Pembayaran belum berhasil disimpan. Silakan coba kembali atau hubungi pengelola.');
+    }
 }

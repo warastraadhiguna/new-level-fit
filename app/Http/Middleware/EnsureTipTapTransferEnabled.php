@@ -19,7 +19,7 @@ class EnsureTipTapTransferEnabled
         abort_unless(
             (bool) optional($user->branchStore)->tip_tap_transfer_enabled,
             404,
-            'Fitur Export Tip-Tap tidak aktif untuk cabang ini.'
+            'Halaman tidak ditemukan.'
         );
 
         return $next($request);

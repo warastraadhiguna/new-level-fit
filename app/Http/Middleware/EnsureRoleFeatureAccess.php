@@ -13,7 +13,7 @@ class EnsureRoleFeatureAccess
             // Role homes stay reachable even when all configurable features are disabled.
             if ($feature==='dashboard' && ($user->isHrd() || $user->isFinance())) return $next($request);
             abort_unless($access->allows($user,$feature,$access->actionForRoute($request->route(),$request->method())),403,'Role Anda tidak memiliki izin untuk tindakan ini. Hubungi Owner.');
-            abort_unless($access->branchEnabled($user,$feature),404,'Fitur tidak aktif untuk cabang ini.');
+            abort_unless($access->branchEnabled($user,$feature),404,'Halaman tidak ditemukan.');
         }
         return $next($request);
     }

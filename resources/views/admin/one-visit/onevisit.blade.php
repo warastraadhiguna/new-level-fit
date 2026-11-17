@@ -151,7 +151,7 @@
                 $("#memberModal").modal("show");
             },
             error: function(xhr, status, error) {
-                console.error(xhr.responseText);
+                window.alert('Pencarian belum dapat diproses. Silakan coba kembali.');
             },
         });
     }

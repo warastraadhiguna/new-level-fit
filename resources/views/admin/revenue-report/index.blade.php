@@ -12,9 +12,6 @@
                         <h4 class="mb-1">Revenue Report</h4>
                         <p class="text-muted mb-0">Revenue is recorded according to the date payment was received.</p>
                     </div>
-                    @if (! $includePos)
-                        <span class="badge badge-light mb-2">POS is disabled for this branch</span>
-                    @endif
                 </div>
 
                 <div class="btn-group mb-4" role="group" aria-label="Revenue report display">
