@@ -13,7 +13,8 @@ class RevenueReportService
         string $toDate,
         bool $includePos,
         ?string $search = null,
-        ?string $category = null
+        ?string $category = null,
+        ?int $methodPaymentId = null
     ): Builder {
         $from = $fromDate . ' 00:00:00';
         $to = $toDate . ' 23:59:59';
@@ -34,6 +35,7 @@ class RevenueReportService
             ->selectRaw("COALESCE(NULLIF(member.member_code, ''), '-') AS customer_code")
             ->selectRaw("COALESCE(NULLIF(package.package_name, ''), '(deleted)') AS item_name")
             ->selectRaw("COALESCE(NULLIF(method.name, ''), '-') AS payment_method")
+            ->selectRaw('payment.method_payment_id AS method_payment_id')
             ->selectRaw("COALESCE(NULLIF(staff.full_name, ''), '-') AS staff_name")
             ->selectRaw('payment.value AS amount')
             ->selectRaw('payment.created_at AS transaction_at');
@@ -60,6 +62,7 @@ class RevenueReportService
             ->selectRaw("COALESCE(NULLIF(member.member_code, ''), '-') AS customer_code")
             ->selectRaw("COALESCE(NULLIF(package.package_name, ''), '(deleted)') AS item_name")
             ->selectRaw("COALESCE(NULLIF(method.name, ''), '-') AS payment_method")
+            ->selectRaw('payment.method_payment_id AS method_payment_id')
             ->selectRaw("COALESCE(NULLIF(staff.full_name, ''), '-') AS staff_name")
             ->selectRaw('payment.value AS amount')
             ->selectRaw('payment.created_at AS transaction_at');
@@ -89,6 +92,7 @@ class RevenueReportService
                 ->selectRaw("'-' AS customer_code")
                 ->selectRaw("'Penjualan POS' AS item_name")
                 ->selectRaw("COALESCE(NULLIF(method.name, ''), '-') AS payment_method")
+                ->selectRaw('sale_payment.method_payment_id AS method_payment_id')
                 ->selectRaw("COALESCE(NULLIF(staff.full_name, ''), '-') AS staff_name")
                 ->selectRaw('sale.grand_total AS amount')
                 ->selectRaw('sale.created_at AS transaction_at');
@@ -97,6 +101,10 @@ class RevenueReportService
         }
 
         $query = DB::query()->fromSub($union, 'revenue_transactions');
+
+        if ($methodPaymentId !== null) {
+            $query->where('method_payment_id', $methodPaymentId);
+        }
 
         if ($search !== null && trim($search) !== '') {
             $keyword = '%' . trim($search) . '%';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Report;
 
 use App\Exports\RevenueReportExport;
 use App\Http\Controllers\Controller;
+use App\Models\MethodPayment;
 use App\Services\RevenueReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -32,6 +33,7 @@ class RevenueReportController extends Controller
             'per_page' => ['nullable', 'integer', 'in:10,20,50,100'],
             'excel' => ['nullable', 'in:1'],
             'pdf' => ['nullable', 'in:1'],
+            'method_payment_id' => ['nullable', 'integer', 'exists:method_payments,id'],
         ]);
 
         $fromDate = $validated['from_date'] ?? now()->startOfMonth()->toDateString();
@@ -39,6 +41,7 @@ class RevenueReportController extends Controller
         $search = $validated['search'] ?? null;
         $viewMode = $validated['view'] ?? 'summary';
         $category = $validated['category'] ?? null;
+        $methodPaymentId = isset($validated['method_payment_id']) ? (int) $validated['method_payment_id'] : null;
         $includePos = (bool) $branchStore->pos_inventory_enabled;
 
         if ($viewMode === 'summary') {
@@ -58,7 +61,8 @@ class RevenueReportController extends Controller
                     $toDate,
                     $includePos,
                     $search,
-                    $category
+                    $category,
+                    $methodPaymentId
                 ),
                 'Revenue-Report-' . $fromDate . '-to-' . $toDate . '.xlsx'
             );
@@ -70,7 +74,8 @@ class RevenueReportController extends Controller
             $toDate,
             $includePos,
             $search,
-            $category
+            $category,
+            $methodPaymentId
         );
 
         $summary = (clone $baseQuery)
@@ -98,6 +103,7 @@ class RevenueReportController extends Controller
                 'toDate' => $toDate,
                 'category' => $category,
                 'search' => $search,
+                'paymentMethodName' => $methodPaymentId ? optional(MethodPayment::find($methodPaymentId))->name : 'All Payment Methods',
                 'summary' => $summary,
                 'transactions' => $transactions,
                 'grandTotal' => (float) $summary->sum('total_amount'),
@@ -130,6 +136,8 @@ class RevenueReportController extends Controller
             'category' => $category,
             'perPage' => (int) ($validated['per_page'] ?? 20),
             'includePos' => $includePos,
+            'methodPaymentId' => $methodPaymentId,
+            'paymentMethods' => MethodPayment::orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

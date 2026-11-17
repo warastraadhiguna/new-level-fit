@@ -1,6 +1,7 @@
 <table>
     <thead>
         <tr><th colspan="10">Revenue Report {{ $fromDate }} to {{ $toDate }}</th></tr>
+        <tr><th colspan="10">Payment Method: {{ $paymentMethodName }}</th></tr>
         <tr>
             <th>No</th>
             <th>Date</th>

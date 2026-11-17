@@ -38,6 +38,7 @@
     @endphp
     <table class="filters">
         <tr><td class="label">Period</td><td>: {{ \Carbon\Carbon::parse($fromDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($toDate)->format('d M Y') }}</td></tr>
+        <tr><td class="label">Payment Method</td><td>: {{ $paymentMethodName }}</td></tr>
         @if ($viewMode === 'detail')
             <tr><td class="label">Revenue Type</td><td>: {{ $categoryNames[$category] ?? 'All Revenue' }}</td></tr>
             <tr><td class="label">Search Details</td><td>: {{ filled($search) ? $search : 'All' }}</td></tr>

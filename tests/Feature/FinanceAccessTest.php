@@ -19,6 +19,9 @@ class FinanceAccessTest extends TestCase
             $t->id();$t->string('name');$t->text('revenue_report_visible_roles')->nullable();
             $t->boolean('pos_inventory_enabled')->default(false);$t->boolean('face_enrollment_enabled')->default(false);
         });
+        Schema::create('method_payments',function(Blueprint $t) {
+            $t->id();$t->string('name');
+        });
         Schema::create('user_application_access',function(Blueprint $t) {
             $t->id();$t->unsignedInteger('user_id');$t->string('application_code');$t->boolean('is_active');$t->timestamps();$t->unique(['user_id','application_code']);
         });
@@ -54,7 +57,7 @@ class FinanceAccessTest extends TestCase
             'transaction_at'=>'2026-11-10 09:00:00','amount'=>$branch*100,'category'=>'Membership','reference_number'=>'REF'.$branch,
             'customer_name'=>'Branch '.$branch.' Payment','customer_code'=>'C'.$branch,'item_name'=>'Package','payment_method'=>'Cash','staff_name'=>'Staff']);
         $this->mock(RevenueReportService::class,function($mock) {
-            $mock->shouldReceive('query')->twice()->with(1,'2026-11-01','2026-11-30',false,null,null)
+            $mock->shouldReceive('query')->twice()->with(1,'2026-11-01','2026-11-30',false,null,null,null)
                 ->andReturnUsing(function() { return DB::table('finance_test_transactions')->where('branch_store_id',1); });
         });
         $this->actingAs($this->actor())->get('/revenue-report?branch_store_id=2')->assertOk()->assertViewHas('grandTotal',100.0)->assertDontSee('Download Excel');

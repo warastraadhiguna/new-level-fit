@@ -60,6 +60,16 @@
                             </div>
                         @endif
 
+                        <div class="col-md-2">
+                            <label class="form-label">Payment Method</label>
+                            <select name="method_payment_id" class="form-control">
+                                <option value="">All Payment Methods</option>
+                                @foreach (($paymentMethods ?? collect()) as $method)
+                                    <option value="{{ $method->id }}" {{ (string) ($methodPaymentId ?? '') === (string) $method->id ? 'selected' : '' }}>{{ $method->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="col-auto"><button type="submit" class="btn btn-info">Show</button></div>
                         <div class="col-auto"><button type="submit" name="pdf" value="1" class="btn btn-outline-primary">Download PDF</button></div>
                         @if ($viewMode === 'detail' && Auth::user()->isOwner())
@@ -139,7 +149,7 @@
                                         <td>{{ number_format($contribution, 1, ',', '.') }}%</td>
                                         <td class="text-end"><strong>Rp. {{ number_format($item->total_amount, 0, ',', '.') }}</strong></td>
                                         <td>
-                                            <a class="btn btn-primary btn-xs" href="{{ route('revenue-report.index', ['view' => 'detail', 'from_date' => $fromDate, 'to_date' => $toDate, 'category' => $categoryKey]) }}">View Details</a>
+                                            <a class="btn btn-primary btn-xs" href="{{ route('revenue-report.index', ['view' => 'detail', 'from_date' => $fromDate, 'to_date' => $toDate, 'category' => $categoryKey, 'method_payment_id' => $methodPaymentId ?? null]) }}">View Details</a>
                                         </td>
                                     </tr>
                                 @empty

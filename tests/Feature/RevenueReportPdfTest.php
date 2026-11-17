@@ -30,6 +30,11 @@ class RevenueReportPdfTest extends TestCase
             },
         ]]);
         $this->app->instance('dompdf.wrapper', $this->pdf);
+        Schema::create('method_payments', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+        });
+        DB::table('method_payments')->insert(['id' => 1, 'name' => 'Cash']);
         Schema::create('revenue_fixture', function (Blueprint $table) {
             $table->integer('row_id');
             foreach (['category', 'transaction_at', 'reference_number', 'customer_name', 'customer_code', 'item_name', 'payment_method', 'staff_name'] as $column) {
@@ -47,10 +52,10 @@ class RevenueReportPdfTest extends TestCase
         }
     }
 
-    private function expectQuery(?string $search = null, ?string $category = null): void
+    private function expectQuery(?string $search = null, ?string $category = null, ?int $methodPaymentId = null): void
     {
         $this->mock(RevenueReportService::class)->shouldReceive('query')->once()
-            ->with(3, '2026-11-01', '2026-11-30', false, $search, $category)
+            ->with(3, '2026-11-01', '2026-11-30', false, $search, $category, $methodPaymentId)
             ->andReturn(DB::table('revenue_fixture'));
     }
 
@@ -103,6 +108,25 @@ class RevenueReportPdfTest extends TestCase
     {
         $this->getJson('/revenue-report?pdf=1&from_date=2026-11-30&to_date=2026-11-01')
             ->assertStatus(422)->assertJsonValidationErrors('to_date');
+    }
+
+    /** @dataProvider reportModes */
+    public function test_pdf_preserves_payment_method_filter_and_prints_it_below_header(string $mode): void
+    {
+        $this->expectQuery(null, null, 1);
+        $this->get('/revenue-report?pdf=1&view=' . $mode . '&from_date=2026-11-01&to_date=2026-11-30&method_payment_id=1')->assertOk();
+        $this->assertStringContainsString('Payment Method', $this->pdfText());
+        $this->assertStringContainsString(': Cash', $this->pdfText());
+    }
+
+    public function reportModes(): array
+    {
+        return [['summary'], ['detail']];
+    }
+
+    public function test_unknown_payment_method_is_rejected(): void
+    {
+        $this->getJson('/revenue-report?pdf=1&method_payment_id=999')->assertStatus(422)->assertJsonValidationErrors('method_payment_id');
     }
 
     public function test_branch_visibility_gate_protects_pdf_download(): void
