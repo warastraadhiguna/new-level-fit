@@ -117,6 +117,55 @@ class FaceEnrollmentTest extends TestCase
         $this->assertCount(128,json_decode(DB::table('face_attendance_employees')->value('face_embedding'),true));
         $this->assertDatabaseCount('employees',3);
     }
+
+    public function test_face_collision_with_another_employee_does_not_create_or_modify_a_profile(): void
+    {
+        $this->actingAs($this->actor());$this->fakeModel();
+        $this->postJson('/enroll',$this->body(10))->assertOk();
+        DB::table('employees')->where('id',20)->update(['all_branch'=>true]);
+        $this->postJson('/enroll',$this->body(20))->assertUnprocessable()->assertJsonValidationErrors('photo')
+            ->assertDontSee('EMP-10')->assertDontSee('Active One');
+        $this->assertDatabaseCount('face_attendance_employees',1);
+        $this->assertDatabaseCount('face_attendance_samples',1);
+    }
+
+    public function test_distinct_faces_can_be_registered_to_different_employees(): void
+    {
+        $this->actingAs($this->actor());DB::table('employees')->where('id',20)->update(['all_branch'=>true]);
+        $sequence=Http::sequence();
+        foreach ([0,1] as $axis) {
+            $vector=array_fill(0,128,0.0);$vector[$axis]=1;
+            $sequence->push(['success'=>true,'quality_checked'=>true,'face_count'=>1,
+                'embedding'=>$vector,'model'=>config('face.model')]);
+        }
+        Http::fake(['*/face/enroll'=>$sequence]);
+        $this->postJson('/enroll',$this->body(10))->assertOk();
+        $this->postJson('/enroll',$this->body(20))->assertOk();
+        $this->assertDatabaseCount('face_attendance_samples',2);
+    }
+
+    public function test_identical_samples_in_non_overlapping_branches_do_not_block_enrollment(): void
+    {
+        $this->actingAs($this->actor());$this->fakeModel();
+        $this->postJson('/enroll',$this->body(10))->assertOk();
+        $actor=$this->actor();$actor->branch_store_id=2;$this->actingAs($actor);
+        $this->postJson('/enroll',$this->body(20))->assertOk();
+        $this->assertDatabaseCount('face_attendance_samples',2);
+    }
+
+    public function test_read_only_audit_flags_existing_collisions_without_exposing_vectors_or_modifying_data(): void
+    {
+        $this->actingAs($this->actor());$this->fakeModel();
+        $this->postJson('/enroll',$this->body(10))->assertOk();
+        $profile=DB::table('face_attendance_employees')->insertGetId(['source_employee_id'=>20,
+            'employee_code'=>'EMP-20','name'=>'Active Two','department'=>'FC']);
+        DB::table('face_attendance_samples')->insert(['face_profile_id'=>$profile,'slot'=>1,'pose'=>'front',
+            'face_embedding'=>json_encode(array_fill(0,128,0.1)),'face_model'=>config('face.model')]);
+        $before=DB::table('face_attendance_samples')->get()->toJson();
+        $this->artisan('face:audit-enrollments',['--employee'=>10])
+            ->expectsOutput('1 sample pairs require review. No data was changed.')->assertExitCode(0);
+        $this->assertSame($before,DB::table('face_attendance_samples')->get()->toJson());
+    }
     public function test_deleted_employee_and_bad_image_are_rejected_before_inference(): void
     {
         $this->actingAs($this->actor());Http::fake();

@@ -61,7 +61,7 @@ class FaceEnrollmentController extends Controller
     }
     private function compatible(array $probe, $samples): bool
     {
-        $valid=0;$best=-1;$probeNorm=sqrt(array_sum(array_map(function($v) { return $v*$v; },$probe)));
+        $scores=[];$probeNorm=sqrt(array_sum(array_map(function($v) { return $v*$v; },$probe)));
         foreach ($samples as $sample) {
             if ($sample->face_model!==config('face.model')) continue;
             $reference=json_decode($sample->face_embedding,true);
@@ -72,9 +72,10 @@ class FaceEnrollmentController extends Controller
                 $dot+=$probe[$i]*$value;$norm+=$value*$value;
             }
             if ($norm<=0 || !is_finite($norm)) continue;
-            $valid++;$best=max($best,$dot/($probeNorm*sqrt($norm)));
+            $scores[]=$dot/($probeNorm*sqrt($norm));
         }
-        return !$valid || $best>=0.363;
+        rsort($scores);
+        return !$scores || $scores[intdiv(count($scores),2)]>=app(\App\Services\FaceEnrollmentSafety::class)->threshold();
     }
     public function store(Request $request, FaceEnrollmentService $service)
     {
@@ -91,7 +92,10 @@ class FaceEnrollmentController extends Controller
         if (!$info || $info[2]!==IMAGETYPE_JPEG || strlen($image)>5*1024*1024 || $info[0]*$info[1]>12000000) throw ValidationException::withMessages(['photo'=>'Foto kamera tidak valid atau terlalu besar.']);
         $data=$service->enroll($image);
         $samples=$db->transaction(function() use($request,$employee,$data,$db) {
+            // Serialize enrollment collision checks, including the first profiles.
+            $db->table('branch_stores')->orderBy('id')->lockForUpdate()->first();
             $current=$this->employees($request)->where('u.id',$employee->id)->lockForUpdate()->first();abort_unless($current,404);
+            app(\App\Services\FaceEnrollmentSafety::class)->assertDistinct($data['embedding'],(int)$current->id,(int)$current->branch_store_id,(bool)$current->all_branch);
             $branch=$db->table('branch_stores')->where('id',$current->branch_store_id)->value('name');$time=now();
             $db->table('face_attendance_employees')->upsert([[
                 'source_employee_id'=>$current->id,'employee_code'=>'EMP-'.$current->id,

@@ -5,5 +5,6 @@ return [
     'url' => env('FACE_SERVICE_URL', 'http://127.0.0.1:8001'),
     'timeout' => (int) env('FACE_SERVICE_TIMEOUT', 30),
     'model' => 'opencv-sface-2021dec',
+    'recognition_threshold' => (float) env('FACE_RECOGNITION_THRESHOLD', 0.45),
     'database' => env('FACE_DB_DATABASE', 'level-fit'),
 ];
